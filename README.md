@@ -7,7 +7,7 @@ Astro storefront for Gobble by Pixie Cream Cheese ([@gobblebypixie](https://www.
 ## Stack
 
 - **Astro** (static output), no UI framework, no Tailwind — vanilla CSS with design tokens.
-- **Content**: Google Sheet published as CSV (see `src/lib/fetchProducts.js`) — live in production, real 37-item catalog.
+- **Content**: Google Sheet published as CSV (see `src/lib/fetchProducts.js`) — live in production, real 37-item catalog. Site copy (hero text, fulfillment banner, FSSAI/GSTIN, etc.) reads from the SiteContent tab the same way (see `src/lib/fetchSiteContent.js`).
 - **Accounts/Rewards**: localStorage session + a deployed, working Google Apps Script backend (`code.gs` in this repo — also the source of truth mirrored into the Sheet's own Script Editor).
 - **Cart**: `public/cart.js`, plain JS + localStorage, shared across every page via `window.GobbleCart`.
 
@@ -41,8 +41,9 @@ Requires being logged into wrangler via OAuth (`wrangler login`) as the client's
 `.env` (gitignored, not committed) needs:
 
 ```
-GOOGLE_SHEET_CSV_URL=   # published-CSV URL for the Products tab of the backend Sheet
-APPS_SCRIPT_URL=        # deployed Apps Script Web App /exec URL (code.gs)
+GOOGLE_SHEET_CSV_URL=          # published-CSV URL for the Products tab of the backend Sheet
+GOOGLE_SITE_CONTENT_CSV_URL=   # published-CSV URL for the SiteContent tab (see src/lib/fetchSiteContent.js)
+APPS_SCRIPT_URL=               # deployed Apps Script Web App /exec URL (code.gs)
 ```
 
 Both are live in production. Without them locally, the site builds fine using hardcoded placeholder products and the account pages show a "not configured yet" state instead of erroring — useful for working on layout/design without needing real credentials.
@@ -66,6 +67,7 @@ src/
     GlutenFreeIcon.astro   — generic GF icon (not a certification mark — product isn't certified)
   lib/
     fetchProducts.js       — Sheet-CSV fetch + parse + fallback data + formatPrice()
+    fetchSiteContent.js    — SiteContent tab fetch + parse, falls back to hardcoded copy
   pages/
     index.astro            — homepage
     menu.astro              — full catalog, category/subcategory/dietary filters, Quick View modal

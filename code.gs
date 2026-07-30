@@ -21,10 +21,10 @@
  *     empty Customers/Orders/Coupons with correct headers) and sets sharing
  *     so the CSV export URLs work without login.
  *  4. Check View → Executions (or the Logger output) for:
- *       - Products CSV URL   → paste into GOOGLE_SHEET_CSV_URL
- *       - SiteContent CSV URL → for the future site-content wiring (not
- *         yet read by the site — the sheet is ready, the Astro code to
- *         consume it isn't built yet)
+ *       - Products CSV URL    → paste into GOOGLE_SHEET_CSV_URL
+ *       - SiteContent CSV URL → paste into GOOGLE_SITE_CONTENT_CSV_URL
+ *         (read by src/lib/fetchSiteContent.js — edit the SiteContent tab's
+ *         `value` column and rebuild+redeploy to update site copy)
  *  5. Deploy → New Deployment → Web App
  *       - Execute as: Me
  *       - Who has access: Anyone
@@ -896,6 +896,43 @@ function setupSiteContentSheet() {
   return sheet;
 }
 
+/**
+ * Repairs the SiteContent tab if its rows ever get squashed into a single
+ * wrapped cell (happens if someone edits a cell with Alt+Enter instead of
+ * typing into the next row down) — found 2026-07-31, most rows had merged
+ * into A1/B1/C1 as one space-joined string, which the site's CSV parser
+ * silently ignores (falls back to hardcoded defaults) rather than crash on.
+ * Run this manually from the Script Editor if `fetchSiteContent.js`'s build
+ * log shows fewer than 10 fields loaded. Preserves fssai_number/gstin
+ * current values; re-seeds everything else from the known-good defaults —
+ * re-paste any custom copy you'd already put in the Sheet afterward.
+ */
+function repairSiteContentSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(CONFIG.SITE_CONTENT_SHEET_NAME);
+  if (!sheet) { Logger.log('No SiteContent sheet found — run runInitialSetup() first.'); return; }
+  sheet.clearContents();
+
+  const DATA = [
+    ['key', 'value', 'where_it_appears'],
+    ['tagline', 'Handmade Flavoured Cream Cheese', 'Hero heading, footer, meta description'],
+    ['hero_eyebrow', "Delhi NCR's Artisanal Cheese House", 'Homepage hero'],
+    ['hero_sub', 'Small-batch cream cheeses and handcrafted grazing boards — 100% vegetarian, gluten-free, keto-friendly. Zero preservatives, always fresh.', 'Homepage hero'],
+    ['hero_trust', 'Loved by 1,700+ fellow food lovers on Instagram', 'Homepage hero'],
+    ['about_intro', "Gobble by Pixie began with a simple belief: cheese should be honest — real ingredients, small batches, zero artificial preservatives. Every jar and every grazing board is handcrafted, never mass-produced on an industrial line.", 'About page'],
+    ['fulfillment_platters', 'Cheese Platters: Next-Day Dispatch', 'Fulfillment banner, FAQ'],
+    ['fulfillment_jars', 'Cream Cheese Jars: Order by Thu Midnight, Shipped Sat', 'Fulfillment banner, FAQ'],
+    ['grazing_table_price', 'Starting at ₹25,000', 'Menu — Grazing Tables panel'],
+    ['fssai_number', '23323002000839', 'Footer'],
+    ['gstin', '07CHAPS2957P2ZL', 'Footer'],
+  ];
+  sheet.getRange(1, 1, DATA.length, DATA[0].length).setValues(DATA);
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, 3).setBackground('#A15F60').setFontColor('#F7F0E7').setFontWeight('bold');
+  sheet.autoResizeColumns(1, 3);
+  Logger.log('✅ SiteContent repaired — 10 clean rows, one key per row.');
+}
+
 function setupCouponsSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(CONFIG.COUPONS_SHEET_NAME);
@@ -939,7 +976,7 @@ function runInitialSetup() {
   Logger.log('✅ All tabs created: Products, SiteContent, Coupons, Customers, Orders');
   Logger.log('Spreadsheet URL: ' + ss.getUrl());
   Logger.log('Products CSV URL (→ GOOGLE_SHEET_CSV_URL): ' + productsCsv);
-  Logger.log('SiteContent CSV URL (for future use): ' + contentCsv);
+  Logger.log('SiteContent CSV URL (→ GOOGLE_SITE_CONTENT_CSV_URL): ' + contentCsv);
   Logger.log('Next: Deploy → New deployment → Web app → Execute as Me, Who has access: Anyone. Copy that URL → APPS_SCRIPT_URL env var.');
 }
 

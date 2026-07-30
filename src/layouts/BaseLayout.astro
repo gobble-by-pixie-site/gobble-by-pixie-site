@@ -1,8 +1,11 @@
 ---
 import '../styles/global.css';
 import GlutenFreeIcon from '../components/GlutenFreeIcon.astro';
+import { fetchSiteContent } from '../lib/fetchSiteContent.js';
 
-const { title = 'Gobble by Pixie — Artisanal Cream Cheese & Cheese Platters', description = 'Handmade Flavoured Cream Cheese. Gluten-free, keto-friendly artisanal cream cheese and handcrafted grazing boards, delivered across Delhi NCR.' } = Astro.props;
+const content = await fetchSiteContent();
+
+const { title = 'Gobble by Pixie — Artisanal Cream Cheese & Cheese Platters', description = `${content.tagline}. Gluten-free, keto-friendly artisanal cream cheese and handcrafted grazing boards, delivered across Delhi NCR.` } = Astro.props;
 
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
@@ -19,9 +22,9 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
 </head>
 <body>
   <div class="fulfillment-banner">
-    <span>🧀 <strong>Cheese Platters:</strong> Next-Day Dispatch</span>
+    <span>🧀 {content.fulfillment_platters}</span>
     <span class="banner-divider">•</span>
-    <span>✨ <strong>Cream Cheese Jars:</strong> Order by Thu Midnight, Shipped Sat</span>
+    <span>✨ {content.fulfillment_jars}</span>
   </div>
 
   <header class="site-header">
@@ -95,7 +98,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     <div class="container footer-inner">
       <div class="footer-brand">
         <a href="/" class="logo"><img src="/Logos/Gobble Logo-TM-Black.png" alt="Gobble by Pixie" class="logo-img" /></a>
-        <p class="footer-tag">Handmade Flavoured Cream Cheese</p>
+        <p class="footer-tag">{content.tagline}</p>
         <div class="footer-badges">
           <span class="badge badge-veg">100% Vegetarian</span>
           <span class="badge badge-gf"><GlutenFreeIcon /> Gluten-Free</span>
@@ -123,7 +126,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     <div class="container">
       <div class="footer-bottom">
         <p class="footer-note">Delivering fresh across Delhi, Gurgaon, Noida, Ghaziabad & Faridabad. Zero preservatives, always small-batch.</p>
-        <p class="footer-legal">FSSAI Lic. No. 23323002000839 &nbsp;·&nbsp; GSTIN: 07CHAPS2957P2ZL</p>
+        <p class="footer-legal">FSSAI Lic. No. {content.fssai_number} &nbsp;·&nbsp; GSTIN: {content.gstin}</p>
         <p class="copyright">&copy; {new Date().getFullYear()} Gobble by Pixie. All rights reserved.</p>
       </div>
     </div>

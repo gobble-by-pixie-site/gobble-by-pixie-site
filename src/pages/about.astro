@@ -1,5 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { fetchSiteContent } from '../lib/fetchSiteContent.js';
+
+const content = await fetchSiteContent();
 ---
 <BaseLayout title="Our Story — Gobble by Pixie">
   <section class="about-hero">
@@ -10,7 +13,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="about-copy">
         <p class="eyebrow">✨ The Artisanal Philosophy</p>
         <h1>Made with love, <span class="text-gradient">never shortcuts</span></h1>
-        <p>Gobble by Pixie began with a simple belief: cheese should be honest — real ingredients, small batches, zero artificial preservatives. Every jar and every grazing board is handcrafted, never mass-produced on an industrial line.</p>
+        <p>{content.about_intro}</p>
         <p>We're gluten-free and keto-friendly by design, not as an afterthought — so everyone around the table can gobble without compromise.</p>
       </div>
     </div>

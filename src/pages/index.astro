@@ -3,8 +3,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import GlutenFreeIcon from '../components/GlutenFreeIcon.astro';
 import { fetchProducts } from '../lib/fetchProducts.js';
+import { fetchSiteContent } from '../lib/fetchSiteContent.js';
 
 const products = await fetchProducts();
+const content = await fetchSiteContent();
 const bestSellers = products.slice(0, 3);
 const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
 ---
@@ -16,9 +18,9 @@ const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
     <span class="hero-sprinkle hero-sprinkle-4" aria-hidden="true">✨</span>
     <div class="container hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow">✨ Delhi NCR's Artisanal Cheese House</p>
+        <p class="eyebrow">✨ {content.hero_eyebrow}</p>
         <h1>Handmade <span class="text-gradient">Flavoured Cream Cheese</span></h1>
-        <p class="hero-sub">Small-batch cream cheeses and handcrafted grazing boards — 100% vegetarian, gluten-free, keto-friendly. Zero preservatives, always fresh.</p>
+        <p class="hero-sub">{content.hero_sub}</p>
         <div class="hero-badges">
           <span class="badge badge-veg">🌱 100% Vegetarian</span>
           <span class="badge badge-gf"><GlutenFreeIcon /> Gluten-Free</span>
@@ -28,7 +30,7 @@ const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
           <a href="/byop" class="btn btn-primary">🧀 Build Your Cheese Platter</a>
           <a href="/menu" class="btn btn-secondary">Shop Cream Cheeses</a>
         </div>
-        <p class="hero-trust">🥰 Loved by 1,700+ fellow food lovers on Instagram</p>
+        <p class="hero-trust">🥰 {content.hero_trust}</p>
       </div>
       <div class="hero-image-wrap">
         <div class="hero-image" style="background-image: url('/Cover photo.JPG')"></div>

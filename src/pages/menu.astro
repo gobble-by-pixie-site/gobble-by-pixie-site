@@ -2,8 +2,10 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { fetchProducts, getCategories, getSubcategories } from '../lib/fetchProducts.js';
+import { fetchSiteContent } from '../lib/fetchSiteContent.js';
 
 const products = await fetchProducts();
+const content = await fetchSiteContent();
 const categories = getCategories(products);
 const platterSubcats = getSubcategories(products, 'Platters');
 const cheeseArtSubcats = getSubcategories(products, 'Cheese Art');
@@ -85,7 +87,7 @@ const WA = 'https://wa.link/sngzs9';
         <div class="card special-card grazing-card">
           <p class="eyebrow">For Big Celebrations</p>
           <h3>Grazing Table for Parties</h3>
-          <p class="grazing-price">Starting at ₹25,000</p>
+          <p class="grazing-price">{content.grazing_table_price}</p>
           <p>A full spread grazing table designed for your event — weddings, corporate parties, milestone celebrations. Every table is custom-built around your guest count, theme, and budget.</p>
           <a href={`${WA}?text=${encodeURIComponent("Hi! I'd like to enquire about a Grazing Table for a party. Could you share more details?")}`} target="_blank" rel="noopener" class="btn btn-primary">Enquire on WhatsApp 🎉</a>
         </div>
