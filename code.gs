@@ -1044,7 +1044,7 @@ function onProductSheetChange(e) {
   Logger.log('Rebuild queued — change in: ' + changedSheet);
 }
 
-/** Time-driven trigger (every 2 min) — fires the deploy hook once edits go quiet. */
+/** Time-driven trigger (every 1 min) — fires the deploy hook once edits go quiet. */
 function flushPendingDeploy() {
   const props = PropertiesService.getScriptProperties();
   const pendingAt = props.getProperty(DEPLOY_PENDING_KEY);
@@ -1078,10 +1078,10 @@ function installAutoDeployTriggers() {
 
   ScriptApp.newTrigger('flushPendingDeploy')
     .timeBased()
-    .everyMinutes(2)
+    .everyMinutes(1)
     .create();
 
-  Logger.log('✅ Auto-deploy triggers installed: onProductSheetChange (on change) + flushPendingDeploy (every 2 min).');
+  Logger.log('✅ Auto-deploy triggers installed: onProductSheetChange (on change) + flushPendingDeploy (every 1 min).');
 }
 
 /** Run manually to test the deploy hook fires correctly, bypassing the debounce. */
