@@ -556,7 +556,11 @@ function sendOwnerNotification(order) {
   const body = `New order on Gobble by Pixie!\n\n`
     + `━━━━━━━━━━━━━━━━━━━━━━━━\nORDER DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━\n`
     + `Item(s):       ${order.productName}\nProduct ID(s): ${order.productId}\n`
-    + `Amount Paid:   ₹${order.amountPaid.toLocaleString('en-IN')}\nPayment ID:    ${order.paymentId}\nOrder ID:      ${order.orderId}\n`
+    + `Amount Paid (Incl. GST): ₹${order.amountPaid.toLocaleString('en-IN')}\n`
+    + `  Taxable Value: ₹${order.taxableValue.toLocaleString('en-IN')}\n`
+    + `  CGST (2.5%):   ₹${order.cgst.toLocaleString('en-IN')}\n`
+    + `  SGST (2.5%):   ₹${order.sgst.toLocaleString('en-IN')}\n`
+    + `Payment ID:    ${order.paymentId}\nOrder ID:      ${order.orderId}\n`
     + `Time:          ${order.timestamp.toLocaleString('en-IN')}\n\n`
     + `━━━━━━━━━━━━━━━━━━━━━━━━\nCUSTOMER DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━\n`
     + `Name:    ${order.customerName}\nEmail:   ${order.customerEmail}\nPhone:   ${order.customerPhone}\nAddress: ${order.shippingAddress || 'Confirm via WhatsApp'}\n\n`
@@ -573,7 +577,9 @@ function sendCustomerConfirmation(order) {
     + `<p>Thank you for your order! We're preparing it fresh — you'll hear from us on WhatsApp with dispatch details.</p>`
     + `<table class="details" width="100%" cellpadding="0" cellspacing="0">`
     + row('Item(s)', order.productName)
-    + row('Amount Paid', '₹' + order.amountPaid.toLocaleString('en-IN'), 'color:#A15F60;font-size:18px')
+    + row('Taxable Value', '₹' + order.taxableValue.toLocaleString('en-IN'))
+    + row('GST (5%)', '₹' + order.totalGst.toLocaleString('en-IN'))
+    + row('Total Paid (Incl. GST)', '₹' + order.amountPaid.toLocaleString('en-IN'), 'color:#A15F60;font-size:18px')
     + row('Payment ID', order.paymentId, 'font-family:monospace;font-weight:400;font-size:11px')
     + row('Date', dateStr)
     + `</table>`
@@ -658,9 +664,31 @@ function doPost(e) {
   }
 }
 
+// All prices on the site/menu are GST-inclusive (what the customer actually
+// pays). This reverse-calculates the taxable value and GST amount at 5%
+// for bookkeeping/GST filing — it does NOT change what's charged, only how
+// the same amount is broken down on the Orders sheet and in emails.
+// Intra-state (Delhi NCR) split shown as CGST 2.5% + SGST 2.5% = 5% total —
+// an inter-state order would technically be IGST 5% instead; this isn't
+// auto-detected from just a payment webhook, so it's flagged here rather
+// than silently assumed correct for every order.
+const GST_RATE = 0.05;
+
+function computeGstBreakdown(inclusiveAmount) {
+  const taxableValue = inclusiveAmount / (1 + GST_RATE);
+  const totalGst = inclusiveAmount - taxableValue;
+  return {
+    taxableValue: Math.round(taxableValue * 100) / 100,
+    cgst: Math.round((totalGst / 2) * 100) / 100,
+    sgst: Math.round((totalGst / 2) * 100) / 100,
+    totalGst: Math.round(totalGst * 100) / 100,
+  };
+}
+
 function extractOrderData(payment) {
   const notes = payment.notes || {};
   const amountInRupees = (payment.amount || 0) / 100;
+  const gst = computeGstBreakdown(amountInRupees);
   return {
     timestamp: new Date(),
     paymentId: payment.id || '',
@@ -671,6 +699,10 @@ function extractOrderData(payment) {
     productId: notes.product_ids || '',
     productName: notes.product_names || 'Gobble by Pixie order',
     amountPaid: amountInRupees,
+    taxableValue: gst.taxableValue,
+    cgst: gst.cgst,
+    sgst: gst.sgst,
+    totalGst: gst.totalGst,
     currency: payment.currency || 'INR',
     shippingAddress: extractShippingAddress(payment),
     status: payment.status || 'captured',
@@ -688,11 +720,12 @@ function appendOrderToSheet(order) {
     order.timestamp, order.paymentId, order.orderId,
     order.customerName, order.customerEmail, order.customerPhone,
     order.productId, order.productName, order.amountPaid,
+    order.taxableValue, order.cgst, order.sgst, order.totalGst,
     order.currency, order.shippingAddress, order.method, order.status,
   ]);
   sheet.getRange(sheet.getLastRow(), 6).setNumberFormat('@');
-  sheet.getRange(sheet.getLastRow(), 9).setNumberFormat('₹#,##0');
-  sheet.autoResizeColumns(1, 13);
+  sheet.getRange(sheet.getLastRow(), 9, 1, 4).setNumberFormat('₹#,##0.00');
+  sheet.autoResizeColumns(1, 17);
   Logger.log('✅ Order appended: ' + order.paymentId);
 }
 
@@ -766,7 +799,7 @@ function handleRefundFailedEvent(refund) {
 }
 
 function setupOrdersSheet(sheet) {
-  const headers = ['Timestamp','Payment ID','Order ID','Customer Name','Customer Email','Customer Phone','Product ID','Product Name','Amount Paid','Currency','Shipping Address','Payment Method','Status'];
+  const headers = ['Timestamp','Payment ID','Order ID','Customer Name','Customer Email','Customer Phone','Product ID','Product Name','Amount Paid (Incl. GST)','Taxable Value','CGST (2.5%)','SGST (2.5%)','Total GST (5%)','Currency','Shipping Address','Payment Method','Status'];
   sheet.appendRow(headers);
   const headerRange = sheet.getRange(1, 1, 1, headers.length);
   headerRange.setBackground('#A15F60').setFontColor('#F7F0E7').setFontWeight('bold').setFontSize(11);
@@ -921,11 +954,14 @@ function testCreateOrder() {
 
 /** Test the full order + email flow (safe — doesn't touch real payments) */
 function testWebhook() {
+  const amountPaid = 750;
+  const gst = computeGstBreakdown(amountPaid);
   const fakeOrder = {
     timestamp: new Date(), paymentId: 'pay_TEST_' + Date.now(), orderId: 'order_TEST_' + Date.now(),
     customerName: 'Test Customer', customerEmail: CONFIG.OWNER_EMAIL, customerPhone: '+91 98765 43210',
     productId: 'gbp-jar-1', productName: 'Test — Herbs & Chilli Cream Cheese',
-    amountPaid: 750, currency: 'INR', shippingAddress: '123 Test Street, New Delhi, 110001',
+    amountPaid: amountPaid, taxableValue: gst.taxableValue, cgst: gst.cgst, sgst: gst.sgst, totalGst: gst.totalGst,
+    currency: 'INR', shippingAddress: '123 Test Street, New Delhi, 110001',
     status: 'captured', method: 'upi',
   };
   appendOrderToSheet(fakeOrder);
