@@ -1015,21 +1015,23 @@ function testWebhook() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  AUTO-DEPLOY — rebuild the website when the Products sheet changes
+//  AUTO-DEPLOY — rebuild the website when Products or SiteContent change
 //
-//  NOTE: this only works once the Cloudflare Pages project is connected
-//  to Git-based builds (Settings → Builds & deployments). Right now the
-//  site deploys via a direct file upload, not a Cloudflare-triggered
-//  build, so a deploy hook has nothing to trigger yet — this is scaffolded
-//  and ready, not yet wired to a live hook.
+//  Cloudflare Pages is Git-connected as of 2026-07-31 (Settings → Build
+//  → Deploy Hooks), so this is live. Debounced: an edit sets a "pending"
+//  flag instead of firing immediately, and a time-driven trigger flushes
+//  it after a quiet period — so uploading 10 photos in a row triggers one
+//  rebuild, not ten.
 //
-//  SETUP (once ready):
-//  1. Paste your Cloudflare Pages Deploy Hook URL into DEPLOY_HOOK_URL
-//  2. Apps Script → Triggers → Add Trigger:
-//       Function: onProductSheetChange | From: spreadsheet | Event: On change
+//  SETUP: run installAutoDeployTriggers() once from the function dropdown
+//  (Run button) — it installs both triggers needed (on-change + the
+//  debounce-flush timer). Re-run it any time to reset if triggers get
+//  duplicated or deleted.
 // ═══════════════════════════════════════════════════════════════════
 
-const DEPLOY_HOOK_URL = 'PASTE_CLOUDFLARE_DEPLOY_HOOK_URL_HERE';
+const DEPLOY_HOOK_URL = 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/fea5fce9-8ef9-4181-a118-911a4ca1a341';
+const DEPLOY_QUIET_PERIOD_MS = 90 * 1000; // wait this long after the last edit before rebuilding
+const DEPLOY_PENDING_KEY = 'pendingDeployAt';
 
 function onProductSheetChange(e) {
   const changedSheet = e && e.source ? e.source.getActiveSheet().getName() : '';
@@ -1038,10 +1040,22 @@ function onProductSheetChange(e) {
     Logger.log('Skipping rebuild — change was in: ' + changedSheet);
     return;
   }
-  if (!DEPLOY_HOOK_URL || DEPLOY_HOOK_URL.indexOf('PASTE_') === 0) {
-    Logger.log('⚠️ DEPLOY_HOOK_URL not set — skipping auto-deploy');
+  PropertiesService.getScriptProperties().setProperty(DEPLOY_PENDING_KEY, String(Date.now()));
+  Logger.log('Rebuild queued — change in: ' + changedSheet);
+}
+
+/** Time-driven trigger (every 2 min) — fires the deploy hook once edits go quiet. */
+function flushPendingDeploy() {
+  const props = PropertiesService.getScriptProperties();
+  const pendingAt = props.getProperty(DEPLOY_PENDING_KEY);
+  if (!pendingAt) return;
+
+  if (Date.now() - Number(pendingAt) < DEPLOY_QUIET_PERIOD_MS) {
+    Logger.log('Still within quiet period — waiting for edits to settle.');
     return;
   }
+
+  props.deleteProperty(DEPLOY_PENDING_KEY);
   try {
     const response = UrlFetchApp.fetch(DEPLOY_HOOK_URL, { method: 'POST', muteHttpExceptions: true });
     Logger.log('✅ Cloudflare build triggered — status: ' + response.getResponseCode());
@@ -1050,12 +1064,28 @@ function onProductSheetChange(e) {
   }
 }
 
-/** Run manually to test the deploy hook is wired up correctly, once DEPLOY_HOOK_URL is set */
+/** Run once from the Script Editor to install both triggers auto-deploy needs. */
+function installAutoDeployTriggers() {
+  ScriptApp.getProjectTriggers().forEach(t => {
+    const fn = t.getHandlerFunction();
+    if (fn === 'onProductSheetChange' || fn === 'flushPendingDeploy') ScriptApp.deleteTrigger(t);
+  });
+
+  ScriptApp.newTrigger('onProductSheetChange')
+    .forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet())
+    .onChange()
+    .create();
+
+  ScriptApp.newTrigger('flushPendingDeploy')
+    .timeBased()
+    .everyMinutes(2)
+    .create();
+
+  Logger.log('✅ Auto-deploy triggers installed: onProductSheetChange (on change) + flushPendingDeploy (every 2 min).');
+}
+
+/** Run manually to test the deploy hook fires correctly, bypassing the debounce. */
 function testDeployHook() {
-  if (!DEPLOY_HOOK_URL || DEPLOY_HOOK_URL.indexOf('PASTE_') === 0) {
-    Logger.log('⚠️ Please paste your Cloudflare Deploy Hook URL into DEPLOY_HOOK_URL first.');
-    return;
-  }
   const response = UrlFetchApp.fetch(DEPLOY_HOOK_URL, { method: 'POST', muteHttpExceptions: true });
   Logger.log(response.getResponseCode() === 200
     ? '✅ Deploy triggered! Site will rebuild in ~60 seconds.'
