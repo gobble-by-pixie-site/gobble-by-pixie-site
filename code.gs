@@ -969,3 +969,15 @@ function onProductSheetChange(e) {
     Logger.log('❌ Failed to trigger Cloudflare build: ' + err.message);
   }
 }
+
+/** Run manually to test the deploy hook is wired up correctly, once DEPLOY_HOOK_URL is set */
+function testDeployHook() {
+  if (!DEPLOY_HOOK_URL || DEPLOY_HOOK_URL.indexOf('PASTE_') === 0) {
+    Logger.log('⚠️ Please paste your Cloudflare Deploy Hook URL into DEPLOY_HOOK_URL first.');
+    return;
+  }
+  const response = UrlFetchApp.fetch(DEPLOY_HOOK_URL, { method: 'POST', muteHttpExceptions: true });
+  Logger.log(response.getResponseCode() === 200
+    ? '✅ Deploy triggered! Site will rebuild in ~60 seconds.'
+    : '❌ Something went wrong — status ' + response.getResponseCode() + '. Double-check the deploy hook URL.');
+}
