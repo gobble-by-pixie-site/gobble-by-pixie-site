@@ -56,6 +56,26 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
   </div>
 </article>
 
+<script>
+  // Cards on pages with the Quick View modal (menu.astro) let that page's own
+  // script own the click. Cards on pages without one (e.g. homepage
+  // best-sellers) add straight to cart instead, so the button always does
+  // something rather than silently no-op.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.js-quick-view-btn');
+    if (!btn) return;
+    if (document.getElementById('productModalBackdrop')) return; // menu.astro handles this itself
+
+    const card = btn.closest('.js-product-card');
+    if (!card || !window.GobbleCart) return;
+    const price = card.dataset.price ? Number(card.dataset.price) : null;
+    window.GobbleCart.add({ id: card.dataset.id, name: card.dataset.name, price, qty: 1 });
+    const original = btn.textContent;
+    btn.textContent = 'Added! ✓';
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  });
+</script>
+
 <style>
   .product-card {
     overflow: hidden;

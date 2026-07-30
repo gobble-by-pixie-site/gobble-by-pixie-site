@@ -125,9 +125,9 @@ const WA = 'https://wa.link/sngzs9';
           <p id="modalDesc" class="modal-desc"></p>
           <div class="modal-footer">
             <span id="modalPrice" class="modal-price"></span>
-            <a id="modalWaBtn" href="#" target="_blank" rel="noopener" class="btn btn-primary modal-wa-btn">
-              Order via WhatsApp 💬
-            </a>
+            <button type="button" id="modalAddToCartBtn" class="btn btn-primary modal-wa-btn">
+              Add to Order 🛒
+            </button>
           </div>
         </div>
       </div>
@@ -475,8 +475,24 @@ const WA = 'https://wa.link/sngzs9';
       badgesEl.innerHTML = dietary.map((d) => `<span class="badge badge-${d.toLowerCase()}">${d}</span>`).join('') +
         `<span class="badge badge-dispatch">${fulfillment}</span>`;
 
-      const msg = `Hi! I'd like to order: ${name} (${price})`;
-      document.getElementById('modalWaBtn').href = `https://wa.link/sngzs9?text=${encodeURIComponent(msg)}`;
+      const addBtn = document.getElementById('modalAddToCartBtn');
+      const isOutOfStock = card.dataset.instock === 'false';
+      addBtn.disabled = isOutOfStock;
+      addBtn.textContent = isOutOfStock ? 'Sold Out' : 'Add to Order 🛒';
+      addBtn.onclick = () => {
+        if (!window.GobbleCart) return;
+        window.GobbleCart.add({
+          id: card.dataset.id,
+          name: name,
+          price: card.dataset.price ? Number(card.dataset.price) : null,
+          qty: 1,
+        });
+        addBtn.textContent = 'Added! ✓';
+        setTimeout(() => {
+          backdrop.style.display = 'none';
+          document.getElementById('cartToggle')?.click();
+        }, 500);
+      };
 
       backdrop.style.display = 'flex';
     }

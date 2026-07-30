@@ -204,9 +204,9 @@ const occasions = ['Birthday', 'Anniversary', 'House Party', 'Gifting', 'Quiet N
           <span id="trayTotal" class="total-amount">₹0</span>
         </div>
         
-        <a id="trayCta" class="btn btn-primary tray-cta" href="#" target="_blank" rel="noopener">
-          Add Custom Platter to Order
-        </a>
+        <button type="button" id="trayCta" class="btn btn-primary tray-cta">
+          Add Custom Platter to Order 🛒
+        </button>
       </aside>
     </div>
   </section>
@@ -217,7 +217,7 @@ const occasions = ['Birthday', 'Anniversary', 'House Party', 'Gifting', 'Quiet N
       <span class="mobile-bar-label">Your Custom Board</span>
       <span class="mobile-bar-price" id="mobileTotal">₹0</span>
     </div>
-    <a id="mobileCta" class="btn btn-primary btn-sm" href="#" target="_blank" rel="noopener">Order Board</a>
+    <button type="button" id="mobileCta" class="btn btn-primary btn-sm">Add to Order</button>
   </div>
 
   <style>
@@ -494,24 +494,47 @@ const occasions = ['Birthday', 'Anniversary', 'House Party', 'Gifting', 'Quiet N
       document.getElementById('trayTotal').textContent = `₹${total}`;
       document.getElementById('mobileTotal').textContent = `₹${total}`;
 
+      const canAdd = !!state.size;
+      [document.getElementById('trayCta'), document.getElementById('mobileCta')].forEach((btn) => {
+        if (btn) btn.disabled = !canAdd;
+      });
+    }
+
+    function addCustomPlatterToCart() {
+      if (!state.size || !window.GobbleCart) return;
       const giftNote = document.getElementById('giftNote')?.value || '';
       const prepNotes = document.getElementById('prepNotes')?.value || '';
-      const lines = [
-        `Hi! I'd like to order a custom cheese platter (#BYOP):`,
-        state.size ? `Board: ${state.size.name} (₹${state.size.price})` : '',
+      const extraCheese = Math.max(0, state.cheese.length - state.size.quota.cheese) * 100;
+      const total = state.size.price + extraCheese;
+
+      const noteParts = [
         state.cheese.length ? `Cream Cheeses: ${state.cheese.join(', ')}` : '',
         state.cracker.length ? `Crackers: ${state.cracker.join(', ')}` : '',
         state.pairing.length ? `Pairings: ${state.pairing.join(', ')}` : '',
         state.occasion ? `Occasion: ${state.occasion}` : '',
         giftNote ? `Gift note: ${giftNote}` : '',
         prepNotes ? `Special instructions: ${prepNotes}` : '',
-        `Estimated total: ₹${total}`,
-      ].filter(Boolean).join('\n');
+      ].filter(Boolean).join(' · ');
 
-      const waUrl = `https://wa.link/sngzs9?text=${encodeURIComponent(lines)}`;
-      document.getElementById('trayCta').href = waUrl;
-      document.getElementById('mobileCta').href = waUrl;
+      window.GobbleCart.add({
+        id: 'byop-' + Date.now(),
+        name: `Custom Platter — ${state.size.name}`,
+        price: total,
+        qty: 1,
+        note: noteParts,
+      });
+
+      [document.getElementById('trayCta'), document.getElementById('mobileCta')].forEach((btn) => {
+        if (!btn) return;
+        const original = btn.textContent;
+        btn.textContent = 'Added to Order! ✓';
+        setTimeout(() => { btn.textContent = original; }, 1200);
+      });
+      document.getElementById('cartToggle')?.click();
     }
+
+    document.getElementById('trayCta')?.addEventListener('click', addCustomPlatterToCart);
+    document.getElementById('mobileCta')?.addEventListener('click', addCustomPlatterToCart);
 
     document.getElementById('giftNote')?.addEventListener('input', renderTray);
     document.getElementById('prepNotes')?.addEventListener('input', renderTray);
