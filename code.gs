@@ -243,6 +243,10 @@ function handleAuthSignup(p) {
   var now = new Date();
   // Timestamp | Name | Email | Phone | Address | Password Hash | Points | Tier | Total Spent | Last Login
   sheet.appendRow([now, name, email, phone, '', serverHash(ph), 100, 'Nibbler', 0, now]);
+  // Force phone to text — column-level '@' format alone isn't reliable at write time;
+  // without this a number like "9876543210" round-trips fine but "+91 98765 43210"
+  // gets silently mangled (the '+' and spaces break numeric coercion).
+  sheet.getRange(sheet.getLastRow(), 4).setNumberFormat('@').setValue(phone);
   sheet.autoResizeColumns(1, 10);
   try { sendWelcomeEmail(name, email); } catch(e) {}
   return jsonOut({ success: true, token: generateToken(email), name: name, email: email, phone: phone, address: '', points: 100, tier: 'Nibbler', totalSpent: 0 });
@@ -321,7 +325,10 @@ function handleUpdateProfile(p) {
   var data    = sheet.getDataRange().getValues();
   var headers = data[0].map(function(h){ return h.toString().toLowerCase().trim(); });
   if (p.name)    updateCustomerCol(sheet, customer._rowIndex, headers, 'name',    p.name.trim());
-  if (p.phone)   updateCustomerCol(sheet, customer._rowIndex, headers, 'phone',   p.phone.trim());
+  if (p.phone) {
+    var phoneCol = headers.indexOf('phone');
+    if (phoneCol >= 0) sheet.getRange(customer._rowIndex, phoneCol + 1).setNumberFormat('@').setValue(p.phone.trim());
+  }
   if (p.address) updateCustomerCol(sheet, customer._rowIndex, headers, 'address', p.address.trim());
   return jsonOut({ success: true });
 }
