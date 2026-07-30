@@ -27,7 +27,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   <header class="site-header">
     <div class="container header-inner">
       <a href="/" class="logo">
-        Gobble <span class="logo-sub">by Pixie</span>
+        <img src="/Logos/Gobble Logo-TM-Black.png" alt="Gobble by Pixie" class="logo-img" />
       </a>
 
       <nav class="main-nav" id="desktopNav">
@@ -94,7 +94,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   <footer class="site-footer">
     <div class="container footer-inner">
       <div class="footer-brand">
-        <a href="/" class="logo">Gobble <span class="logo-sub">by Pixie</span></a>
+        <a href="/" class="logo"><img src="/Logos/Gobble Logo-TM-Black.png" alt="Gobble by Pixie" class="logo-img" /></a>
         <p class="footer-tag">Handmade Flavoured Cream Cheese</p>
         <div class="footer-badges">
           <span class="badge badge-veg">100% Vegetarian</span>
@@ -179,16 +179,9 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       padding-bottom: var(--space-xs);
       height: 68px;
     }
-    .logo {
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-espresso);
-      display: flex;
-      align-items: baseline;
-      gap: 0.3rem;
-    }
-    .logo-sub { color: var(--accent-coral-deep); font-style: italic; font-weight: 600; }
+    .logo { display: flex; align-items: center; }
+    .logo-img { height: 38px; width: auto; display: block; }
+    .footer-brand .logo-img { height: 44px; }
 
     .main-nav {
       display: flex;
