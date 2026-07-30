@@ -89,8 +89,7 @@ const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
           points: data.points, tier: data.tier,
         }));
         localStorage.setItem('gbp_customer', JSON.stringify({
-          name: data.name, email: data.email, phone: data.phone || '',
-          address: data.address || '', pincode: data.pincode || '',
+          name: data.name, email: data.email, phone: data.phone || '', address: data.address || '',
         }));
 
         document.getElementById('login-form')?.style.setProperty('display', 'none');

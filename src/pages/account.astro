@@ -320,6 +320,14 @@ const earnRules = [
         window.location.href = '/login';
       });
 
+      var WA_LINK = 'https://wa.link/sngzs9';
+
+      function reorderText(o) {
+        return 'Hi! I\'d like to reorder: ' + (o.productName || 'my previous order')
+          + (o.orderId ? (' (Order ref: ' + o.orderId + ')') : '')
+          + '. Same as before, please!';
+      }
+
       function renderOrderList(orders) {
         var el = document.getElementById('orders-list');
         if (!orders.length) {
@@ -327,7 +335,18 @@ const earnRules = [
           return;
         }
         el.innerHTML = orders.map(function (o) {
-          return '<div class="card" style="padding:1.2rem;margin-bottom:0.8rem;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><p style="font-weight:600;margin:0;">' + fmtDate(o.date) + '</p><p style="font-size:0.85rem;color:var(--text-muted);margin:0;">' + (o.productName || 'Order') + '</p></div><p style="font-family:var(--font-display);font-weight:700;font-size:1.2rem;margin:0;color:var(--accent-gold-deep);">' + fmtINR(o.total) + '</p></div></div>';
+          var reorderHref = WA_LINK + '?text=' + encodeURIComponent(reorderText(o));
+          var statusBadge = o.status && o.status !== 'Confirmed'
+            ? '<span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--accent-berry-deep);background:rgba(161,95,96,0.12);padding:0.2rem 0.55rem;border-radius:2px;margin-left:0.5rem;">' + o.status + '</span>'
+            : '';
+          return '<div class="card" style="padding:1.2rem;margin-bottom:0.8rem;">'
+            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">'
+            + '<div><p style="font-weight:600;margin:0;">' + fmtDate(o.date) + statusBadge + '</p>'
+            + '<p style="font-size:0.85rem;color:var(--text-muted);margin:0;">' + (o.productName || 'Order') + '</p></div>'
+            + '<div style="display:flex;align-items:center;gap:0.8rem;">'
+            + '<p style="font-family:var(--font-display);font-weight:700;font-size:1.2rem;margin:0;color:var(--accent-gold-deep);">' + fmtINR(o.amountPaid) + '</p>'
+            + '<a href="' + reorderHref + '" target="_blank" rel="noopener" class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">🔁 Reorder</a>'
+            + '</div></div></div>';
         }).join('');
       }
 
