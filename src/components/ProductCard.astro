@@ -1,5 +1,6 @@
 ---
 import { formatPrice } from '../lib/fetchProducts.js';
+import GlutenFreeIcon from './GlutenFreeIcon.astro';
 const { product } = Astro.props;
 const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat' : 'Next-Day Dispatch';
 ---
@@ -29,7 +30,11 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
   </div>
   <div class="product-body">
     <div class="badge-row">
-      {product.dietary.map((d) => <span class={`badge badge-${d.toLowerCase()}`}>{d}</span>)}
+      {product.dietary.map((d) => (
+        <span class={`badge badge-${d.toLowerCase()}`}>
+          {d === 'GF' ? <><GlutenFreeIcon /> Gluten-Free</> : d}
+        </span>
+      ))}
       <span class="badge badge-dispatch">{dispatchLabel}</span>
     </div>
     <h3 class="product-title">{product.name}</h3>

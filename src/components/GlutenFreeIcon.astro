@@ -1,0 +1,26 @@
+---
+// Generic gluten-free icon (wheat stalk + slash) — NOT a certification mark.
+// Deliberately not a trademarked "Certified Gluten-Free" seal (GFCO/GIG etc.) —
+// product isn't third-party certified, so no certification claim should appear.
+const { size = 14 } = Astro.props;
+---
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  class="gf-icon"
+>
+  <path d="M12 2v13" />
+  <path d="M12 4c-1.5 0-2.5 1-2.5 2.2S10.5 8 12 8" />
+  <path d="M12 4c1.5 0 2.5 1 2.5 2.2S13.5 8 12 8" />
+  <path d="M12 8c-1.5 0-2.5 1-2.5 2.2S10.5 12 12 12" />
+  <path d="M12 8c1.5 0 2.5 1 2.5 2.2S13.5 12 12 12" />
+  <path d="M9 19c0-2 1.3-3.5 3-3.5s3 1.5 3 3.5" />
+  <line x1="3" y1="3" x2="21" y2="21" />
+</svg>

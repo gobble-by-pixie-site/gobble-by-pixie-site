@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
+import GlutenFreeIcon from '../components/GlutenFreeIcon.astro';
 import { fetchProducts } from '../lib/fetchProducts.js';
 
 const products = await fetchProducts();
@@ -16,11 +17,11 @@ const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
     <div class="container hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">✨ Delhi NCR's Artisanal Cheese House</p>
-        <h1>Creamy, Dreamy, <span class="text-gradient">Made with Love</span></h1>
+        <h1>Handmade <span class="text-gradient">Flavoured Cream Cheese</span></h1>
         <p class="hero-sub">Small-batch cream cheeses and handcrafted grazing boards — 100% vegetarian, gluten-free, keto-friendly. Zero preservatives, always fresh.</p>
         <div class="hero-badges">
           <span class="badge badge-veg">🌱 100% Vegetarian</span>
-          <span class="badge badge-gf">✨ Gluten-Free</span>
+          <span class="badge badge-gf"><GlutenFreeIcon /> Gluten-Free</span>
           <span class="badge badge-keto">🥑 Keto-Friendly</span>
         </div>
         <div class="hero-ctas">

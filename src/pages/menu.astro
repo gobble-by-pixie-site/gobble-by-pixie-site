@@ -20,11 +20,8 @@ const WA = 'https://wa.link/sngzs9';
 
   <section class="menu-body">
     <div class="container">
-      <!-- Search & Filter Controls -->
+      <!-- Filter Controls -->
       <div class="menu-controls card">
-        <div class="search-box">
-          <input type="search" id="menuSearch" placeholder="🔍 Search menu by name, flavour, or ingredient..." aria-label="Search menu items" />
-        </div>
         <div class="dietary-filter-pills" id="dietaryFilters">
           <button class="dietary-pill active" data-dietary="all">All Dietary</button>
           <button class="dietary-pill" data-dietary="Veg">🌱 100% Vegetarian</button>
@@ -52,7 +49,7 @@ const WA = 'https://wa.link/sngzs9';
       <!-- Matching Count Bar -->
       <div class="results-bar">
         <span id="resultsCount" class="results-count">Showing {products.length} products</span>
-        <button id="resetFiltersBtn" class="reset-btn" style="display:none;">Reset Search & Filters</button>
+        <button id="resetFiltersBtn" class="reset-btn" style="display:none;">Reset Filters</button>
       </div>
 
       <!-- Suggest a Flavour — Jars only -->
@@ -98,18 +95,18 @@ const WA = 'https://wa.link/sngzs9';
       <div class="product-grid" id="productGrid">
         {products.map((p) => (
           <div class="grid-item" data-cat={p.category} data-subcat={p.subcategory || ''} data-dietary={(p.dietary || []).join(',')} data-name={p.name.toLowerCase()}>
-            {p.subcategory && <p class="subcat-tag">{p.subcategory}</p>}
+            <p class:list={['subcat-tag', { 'subcat-tag-empty': !p.subcategory }]}>{p.subcategory || ' '}</p>
             <ProductCard product={p} />
           </div>
         ))}
       </div>
 
-      <!-- Empty Search State -->
+      <!-- Empty Filter State -->
       <div id="noResultsState" class="card no-results-card" style="display:none;">
         <span class="no-results-emoji">🧀</span>
         <h3>No matching items found</h3>
-        <p>Try adjusting your search query or clear the dietary filters.</p>
-        <button id="noResultsResetBtn" class="btn btn-secondary">Clear Search & Show All Items</button>
+        <p>Try clearing the category or dietary filters.</p>
+        <button id="noResultsResetBtn" class="btn btn-secondary">Clear Filters & Show All Items</button>
       </div>
     </div>
   </section>
@@ -141,21 +138,12 @@ const WA = 'https://wa.link/sngzs9';
     .menu-hero { text-align: center; padding-bottom: var(--space-md); }
     .section-sub { max-width: 52ch; margin: 0 auto; color: var(--text-espresso-soft); font-size: 1.05rem; }
 
-    /* Search & Controls */
     .menu-controls {
       padding: var(--space-md);
       margin-bottom: var(--space-md);
       display: flex;
       flex-direction: column;
       gap: var(--space-sm);
-    }
-    .search-box input {
-      width: 100%;
-      padding: 0.8rem 1.2rem;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-hairline);
-      font-size: 1rem;
-      background: #ffffff;
     }
     .dietary-filter-pills {
       display: flex;
@@ -288,13 +276,18 @@ const WA = 'https://wa.link/sngzs9';
       text-transform: uppercase;
       color: var(--accent-teal-deep);
       margin: 0 0 0.4rem 0.2rem;
+      line-height: 1.3;
+      /* always reserved, even when empty, so cards in the same row stay aligned */
     }
+    .subcat-tag-empty { visibility: hidden; }
 
     .product-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: var(--space-lg);
     }
+    .grid-item { display: flex; flex-direction: column; }
+    .grid-item :global(.product-card) { flex: 1; }
 
     .no-results-card {
       text-align: center;
@@ -340,7 +333,6 @@ const WA = 'https://wa.link/sngzs9';
   </style>
 
   <script is:inline define:vars={{ platterSubcats, cheeseArtSubcats }}>
-    const searchInput = document.getElementById('menuSearch');
     const tabs = document.querySelectorAll('.tab');
     const dietaryPills = document.querySelectorAll('.dietary-pill');
     const items = document.querySelectorAll('.grid-item');
@@ -353,7 +345,6 @@ const WA = 'https://wa.link/sngzs9';
     const noResults = document.getElementById('noResultsState');
 
     let state = {
-      search: '',
       category: 'all',
       subcategory: 'all',
       dietary: 'all',
@@ -403,29 +394,22 @@ const WA = 'https://wa.link/sngzs9';
         const cat = item.getAttribute('data-cat');
         const subcat = item.getAttribute('data-subcat');
         const dietary = (item.getAttribute('data-dietary') || '').split(',');
-        const name = item.getAttribute('data-name') || '';
 
         const matchCat = state.category === 'all' || cat === state.category;
         const matchSubcat = state.subcategory === 'all' || subcat === state.subcategory;
         const matchDietary = state.dietary === 'all' || dietary.includes(state.dietary);
-        const matchSearch = !state.search || name.includes(state.search) || cat.toLowerCase().includes(state.search) || subcat.toLowerCase().includes(state.search);
 
-        const visible = matchCat && matchSubcat && matchDietary && matchSearch;
+        const visible = matchCat && matchSubcat && matchDietary;
         item.style.display = visible ? '' : 'none';
         if (visible) visibleCount++;
       });
 
       resultsCount.textContent = `Showing ${visibleCount} of ${totalCount} products`;
-      const isFiltered = state.category !== 'all' || state.subcategory !== 'all' || state.dietary !== 'all' || state.search !== '';
+      const isFiltered = state.category !== 'all' || state.subcategory !== 'all' || state.dietary !== 'all';
       resetBtn.style.display = isFiltered ? 'inline-block' : 'none';
 
       noResults.style.display = (visibleCount === 0 && state.category !== 'Grazing Tables') ? 'block' : 'none';
     }
-
-    searchInput?.addEventListener('input', (e) => {
-      state.search = e.target.value.toLowerCase().trim();
-      filterProducts();
-    });
 
     tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
@@ -448,8 +432,7 @@ const WA = 'https://wa.link/sngzs9';
     });
 
     function resetAll() {
-      state = { search: '', category: 'all', subcategory: 'all', dietary: 'all' };
-      if (searchInput) searchInput.value = '';
+      state = { category: 'all', subcategory: 'all', dietary: 'all' };
       tabs.forEach((t) => t.classList.toggle('active', t.getAttribute('data-cat') === 'all'));
       dietaryPills.forEach((p) => p.classList.toggle('active', p.getAttribute('data-dietary') === 'all'));
       updateSubcategoryBar();

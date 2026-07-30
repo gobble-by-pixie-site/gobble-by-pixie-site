@@ -1,7 +1,8 @@
 ---
 import '../styles/global.css';
+import GlutenFreeIcon from '../components/GlutenFreeIcon.astro';
 
-const { title = 'Gobble by Pixie — Artisanal Cream Cheese & Cheese Platters', description = 'Creamy, dreamy, and made with love. Gluten-free, keto-friendly artisanal cream cheese and handcrafted grazing boards, delivered across Delhi NCR.' } = Astro.props;
+const { title = 'Gobble by Pixie — Artisanal Cream Cheese & Cheese Platters', description = 'Handmade Flavoured Cream Cheese. Gluten-free, keto-friendly artisanal cream cheese and handcrafted grazing boards, delivered across Delhi NCR.' } = Astro.props;
 
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
@@ -71,10 +72,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     <div class="container footer-inner">
       <div class="footer-brand">
         <a href="/" class="logo">Gobble <span class="logo-sub">by Pixie</span></a>
-        <p class="footer-tag">Creamy, Dreamy, & Made with Love!</p>
+        <p class="footer-tag">Handmade Flavoured Cream Cheese</p>
         <div class="footer-badges">
           <span class="badge badge-veg">100% Vegetarian</span>
-          <span class="badge badge-gf">Gluten-Free</span>
+          <span class="badge badge-gf"><GlutenFreeIcon /> Gluten-Free</span>
           <span class="badge badge-keto">Keto-Friendly</span>
         </div>
       </div>
@@ -99,12 +100,13 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     <div class="container">
       <div class="footer-bottom">
         <p class="footer-note">Delivering fresh across Delhi, Gurgaon, Noida, Ghaziabad & Faridabad. Zero preservatives, always small-batch.</p>
+        <p class="footer-legal">FSSAI Lic. No. 23323002000839 &nbsp;·&nbsp; GSTIN: 07CHAPS2957P2ZL</p>
         <p class="copyright">&copy; {new Date().getFullYear()} Gobble by Pixie. All rights reserved.</p>
       </div>
     </div>
   </footer>
 
-  <!-- Floating WhatsApp mascot — a bouncing cheese character, not a generic phone icon -->
+  <!-- Floating WhatsApp contact button — real product jar, bounces gently, with a chat badge so it clearly reads as "contact us" -->
   <a
     href="https://wa.link/sngzs9"
     target="_blank"
@@ -113,15 +115,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     aria-label="Chat with Gobble by Pixie on WhatsApp"
   >
     <span class="wa-fab-ping"></span>
-    <span class="wa-fab-bubble">Say cheese! 🧀</span>
+    <span class="wa-fab-bubble">Chat with us! 💬</span>
     <span class="wa-fab-face">
-      <span class="wa-fab-cheese">🧀</span>
-      <span class="wa-fab-eyes">
-        <span class="wa-fab-eye"></span>
-        <span class="wa-fab-eye"></span>
-      </span>
-      <span class="wa-fab-blush wa-fab-blush-l"></span>
-      <span class="wa-fab-blush wa-fab-blush-r"></span>
+      <img src="/Green Jar.png" alt="" class="wa-fab-jar" />
+      <span class="wa-fab-chat-badge">💬</span>
     </span>
   </a>
 
@@ -319,6 +316,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       gap: var(--space-sm);
     }
     .footer-note { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
+    .footer-legal { font-size: 0.78rem; font-weight: 600; color: var(--text-espresso-soft); margin: 0; width: 100%; text-align: center; order: 3; padding-top: 0.4rem; }
     .copyright { font-size: 0.8rem; color: var(--text-muted); opacity: 0.8; margin: 0; }
 
     @media (max-width: 720px) {
@@ -339,47 +337,46 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     }
     .wa-fab-face {
       position: relative;
-      width: 60px;
-      height: 60px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
-      background: linear-gradient(150deg, var(--accent-gold), var(--accent-gold-deep));
+      background: #fff;
       box-shadow: 0 10px 28px -6px rgba(140, 60, 10, 0.45), 0 0 0 4px rgba(255, 251, 242, 0.9);
       display: flex;
       align-items: center;
       justify-content: center;
       animation: wa-bob 2.4s ease-in-out infinite;
       cursor: pointer;
-      overflow: visible;
+      overflow: hidden;
     }
-    .wa-fab-cheese { font-size: 2.1rem; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15)); }
-    .wa-fab-eyes {
+    .wa-fab-jar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+      transform: scale(1.6);
+    }
+    .wa-fab-chat-badge {
       position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 9px;
-    }
-    .wa-fab-eye {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--text-espresso);
-      animation: wa-blink 3.6s ease-in-out infinite;
-    }
-    .wa-fab-blush {
-      position: absolute;
-      top: 27px;
-      width: 7px; height: 4px;
+      bottom: -2px;
+      right: -2px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      background: rgba(232, 93, 66, 0.55);
+      background: var(--accent-teal);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      box-shadow: 0 0 0 2px #fff;
     }
-    .wa-fab-blush-l { left: 8px; }
-    .wa-fab-blush-r { right: 8px; }
 
     .wa-fab-ping {
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      background: var(--accent-gold);
+      background: var(--accent-teal);
       opacity: 0.55;
       animation: wa-ping 2.4s ease-out infinite;
     }
@@ -407,10 +404,6 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       0%, 100% { transform: translateY(0) rotate(-3deg); }
       50% { transform: translateY(-8px) rotate(3deg); }
     }
-    @keyframes wa-blink {
-      0%, 92%, 100% { transform: scaleY(1); }
-      96% { transform: scaleY(0.15); }
-    }
     @keyframes wa-ping {
       0% { transform: scale(1); opacity: 0.5; }
       100% { transform: scale(1.6); opacity: 0; }
@@ -421,11 +414,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       body:has(.mobile-sticky-bar) .wa-fab { bottom: 5rem; }
       .wa-fab-bubble { display: none; }
       .wa-fab-face { width: 52px; height: 52px; }
-      .wa-fab-cheese { font-size: 1.8rem; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .wa-fab-face, .wa-fab-eye, .wa-fab-ping { animation: none; }
+      .wa-fab-face, .wa-fab-ping { animation: none; }
     }
   </style>
 
