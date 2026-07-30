@@ -1,0 +1,84 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [
+  { q: 'When will my order arrive?', a: 'Cheese platters are prepared fresh and dispatched next-day (within 24 hours of ordering). Cream cheese jars follow a weekly batch: order before Thursday 11:59 PM, and it ships Saturday. Orders placed after the cut-off queue for the following Saturday.' },
+  { q: 'Do you deliver to my area in Delhi NCR?', a: 'We currently deliver across Delhi, Gurgaon, Noida, Ghaziabad, and Faridabad via temperature-controlled delivery partners.' },
+  { q: 'Is it really 100% gluten-free and keto-friendly?', a: 'Yes — our cream cheeses and platters are made without gluten-containing ingredients and are formulated to be keto-friendly. If you have severe allergies, message us directly via WhatsApp to confirm cross-contamination safeguards for your order.' },
+  { q: 'How should I store my cream cheese & platter?', a: 'Keep refrigerated at 2°C – 4°C at all times. Consume within 5-7 days of opening for peak taste and texture.' },
+];
+---
+<BaseLayout title="Delivery & FAQ — Gobble by Pixie">
+  <section class="faq-hero">
+    <div class="container">
+      <p class="eyebrow">Good to Know</p>
+      <h1>Delivery & FAQs</h1>
+      <p class="section-sub">Everything you need to know about our batch schedule and fresh delivery process.</p>
+    </div>
+  </section>
+
+  <section class="fulfillment-detail">
+    <div class="container fulfillment-grid">
+      <div class="card fulfillment-card card-dispatch">
+        <span class="badge badge-dispatch">Cheese Platters</span>
+        <h3>Next-Day Dispatch</h3>
+        <p>Prepared fresh to order — place your order today, and your custom board ships within 24 hours.</p>
+      </div>
+      <div class="card fulfillment-card card-batch">
+        <span class="badge badge-gf">Cream Cheese Jars</span>
+        <h3>Weekly Batch</h3>
+        <p>Order by Thursday 11:59 PM → handcrafted Friday → shipped cold on Saturday.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq-list-section">
+    <div class="container faq-container">
+      <div class="faq-list">
+        {faqs.map((f) => (
+          <details class="faq-item card">
+            <summary class="faq-summary">
+              <span>{f.q}</span>
+              <span class="faq-toggle-icon">+</span>
+            </summary>
+            <p class="faq-answer">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .faq-hero { text-align: center; padding-bottom: var(--space-md); }
+    .section-sub { max-width: 50ch; margin: 0 auto; color: var(--text-espresso-soft); font-size: 1.05rem; }
+
+    .fulfillment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+    .fulfillment-card { padding: var(--space-lg); border-top: 4px solid var(--accent-gold); }
+    .card-dispatch { border-top-color: var(--accent-gold); }
+    .card-batch { border-top-color: var(--accent-teal); }
+    .fulfillment-card h3 { margin: 0.6rem 0 0.4rem; font-family: var(--font-display); }
+    .fulfillment-card p { color: var(--text-muted); margin: 0; font-size: 0.95rem; }
+
+    .faq-container { max-width: 780px; margin: 0 auto; }
+    .faq-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+    .faq-item {
+      padding: var(--space-md) var(--space-lg);
+      transition: all 0.25s ease;
+    }
+    .faq-summary {
+      font-family: var(--font-display); font-weight: 700; font-size: 1.15rem;
+      color: var(--text-espresso); cursor: pointer; list-style: none;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .faq-summary::-webkit-details-marker { display: none; }
+    .faq-toggle-icon { font-size: 1.4rem; font-weight: 400; color: var(--accent-gold-deep); transition: transform 0.2s ease; }
+    .faq-item[open] .faq-toggle-icon { transform: rotate(45deg); }
+    .faq-answer { margin-top: 0.8rem; color: var(--text-espresso-soft); line-height: 1.6; font-size: 0.95rem; margin-bottom: 0; }
+
+    @media (max-width: 720px) {
+      .fulfillment-grid { grid-template-columns: 1fr; }
+      .faq-item { padding: var(--space-md); }
+    }
+  </style>
+</BaseLayout>
+

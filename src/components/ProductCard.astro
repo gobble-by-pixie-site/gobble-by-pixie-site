@@ -1,0 +1,190 @@
+---
+import { formatPrice } from '../lib/fetchProducts.js';
+const { product } = Astro.props;
+const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat' : 'Next-Day Dispatch';
+---
+<article 
+  class="card product-card js-product-card"
+  data-id={product.id}
+  data-name={product.name}
+  data-category={product.category}
+  data-subcategory={product.subcategory || ''}
+  data-price={product.price || ''}
+  data-weight={product.net_weight || ''}
+  data-desc={product.description || ''}
+  data-image={product.image_url || ''}
+  data-fulfillment={dispatchLabel}
+  data-dietary={(product.dietary || []).join(',')}
+  data-instock={product.in_stock ? 'true' : 'false'}
+>
+  <div class="image-wrapper">
+    {product.image_url ? (
+      <div class="product-image" style={`background-image: url(${product.image_url})`}></div>
+    ) : (
+      <div class="product-image-placeholder">
+        <span>🧀</span>
+        <p>Photo coming soon</p>
+      </div>
+    )}
+  </div>
+  <div class="product-body">
+    <div class="badge-row">
+      {product.dietary.map((d) => <span class={`badge badge-${d.toLowerCase()}`}>{d}</span>)}
+      <span class="badge badge-dispatch">{dispatchLabel}</span>
+    </div>
+    <h3 class="product-title">{product.name}</h3>
+    {product.rating && (
+      <div class="rating-row" aria-label={`Rated ${product.rating} out of 5`}>
+        <span class="stars" style={`--fill: ${Math.round((product.rating / 5) * 100)}%`} aria-hidden="true">★★★★★</span>
+        <span class="rating-num">{product.rating.toFixed(1)}</span>
+        {product.review_count > 0 && <span class="review-count">({product.review_count})</span>}
+      </div>
+    )}
+    {product.net_weight && <p class="product-weight">{product.net_weight}</p>}
+    {product.description && <p class="product-desc">{product.description}</p>}
+    <div class="product-footer">
+      <span class="product-price">{formatPrice(product.price)}</span>
+      <button type="button" class="btn btn-primary btn-sm js-quick-view-btn" disabled={!product.in_stock}>
+        {product.in_stock ? 'Quick View / Order' : 'Sold Out'}
+      </button>
+    </div>
+  </div>
+</article>
+
+<style>
+  .product-card {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .image-wrapper {
+    position: relative;
+    height: 230px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border-hairline);
+    background: var(--bg-parchment-alt);
+  }
+  .product-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .product-card:hover .product-image {
+    transform: scale(1.06);
+  }
+  .product-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: linear-gradient(150deg, var(--accent-gold-light), var(--bg-parchment-alt));
+    color: var(--text-espresso-soft);
+  }
+  .product-image-placeholder span {
+    font-size: 2.6rem;
+    opacity: 0.5;
+  }
+  .product-image-placeholder p {
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin: 0;
+    opacity: 0.55;
+  }
+
+  .product-body {
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+  .badge-row {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-xs);
+  }
+  .product-title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+    line-height: 1.25;
+  }
+  .rating-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.35rem;
+  }
+  .stars {
+    position: relative;
+    display: inline-block;
+    font-size: 0.9rem;
+    line-height: 1;
+    letter-spacing: 1px;
+    color: rgba(36, 21, 18, 0.18);
+  }
+  .stars::before {
+    content: '★★★★★';
+    position: absolute;
+    inset: 0;
+    width: var(--fill);
+    overflow: hidden;
+    color: var(--accent-gold-deep);
+    white-space: nowrap;
+  }
+  .rating-num {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-espresso);
+  }
+  .review-count {
+    font-size: 0.78rem;
+    color: var(--text-espresso-soft);
+    opacity: 0.65;
+  }
+  .product-weight {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent-gold-deep);
+    margin-bottom: 0.5rem;
+  }
+  .product-desc {
+    font-size: 0.88rem;
+    color: var(--text-espresso-soft);
+    margin-bottom: var(--space-md);
+    line-height: 1.5;
+    flex-grow: 1;
+  }
+  .product-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--space-xs);
+    border-top: 1px solid rgba(196, 121, 6, 0.1);
+    margin-top: auto;
+  }
+  .product-price {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-espresso);
+  }
+  .btn-sm {
+    padding: 0.55rem 1.25rem;
+    font-size: 0.85rem;
+  }
+  .btn-sm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #ccc;
+    box-shadow: none;
+  }
+</style>
+

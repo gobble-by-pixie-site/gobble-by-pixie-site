@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Our Story — Gobble by Pixie">
+  <section class="about-hero">
+    <div class="container about-grid">
+      <div class="about-image-wrap card">
+        <div class="about-image" style="background-image: url('https://images.unsplash.com/photo-1631206753348-db44968fd440?w=1000&q=80')"></div>
+      </div>
+      <div class="about-copy">
+        <p class="eyebrow">✨ The Artisanal Philosophy</p>
+        <h1>Made with love, <span class="text-gradient">never shortcuts</span></h1>
+        <p>Gobble by Pixie began with a simple belief: cheese should be honest — real ingredients, small batches, zero artificial preservatives. Every jar and every grazing board is handcrafted, never mass-produced on an industrial line.</p>
+        <p>We're gluten-free and keto-friendly by design, not as an afterthought — so everyone around the table can gobble without compromise.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="values">
+    <div class="container">
+      <div class="values-header">
+        <p class="eyebrow">Why Choose Pixie</p>
+        <h2>Our Uncompromising Standards</h2>
+      </div>
+      
+      <div class="values-grid">
+        <div class="value-card card card-gold">
+          <span class="value-icon">🌿</span>
+          <h3>Zero Preservatives</h3>
+          <p>Nothing artificial, ever. What you taste is pure, authentic cream cheese made from natural ingredients.</p>
+        </div>
+        <div class="value-card card card-coral">
+          <span class="value-icon">🧀</span>
+          <h3>Small-Batch Craft</h3>
+          <p>Handcrafted fresh in small batches to preserve rich creaminess and fearless flavour profiles.</p>
+        </div>
+        <div class="value-card card card-teal">
+          <span class="value-icon">🚀</span>
+          <h3>Delhi NCR Doorstep</h3>
+          <p>Delivered direct from our kitchen across Delhi, Gurgaon, Noida, Ghaziabad & Faridabad.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .about-hero { padding-bottom: var(--space-xl); }
+    .about-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: var(--space-xl); align-items: center; }
+    .about-image-wrap { padding: 10px; border-radius: var(--radius-lg); }
+    .about-image { height: 440px; border-radius: calc(var(--radius-lg) - 6px); background-size: cover; background-position: center; }
+    .about-copy p { font-size: 1.05rem; color: var(--text-espresso-soft); line-height: 1.6; }
+
+    .values { background: var(--bg-parchment-alt); border-top: 1px solid var(--border-hairline); }
+    .values-header { text-align: center; max-width: 500px; margin: 0 auto var(--space-lg); }
+    .values-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
+    
+    .value-card { padding: var(--space-lg) var(--space-md); text-align: center; border-top: 4px solid var(--accent-gold); }
+    .card-gold { border-top-color: var(--accent-gold); }
+    .card-coral { border-top-color: var(--accent-coral); }
+    .card-teal { border-top-color: var(--accent-teal); }
+    
+    .value-icon { font-size: 2.2rem; display: block; margin-bottom: 0.6rem; }
+    .value-card h3 { font-size: 1.25rem; font-family: var(--font-display); margin-bottom: 0.4rem; }
+    .value-card p { font-size: 0.9rem; color: var(--text-muted); margin: 0; }
+
+    @media (max-width: 860px) {
+      .about-grid { grid-template-columns: 1fr; }
+      .about-image-wrap { order: -1; }
+      .about-image { height: 300px; }
+      .values-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>
+

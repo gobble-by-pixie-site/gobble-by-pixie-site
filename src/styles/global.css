@@ -1,0 +1,308 @@
+/* ── Gobble by Pixie — Design Tokens & Core Styles ────────────────
+   REVISED 2026-07-31: full pivot toward client-approved reference
+   (miampatisserie.com) — muted dusty-rose/mauve + cream, sharp editorial
+   corners, unified serif typography throughout. Replaces the earlier
+   colorful/rounded "playful boutique" direction per client feedback
+   ("client doesn't like our fonts" + explicit reference site approval).
+   No Tailwind, no generic component libs — vanilla CSS only. */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  /* Core background & text — muted dusty-rose/mauve on cream, editorial French-patisserie feel */
+  --bg-parchment: #F7F0E7;
+  --bg-parchment-alt: #F1E6D8;
+  --bg-parchment-warm: #EADFCE;
+  --text-espresso: #241512;
+  --text-espresso-soft: #4A322B;
+  --text-muted: #785A52;
+
+  /* Primary brand tone — dusty rose/mauve (from reference), used as the dominant color */
+  --rose: #C78283;
+  --rose-deep: #A15F60;
+  --rose-light: #F3E1DF;
+  --cream: #F7F0E7;
+
+  /* Restrained accent set — used sparingly now, not as a rainbow */
+  --accent-gold: #B8863F;
+  --accent-gold-deep: #93691F;
+  --accent-gold-light: #F3E9D6;
+
+  --accent-berry: var(--rose-deep);
+  --accent-berry-deep: #7A4547;
+  --accent-berry-light: var(--rose-light);
+
+  --accent-teal: #5C8783;
+  --accent-teal-deep: #3E615D;
+  --accent-teal-light: #E7EFEE;
+
+  --accent-coral: var(--rose);
+  --accent-coral-deep: var(--rose-deep);
+  --accent-coral-light: var(--rose-light);
+
+  --tag-sage: #6B7A4F;
+  --tag-sage-deep: #4C5738;
+  --tag-sage-light: #ECEEE2;
+
+  /* Legacy aliases kept for complete backward compatibility */
+  --accent-fig: var(--accent-berry);
+  --accent-fig-deep: var(--accent-berry-deep);
+
+  /* Borders & Shadows — flatter, more restrained than the earlier glow-heavy style */
+  --border-hairline: rgba(161, 95, 96, 0.22);
+  --border-strong: rgba(161, 95, 96, 0.4);
+  --shadow-ambient: 0 4px 16px -4px rgba(74, 50, 43, 0.10);
+  --shadow-ambient-lg: 0 10px 28px -6px rgba(74, 50, 43, 0.16);
+  --shadow-glow-gold: none;
+  --shadow-glow-coral: none;
+
+  /* Typography — unified serif throughout, matching the reference (no separate display/body split) */
+  --font-display: 'Cormorant Garamond', 'EB Garamond', serif;
+  --font-serif-italic: 'Cormorant Garamond', serif;
+  --font-body: 'EB Garamond', 'Cormorant Garamond', Garamond, Baskerville, serif;
+
+  /* Spacing scale */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2.5rem;
+  --space-xl: 4rem;
+  --space-2xl: 6rem;
+
+  /* Radii — sharp editorial corners, not rounded pills (per reference) */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-pill: 2px;
+
+  --max-width: 1240px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-parchment);
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(253, 241, 214, 0.5) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(252, 234, 230, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(230, 245, 244, 0.3) 0%, transparent 50%);
+  background-attachment: fixed;
+  color: var(--text-espresso);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  color: var(--text-espresso);
+  margin: 0 0 var(--space-sm);
+  line-height: 1.18;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h1 { font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 700; }
+h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 700; }
+h3 { font-size: clamp(1.25rem, 2.5vw, 1.65rem); }
+h4 { font-size: clamp(1.1rem, 2vw, 1.3rem); }
+
+p { margin: 0 0 var(--space-sm); }
+
+a { color: inherit; text-decoration: none; }
+
+/* Text Gradient Helpers */
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent-berry-deep), var(--accent-coral), var(--accent-gold-deep));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-coral));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-gold-deep);
+  display: inline-block;
+  margin-bottom: var(--space-xs);
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1.85rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-align: center;
+}
+.btn:hover {
+  transform: translateY(-2px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-coral-deep));
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(232, 87, 61, 0.3);
+}
+.btn-primary:hover {
+  box-shadow: 0 10px 28px rgba(232, 87, 61, 0.42);
+  background: linear-gradient(135deg, #f3a61d, var(--accent-coral));
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  color: var(--text-espresso);
+  border: 1.5px solid var(--accent-teal);
+  box-shadow: 0 4px 14px rgba(27, 138, 133, 0.08);
+}
+.btn-secondary:hover {
+  background: var(--accent-teal);
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgba(27, 138, 133, 0.25);
+}
+
+.btn-berry {
+  background: linear-gradient(135deg, var(--accent-berry), var(--accent-berry-deep));
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(184, 46, 62, 0.28);
+}
+.btn-berry:hover {
+  box-shadow: 0 10px 26px rgba(184, 46, 62, 0.38);
+}
+
+/* ── Cards: Frosted Glassmorphism with Warm Borders ── */
+.card {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-ambient);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.card:hover {
+  box-shadow: var(--shadow-ambient-lg);
+  border-color: var(--border-strong);
+}
+
+/* ── Form Inputs Baseline ── */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+textarea,
+select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-espresso);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-gold);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(232, 157, 23, 0.18);
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-espresso-soft);
+  margin-bottom: 0.35rem;
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.32rem 0.75rem;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+}
+.badge-gf, .badge-keto {
+  background: var(--accent-teal-light);
+  color: var(--accent-teal-deep);
+  border: 1px solid rgba(27, 138, 133, 0.25);
+}
+.badge-veg {
+  background: var(--tag-sage-light);
+  color: var(--tag-sage-deep);
+  border: 1px solid rgba(76, 122, 31, 0.25);
+}
+.badge-dispatch {
+  background: var(--accent-gold-light);
+  color: var(--accent-gold-deep);
+  border: 1px solid rgba(232, 157, 23, 0.3);
+}
+.badge-berry {
+  background: var(--accent-berry-light);
+  color: var(--accent-berry);
+  border: 1px solid rgba(184, 46, 62, 0.25);
+}
+
+/* ── Section Rhythm ── */
+section {
+  padding: var(--space-2xl) 0;
+  position: relative;
+}
+
+.section-berry-wash {
+  background: linear-gradient(180deg, var(--bg-parchment-alt), var(--bg-parchment));
+}
+
+@media (max-width: 720px) {
+  section { padding: var(--space-xl) 0; }
+  .container { padding: 0 var(--space-sm); }
+}
+

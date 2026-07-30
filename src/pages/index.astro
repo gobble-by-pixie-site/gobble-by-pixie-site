@@ -1,0 +1,265 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { fetchProducts } from '../lib/fetchProducts.js';
+
+const products = await fetchProducts();
+const bestSellers = products.slice(0, 3);
+const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
+---
+<BaseLayout>
+  <section class="hero">
+    <span class="hero-sprinkle hero-sprinkle-1" aria-hidden="true">🧀</span>
+    <span class="hero-sprinkle hero-sprinkle-2" aria-hidden="true">🍯</span>
+    <span class="hero-sprinkle hero-sprinkle-3" aria-hidden="true">🫐</span>
+    <span class="hero-sprinkle hero-sprinkle-4" aria-hidden="true">✨</span>
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">✨ Delhi NCR's Artisanal Cheese House</p>
+        <h1>Creamy, Dreamy, <span class="text-gradient">Made with Love</span></h1>
+        <p class="hero-sub">Small-batch cream cheeses and handcrafted grazing boards — 100% vegetarian, gluten-free, keto-friendly. Zero preservatives, always fresh.</p>
+        <div class="hero-badges">
+          <span class="badge badge-veg">🌱 100% Vegetarian</span>
+          <span class="badge badge-gf">✨ Gluten-Free</span>
+          <span class="badge badge-keto">🥑 Keto-Friendly</span>
+        </div>
+        <div class="hero-ctas">
+          <a href="/byop" class="btn btn-primary">🧀 Build Your Cheese Platter</a>
+          <a href="/menu" class="btn btn-secondary">Shop Cream Cheeses</a>
+        </div>
+        <p class="hero-trust">🥰 Loved by 1,700+ fellow food lovers on Instagram</p>
+      </div>
+      <div class="hero-image-wrap">
+        <div class="hero-image" style="background-image: url('https://images.unsplash.com/photo-1452195100486-9cc805987862?w=1200&q=80')"></div>
+        <div class="hero-image-badge">Fresh Small-Batch Daily</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="byop-teaser">
+    <div class="container">
+      <div class="teaser-header">
+        <p class="eyebrow">#BYOP Experience</p>
+        <h2>Build Your Own Platter</h2>
+        <p class="section-sub">Curate your custom cheese board in four easy steps — like having a personal cheesemonger in your kitchen.</p>
+      </div>
+      
+      <div class="teaser-steps">
+        <div class="teaser-step card step-gold">
+          <span class="step-num">1</span>
+          <strong>Board Size</strong>
+          <p>Solo, Medium, or Grand Feast</p>
+        </div>
+        <div class="teaser-step card step-coral">
+          <span class="step-num">2</span>
+          <strong>Cream Cheeses</strong>
+          <p>Truffle, Fig, Garlic & Herb</p>
+        </div>
+        <div class="teaser-step card step-teal">
+          <span class="step-num">3</span>
+          <strong>Artisanal Crisps</strong>
+          <p>Seed Crackers & Almond Crisps</p>
+        </div>
+        <div class="teaser-step card step-berry">
+          <span class="step-num">4</span>
+          <strong>Gourmet Pairings</strong>
+          <p>Fresh Berries, Nuts & Honey</p>
+        </div>
+      </div>
+      <div class="teaser-cta">
+        <a href="/byop" class="btn btn-primary">Start Customizing Now &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="bestsellers">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Fan Favourites</p>
+        <h2>Curated Best-Sellers</h2>
+      </div>
+      <div class="product-grid">
+        {bestSellers.map((p) => <ProductCard product={p} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="story-snippet">
+    <div class="container story-grid">
+      <div class="story-image-wrap card">
+        <div class="story-image" style="background-image: url('https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=1000&q=80')"></div>
+      </div>
+      <div class="story-copy">
+        <p class="eyebrow">Our Philosophy</p>
+        <h2>Clean, preservative-free artisanship</h2>
+        <p>Every jar is handcrafted in small batches, made with real ingredients and zero artificial preservatives — because good cheese shouldn't need shortcuts.</p>
+        <p class="story-quote">"We believe food should feel like a celebration of flavor, texture, and pure indulgence."</p>
+        <a href="/about" class="btn btn-secondary">Read Our Full Story</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="insta-strip">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Follow the Fun</p>
+        <h2>@gobblebypixie on Instagram</h2>
+        <p class="section-sub">1,700+ fellow cheese lovers already follow along for behind-the-scenes boards, new flavour drops, and #BYOP inspiration.</p>
+      </div>
+      <div class="insta-scroll">
+        {[
+          { emoji: '🧀', label: 'Cheese Art' },
+          { emoji: '✨', label: '#BYOP' },
+          { emoji: '🐶', label: 'Furry Babies' },
+          { emoji: '💖', label: 'Gobblers' },
+          { emoji: '🕯️', label: 'Butter Candles' },
+          { emoji: '🎬', label: 'Behind the Scenes' },
+        ].map((post) => (
+          <a href="https://www.instagram.com/gobblebypixie/" target="_blank" rel="noopener" class="insta-tile card">
+            <span class="insta-tile-emoji">{post.emoji}</span>
+            <span class="insta-tile-label">{post.label}</span>
+          </a>
+        ))}
+      </div>
+      <a href="https://www.instagram.com/gobblebypixie/" target="_blank" rel="noopener" class="btn btn-secondary insta-follow-btn">📸 Follow @gobblebypixie</a>
+    </div>
+  </section>
+
+  <section class="delivery-checker">
+    <div class="container">
+      <p class="eyebrow">Fresh Doorstep Delivery</p>
+      <h2>Delhi NCR Delivery Zones</h2>
+      <p class="section-sub">Shipped in temperature-controlled packaging directly to your home.</p>
+      <div class="zone-chips">
+        {zones.map((z) => (
+          <span class="zone-chip">
+            <span class="dot-pulse"></span> {z}
+          </span>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .hero { position: relative; overflow: hidden; }
+    .hero-sprinkle {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.55;
+      animation: sprinkle-float 6s ease-in-out infinite;
+      pointer-events: none;
+      user-select: none;
+    }
+    .hero-sprinkle-1 { top: 8%; left: 4%; font-size: 1.8rem; animation-delay: 0s; }
+    .hero-sprinkle-2 { top: 68%; left: 8%; font-size: 1.5rem; animation-delay: 1.2s; }
+    .hero-sprinkle-3 { top: 14%; right: 6%; font-size: 1.6rem; animation-delay: 2.4s; }
+    .hero-sprinkle-4 { top: 78%; right: 10%; font-size: 1.4rem; animation-delay: 3.6s; }
+    @keyframes sprinkle-float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-14px) rotate(8deg); }
+    }
+    @media (prefers-reduced-motion: reduce) { .hero-sprinkle { animation: none; } }
+    @media (max-width: 860px) { .hero-sprinkle { display: none; } }
+
+    .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-xl); align-items: center; position: relative; z-index: 1; }
+    .hero-sub { font-size: 1.1rem; color: var(--text-espresso-soft); max-width: 48ch; margin-bottom: var(--space-md); }
+    .hero-badges { display: flex; gap: 0.5rem; margin-bottom: var(--space-md); flex-wrap: wrap; }
+    .hero-ctas { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-sm); }
+    .hero-trust { margin-top: var(--space-md); font-size: 0.88rem; color: var(--text-espresso-soft); font-weight: 500; }
+
+    .hero-image-wrap { position: relative; }
+    .hero-image {
+      height: 480px; border-radius: var(--radius-lg); background-size: cover; background-position: center;
+      box-shadow: var(--shadow-ambient-lg); border: 2px solid var(--border-hairline);
+    }
+    .hero-image-badge {
+      position: absolute; bottom: 20px; left: 20px;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px);
+      padding: 0.6rem 1.2rem; border-radius: var(--radius-pill);
+      font-weight: 700; font-size: 0.85rem; color: var(--accent-berry-deep);
+      box-shadow: var(--shadow-ambient); border: 1px solid var(--border-hairline);
+    }
+
+    .byop-teaser { background: var(--bg-parchment-alt); text-align: center; border-y: 1px solid var(--border-hairline); }
+    .teaser-header { max-width: 600px; margin: 0 auto var(--space-lg); }
+    .section-sub { max-width: 52ch; margin: 0 auto; color: var(--text-espresso-soft); }
+    
+    .teaser-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-lg); }
+    .teaser-step {
+      padding: var(--space-md); text-align: center; display: flex; flex-direction: column; align-items: center;
+      gap: 0.4rem; transition: transform 0.3s ease;
+    }
+    .teaser-step:hover { transform: translateY(-4px); }
+    .step-num {
+      width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: #fff; margin-bottom: 0.4rem;
+    }
+    .step-gold .step-num { background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-deep)); }
+    .step-coral .step-num { background: linear-gradient(135deg, var(--accent-coral), var(--accent-coral-deep)); }
+    .step-teal .step-num { background: linear-gradient(135deg, var(--accent-teal), var(--accent-teal-deep)); }
+    .step-berry .step-num { background: linear-gradient(135deg, var(--accent-berry), var(--accent-berry-deep)); }
+
+    .teaser-step strong { font-size: 1.05rem; font-family: var(--font-display); }
+    .teaser-step p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+    .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin-top: var(--space-lg); }
+
+    .story-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: var(--space-xl); align-items: center; }
+    .story-image-wrap { padding: 10px; border-radius: var(--radius-lg); }
+    .story-image { height: 400px; border-radius: calc(var(--radius-lg) - 6px); background-size: cover; background-position: center; }
+    .story-quote { font-family: var(--font-serif-italic); font-size: 1.2rem; font-style: italic; color: var(--accent-berry-deep); border-left: 3px solid var(--accent-gold); padding-left: var(--space-sm); margin: var(--space-md) 0; }
+
+    .insta-strip { text-align: center; background: var(--bg-parchment-alt); }
+    .insta-scroll {
+      display: flex;
+      gap: var(--space-md);
+      overflow-x: auto;
+      padding: var(--space-md) 0.2rem var(--space-sm);
+      scroll-snap-type: x mandatory;
+    }
+    .insta-tile {
+      flex: 0 0 150px;
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      height: 150px;
+      background: linear-gradient(150deg, var(--accent-gold-light), var(--bg-parchment));
+      transition: transform 0.25s ease;
+    }
+    .insta-tile:nth-child(2n) { background: linear-gradient(150deg, rgba(27,138,133,0.12), var(--bg-parchment)); }
+    .insta-tile:nth-child(3n) { background: linear-gradient(150deg, rgba(232,93,66,0.12), var(--bg-parchment)); }
+    .insta-tile:hover { transform: translateY(-4px) scale(1.03); }
+    .insta-tile-emoji { font-size: 2.4rem; }
+    .insta-tile-label { font-size: 0.82rem; font-weight: 700; color: var(--text-espresso-soft); }
+    .insta-follow-btn { margin-top: var(--space-sm); }
+
+    .delivery-checker { text-align: center; }
+    .zone-chips { display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-top: var(--space-md); }
+    .zone-chip {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.65rem 1.4rem; border-radius: var(--radius-pill); border: 1px solid var(--border-hairline);
+      font-size: 0.92rem; font-weight: 600; background: rgba(255,255,255,0.75); color: var(--text-espresso);
+      box-shadow: var(--shadow-ambient);
+    }
+    .dot-pulse {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--tag-sage);
+      box-shadow: 0 0 0 3px rgba(76, 122, 31, 0.2);
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid, .story-grid { grid-template-columns: 1fr; }
+      .hero-image-wrap { order: -1; }
+      .hero-image { height: 320px; }
+      .teaser-steps { grid-template-columns: repeat(2, 1fr); }
+      .product-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 500px) {
+      .teaser-steps { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>
+

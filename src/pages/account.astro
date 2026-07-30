@@ -1,0 +1,346 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
+
+const tiers = [
+  { name: 'Nibbler', range: '0 – 299 pts', color: 'var(--tag-sage)', perks: 'Free account • Early access to seasonal artisanal flavours' },
+  { name: 'Foodie', range: '300 – 999 pts', color: 'var(--accent-gold-deep)', perks: 'Everything in Nibbler • 5% off every order automatically' },
+  { name: 'Gobbler VIP', range: '1000+ pts', color: 'var(--accent-berry)', perks: 'Everything in Foodie • 10% off • First access to new handcrafted drops & #BYOP specials' },
+];
+
+const earnRules = [
+  ['Create an account', '100 pts', 'Instant bonus on signup'],
+  ['Every order', '1 pt per ₹100', 'Automatic on payment'],
+  ['Refer a friend', '150 pts', 'Unlocks soon'],
+];
+---
+<BaseLayout title="My Account — Gobble by Pixie" description="Your orders and Gobble Rewards.">
+  <div id="acct-config" data-url={appsScriptUrl} style="display:none"></div>
+
+  <!-- Not logged in Gate -->
+  <div id="auth-gate" class="container auth-gate" style="display:none;">
+    <div class="card auth-gate-card">
+      <p class="eyebrow">✨ Gobble Rewards Club</p>
+      <h1>Sign in to see your rewards</h1>
+      <p id="session-expired-notice" class="session-notice" style="display:none;">Your session has expired — please sign in again.</p>
+      <p class="auth-gate-sub">Track your handcrafted orders, earn points on every platter, and unlock exclusive VIP discounts.</p>
+      <div class="auth-gate-ctas">
+        <a href="/login" class="btn btn-primary">Sign In</a>
+        <a href="/signup" class="btn btn-secondary">Create Free Account (100 pts bonus)</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logged in Content -->
+  <div id="acct-content-wrap" style="display:none;">
+    <section class="acct-header">
+      <div class="container acct-header-inner card">
+        <div class="user-greeting">
+          <p class="eyebrow">Welcome Back</p>
+          <h1 id="acct-greeting">Hello.</h1>
+          <p class="greeting-sub">Manage your profile, view orders, and redeem Gobble Rewards.</p>
+        </div>
+        <div id="acct-points-badge" class="points-badge" style="display:none;">
+          <div id="tier-badge" class="tier-badge"></div>
+          <p id="points-display" class="points-display text-gradient-gold">0</p>
+          <p class="points-label">Gobble Reward Points</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="tabs-bar">
+      <div class="container tabs-inner">
+        {['Profile', 'Orders', 'Rewards'].map((tab) => (
+          <button class="tab-btn" data-tab={tab.toLowerCase()}>{tab}</button>
+        ))}
+      </div>
+    </div>
+
+    <div class="container tab-content">
+      <!-- PROFILE TAB -->
+      <div id="tab-profile" class="tab-pane" style="display:none;">
+        <div class="card pane-card">
+          <h3>Your Profile Details</h3>
+          <div class="profile-grid">
+            <div><label class="field-label">Full Name</label><input id="p-name" type="text" class="text-field" /></div>
+            <div><label class="field-label">Email</label><input id="p-email" type="email" class="text-field" readonly /></div>
+            <div><label class="field-label">Phone</label><input id="p-phone" type="tel" class="text-field" /></div>
+            <div><label class="field-label">Delivery Address</label><input id="p-address" type="text" class="text-field" placeholder="House no, street, locality..." /></div>
+            <div class="profile-actions">
+              <button id="save-profile-btn" class="btn btn-primary">Save Profile Changes</button>
+              <p id="profile-saved-msg" class="saved-msg" style="display:none;">✓ Profile saved successfully</p>
+            </div>
+            <div class="signout-row">
+              <button id="signout-btn" class="signout-link">Sign out of this device</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDERS TAB -->
+      <div id="tab-orders" class="tab-pane" style="display:none;">
+        <div id="orders-list"></div>
+      </div>
+
+      <!-- REWARDS TAB -->
+      <div id="tab-rewards" class="tab-pane" style="display:none;">
+        <div class="rewards-summary">
+          <div class="card reward-stat stat-points">
+            <p id="r-points" class="stat-num text-gradient-gold">—</p>
+            <p class="stat-label">Your Active Points</p>
+          </div>
+          <div class="card reward-stat stat-tier">
+            <p id="r-tier" class="stat-num text-gradient">—</p>
+            <p class="stat-label">Current Member Tier</p>
+          </div>
+          <div class="card reward-stat stat-spent">
+            <p id="r-spent" class="stat-num">—</p>
+            <p class="stat-label">Total Spend</p>
+          </div>
+        </div>
+
+        <div class="card tier-progress-card">
+          <h3>Tier Progression</h3>
+          <div id="tier-progress" class="tier-progress"></div>
+        </div>
+
+        <div class="card pane-card" style="margin-top: var(--space-lg);">
+          <h3>How to earn Gobble Points</h3>
+          <div class="earn-list">
+            {earnRules.map(([action, pts, note]) => (
+              <div class="earn-row">
+                <div>
+                  <p class="earn-action">{action}</p>
+                  <p class="earn-note">{note}</p>
+                </div>
+                <span class="earn-pts">{pts}</span>
+              </div>
+            ))}
+          </div>
+
+          <h3 style="margin-top: var(--space-lg);">Tier Benefits</h3>
+          <div class="tier-list">
+            {tiers.map((t) => (
+              <div class="card tier-card">
+                <span class="tier-chip" style={`background:${t.color}22; color:${t.color}; border: 1px solid ${t.color}44;`}>{t.name}</span>
+                <div>
+                  <p class="tier-range">{t.range}</p>
+                  <p class="tier-perks">{t.perks}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .auth-gate { padding: var(--space-2xl) 0; max-width: 520px; margin: 0 auto; text-align: center; }
+    .auth-gate-card { padding: var(--space-xl); }
+    .session-notice { color: var(--accent-berry-deep); font-size: 0.88rem; font-weight: 600; }
+    .auth-gate-sub { color: var(--text-espresso-soft); margin-bottom: var(--space-lg); line-height: 1.5; }
+    .auth-gate-ctas { display: flex; flex-direction: column; gap: var(--space-sm); }
+
+    .acct-header { padding: var(--space-lg) 0 var(--space-md); }
+    .acct-header-inner { padding: var(--space-lg); display: flex; justify-content: space-between; align-items: center; }
+    .greeting-sub { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+    .points-badge { text-align: right; background: rgba(255,255,255,0.7); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); border: 1px solid var(--border-hairline); }
+    .tier-badge {
+      display: inline-block; font-size: 0.73rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.35rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 0.3rem;
+    }
+    .points-display { font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; line-height: 1; }
+    .points-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+
+    .tabs-bar {
+      border-bottom: 1px solid var(--border-hairline); position: sticky; top: 68px;
+      background: rgba(253, 251, 242, 0.95); backdrop-filter: blur(12px); z-index: 40;
+    }
+    .tabs-inner { display: flex; gap: var(--space-xl); }
+    .tab-btn {
+      background: none; border: none; padding: var(--space-sm) 0; font-family: var(--font-body);
+      font-weight: 700; font-size: 0.92rem; color: var(--text-muted);
+      border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s ease;
+    }
+    .tab-btn.active { color: var(--accent-berry); border-bottom-color: var(--accent-berry); }
+
+    .tab-content { padding: var(--space-lg) 0; }
+    .pane-card { padding: var(--space-lg); }
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); max-width: 680px; margin-top: var(--space-md); }
+    .profile-actions { display: flex; align-items: center; gap: var(--space-md); grid-column: span 2; margin-top: var(--space-sm); }
+    .saved-msg { color: var(--tag-sage-deep); font-size: 0.88rem; font-weight: 600; }
+    .signout-row { grid-column: span 2; border-top: 1px solid var(--border-hairline); padding-top: var(--space-md); margin-top: var(--space-md); }
+    .signout-link { background: none; border: none; color: var(--text-muted); font-size: 0.85rem; cursor: pointer; text-decoration: underline; }
+
+    .rewards-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin-bottom: var(--space-lg); }
+    .reward-stat { text-align: center; padding: var(--space-md); }
+    .stat-num { font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.2rem; }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .tier-progress-card { padding: var(--space-lg); }
+    .tier-progress { margin-top: var(--space-sm); }
+    .progress-track { width: 100%; height: 10px; background: var(--bg-parchment-alt); border-radius: var(--radius-pill); overflow: hidden; border: 1px solid var(--border-hairline); }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-gold), var(--accent-coral), var(--accent-berry)); border-radius: var(--radius-pill); transition: width 0.6s ease; }
+
+    .earn-list { margin-top: var(--space-sm); }
+    .earn-row { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0; border-bottom: 1px solid var(--border-hairline); }
+    .earn-action { font-weight: 600; font-size: 0.95rem; }
+    .earn-note { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
+    .earn-pts { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--accent-gold-deep); }
+
+    .tier-list { display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-sm); }
+    .tier-card { display: flex; align-items: flex-start; gap: var(--space-md); padding: var(--space-md); }
+    .tier-chip { font-size: 0.74rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: var(--radius-pill); flex-shrink: 0; text-transform: uppercase; }
+    .tier-range { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .tier-perks { font-size: 0.88rem; color: var(--text-espresso-soft); margin: 0; }
+
+    @media (max-width: 720px) {
+      .acct-header-inner { flex-direction: column; text-align: center; gap: var(--space-md); }
+      .points-badge { width: 100%; text-align: center; }
+      .profile-grid { grid-template-columns: 1fr; }
+      .profile-actions, .signout-row { grid-column: span 1; }
+      .rewards-summary { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <script is:inline>
+    (function () {
+      var AUTH_KEY = 'gbp_auth';
+      var CUSTOMER_KEY = 'gbp_customer';
+      var ORDERS_KEY = 'gbp_orders';
+
+      function getAuth() { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { return null; } }
+      function fmtINR(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+      function fmtDate(iso) { try { return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return iso; } }
+
+      var auth = getAuth();
+      var appsUrl = document.getElementById('acct-config')?.getAttribute('data-url');
+
+      if (!auth || !auth.token) {
+        document.getElementById('auth-gate').style.display = 'block';
+        return;
+      }
+      document.getElementById('acct-content-wrap').style.display = 'block';
+
+      var TIER_COLORS = { Nibbler: 'var(--tag-sage)', Foodie: 'var(--accent-gold-deep)', 'Gobbler VIP': 'var(--accent-berry-deep)' };
+
+      function fillUI(data) {
+        var firstName = (data.name || '').split(' ')[0];
+        var greeting = document.getElementById('acct-greeting');
+        if (greeting) greeting.textContent = 'Hello, ' + firstName + '.';
+
+        document.getElementById('acct-points-badge').style.display = 'block';
+        var tierEl = document.getElementById('tier-badge');
+        var color = TIER_COLORS[data.tier] || TIER_COLORS.Nibbler;
+        tierEl.textContent = data.tier || 'Nibbler';
+        tierEl.style.background = color + '22';
+        tierEl.style.color = color;
+        document.getElementById('points-display').textContent = (data.points || 0).toLocaleString('en-IN');
+
+        if (document.getElementById('p-name')) document.getElementById('p-name').value = data.name || '';
+        if (document.getElementById('p-email')) document.getElementById('p-email').value = data.email || '';
+        if (document.getElementById('p-phone')) document.getElementById('p-phone').value = data.phone || '';
+        if (document.getElementById('p-address')) document.getElementById('p-address').value = data.address || '';
+
+        document.getElementById('r-points').textContent = (data.points || 0).toLocaleString('en-IN');
+        document.getElementById('r-tier').textContent = data.tier || 'Nibbler';
+        document.getElementById('r-spent').textContent = fmtINR(data.totalSpent || 0);
+
+        var prog = document.getElementById('tier-progress');
+        var pts = data.points || 0;
+        var nextTier, needed;
+        if (pts < 300) { nextTier = 'Foodie'; needed = 300; }
+        else if (pts < 1000) { nextTier = 'Gobbler VIP'; needed = 1000; }
+        else { nextTier = null; }
+
+        if (nextTier) {
+          var pct = Math.min(100, Math.round((pts / needed) * 100));
+          prog.innerHTML = '<p style="margin-bottom:0.6rem;font-size:0.9rem;color:var(--text-espresso-soft)">' + (needed - pts) + ' more points to reach <strong style="color:var(--text-espresso)">' + nextTier + '</strong></p>'
+            + '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>';
+        } else {
+          prog.innerHTML = '<p style="color:var(--accent-berry);font-weight:600">You\'ve reached Gobbler VIP. Thank you for being a loyal gobbler!</p>';
+        }
+      }
+
+      fillUI(auth);
+
+      if (appsUrl && auth.token) {
+        fetch(appsUrl + '?action=get-profile&token=' + encodeURIComponent(auth.token))
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.success) {
+              var updated = Object.assign({}, auth, data);
+              localStorage.setItem(AUTH_KEY, JSON.stringify(updated));
+              fillUI(updated);
+            } else if (data.error) {
+              localStorage.removeItem(AUTH_KEY);
+              localStorage.removeItem(CUSTOMER_KEY);
+              document.getElementById('acct-content-wrap').style.display = 'none';
+              document.getElementById('session-expired-notice').style.display = 'block';
+              document.getElementById('auth-gate').style.display = 'block';
+            }
+          }).catch(function () {});
+      }
+
+      var tabs = document.querySelectorAll('.tab-btn');
+      function activateTab(name) {
+        tabs.forEach(function (t) { t.classList.toggle('active', t.getAttribute('data-tab') === name); });
+        document.querySelectorAll('.tab-pane').forEach(function (c) { c.style.display = 'none'; });
+        var el = document.getElementById('tab-' + name);
+        if (el) el.style.display = 'block';
+        if (name === 'orders') renderOrders();
+      }
+      tabs.forEach(function (t) { t.addEventListener('click', function () { activateTab(this.getAttribute('data-tab')); }); });
+      activateTab('profile');
+
+      document.getElementById('save-profile-btn')?.addEventListener('click', function () {
+        var name = document.getElementById('p-name')?.value.trim();
+        var phone = document.getElementById('p-phone')?.value.trim();
+        var address = document.getElementById('p-address')?.value.trim();
+        var token = auth.token;
+
+        var a = getAuth() || {};
+        if (name) a.name = name;
+        a.phone = phone; a.address = address;
+        localStorage.setItem(AUTH_KEY, JSON.stringify(a));
+
+        var msg = document.getElementById('profile-saved-msg');
+        msg.style.display = 'inline'; setTimeout(function () { msg.style.display = 'none'; }, 2500);
+
+        if (appsUrl && token) {
+          var params = new URLSearchParams({ action: 'update-profile', token: token, name: name || '', phone: phone || '', address: address || '' });
+          fetch(appsUrl + '?' + params.toString()).catch(function () {});
+        }
+      });
+
+      document.getElementById('signout-btn')?.addEventListener('click', function () {
+        localStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem(CUSTOMER_KEY);
+        window.location.href = '/login';
+      });
+
+      function renderOrderList(orders) {
+        var el = document.getElementById('orders-list');
+        if (!orders.length) {
+          el.innerHTML = '<div class="card" style="text-align:center;padding:3rem 1rem;"><p style="font-family:var(--font-display);font-size:1.4rem;color:var(--text-espresso);">No order history found yet.</p><p style="color:var(--text-muted);font-size:0.9rem;">Your past handcrafted platter orders will appear here.</p><a href="/menu" class="btn btn-primary" style="margin-top:1rem;display:inline-flex;">Browse Menu</a></div>';
+          return;
+        }
+        el.innerHTML = orders.map(function (o) {
+          return '<div class="card" style="padding:1.2rem;margin-bottom:0.8rem;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><p style="font-weight:600;margin:0;">' + fmtDate(o.date) + '</p><p style="font-size:0.85rem;color:var(--text-muted);margin:0;">' + (o.productName || 'Order') + '</p></div><p style="font-family:var(--font-display);font-weight:700;font-size:1.2rem;margin:0;color:var(--accent-gold-deep);">' + fmtINR(o.total) + '</p></div></div>';
+        }).join('');
+      }
+
+      function renderOrders() {
+        var el = document.getElementById('orders-list');
+        if (!appsUrl || !auth.token) { renderOrderList([]); return; }
+        el.innerHTML = '<p style="text-align:center;padding:2rem 0;opacity:.5;">Loading your orders…</p>';
+        fetch(appsUrl + '?action=get-orders&token=' + encodeURIComponent(auth.token))
+          .then(function (r) { return r.json(); })
+          .then(function (data) { renderOrderList(data.success ? data.orders : []); })
+          .catch(function () { renderOrderList([]); });
+      }
+    })();
+  </script>
+</BaseLayout>
+

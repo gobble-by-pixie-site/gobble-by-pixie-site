@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
+---
+<BaseLayout title="Create Account — Gobble by Pixie" description="Join Gobble by Pixie Rewards.">
+  <div id="su-config" data-url={appsScriptUrl} style="display:none"></div>
+
+  <section class="auth-section">
+    <div class="container auth-wrap">
+      <div class="card auth-card">
+        <p class="eyebrow">✨ Join Gobble Rewards</p>
+        <h1>Create Free Account</h1>
+        <div class="bonus-pill">
+          <span>🎉 100 Bonus Points Free On Signup</span>
+        </div>
+
+        <form id="signup-form" class="auth-form" onsubmit="return false">
+          <div class="form-group">
+            <label class="field-label" for="su-name">Full Name</label>
+            <input id="su-name" type="text" required class="text-field" placeholder="e.g. Ananya Sharma" autocomplete="name" />
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="su-email">Email Address</label>
+            <input id="su-email" type="email" required class="text-field" placeholder="you@example.com" autocomplete="email" />
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="su-phone">Phone Number (For Delivery Updates)</label>
+            <input id="su-phone" type="tel" class="text-field" placeholder="+91 98765 43210" autocomplete="tel" />
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="su-pass">Create Password</label>
+            <input id="su-pass" type="password" required class="text-field" placeholder="Choose a password" autocomplete="new-password" />
+          </div>
+
+          <p id="su-error" class="auth-error" style="display:none;"></p>
+
+          <button type="button" id="su-btn" class="btn btn-primary auth-submit">Create Account & Claim 100 Pts</button>
+
+          <p class="auth-footnote">Already have an account? <a href="/login">Sign in here</a></p>
+        </form>
+
+        <p id="su-success" class="auth-success" style="display:none;">🎉 Welcome to Gobble Rewards! Taking you to your account…</p>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .auth-section { padding: var(--space-2xl) 0; }
+    .auth-wrap { max-width: 460px; margin: 0 auto; }
+    .auth-card { padding: var(--space-xl); text-align: center; }
+    .bonus-pill {
+      display: inline-block;
+      background: var(--accent-gold-light);
+      border: 1px solid rgba(232, 157, 23, 0.4);
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent-gold-deep);
+      margin-bottom: var(--space-md);
+    }
+    .auth-form { text-align: left; margin-top: var(--space-sm); display: flex; flex-direction: column; gap: var(--space-xs); }
+    .form-group { text-align: left; }
+    .auth-error { color: var(--accent-berry-deep); font-size: 0.88rem; font-weight: 600; text-align: center; }
+    .auth-submit { margin-top: var(--space-sm); width: 100%; }
+    .auth-footnote { text-align: center; font-size: 0.9rem; color: var(--text-muted); margin-top: var(--space-md); }
+    .auth-footnote a { color: var(--accent-teal-deep); font-weight: 700; }
+    .auth-success { text-align: center; font-family: var(--font-display); font-size: 1.25rem; color: var(--tag-sage-deep); margin-top: var(--space-md); }
+  </style>
+
+  <script is:inline>
+    async function hashPassword(password) {
+      var enc = new TextEncoder();
+      var buf = await crypto.subtle.digest('SHA-256', enc.encode(password));
+      return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    }
+
+    async function doSignup() {
+      var name = document.getElementById('su-name')?.value.trim();
+      var email = document.getElementById('su-email')?.value.trim();
+      var phone = document.getElementById('su-phone')?.value.trim();
+      var pass = document.getElementById('su-pass')?.value;
+      var errEl = document.getElementById('su-error');
+      var btn = document.getElementById('su-btn');
+
+      function showErr(msg) { if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; } }
+
+      if (!name || !email || !pass) return showErr('Please fill in name, email, and password.');
+      if (errEl) errEl.style.display = 'none';
+
+      var url = document.getElementById('su-config')?.getAttribute('data-url');
+      if (!url) return showErr('Account system not configured yet — check back soon.');
+
+      if (btn) { btn.disabled = true; btn.textContent = 'Creating account…'; }
+
+      try {
+        var ph = await hashPassword(pass);
+        var params = new URLSearchParams({ action: 'signup', name: name, email: email, phone: phone, ph: ph });
+        var res = await fetch(url + '?' + params.toString());
+        var data = await res.json();
+
+        if (!data.success) {
+          showErr(data.error || 'Could not create account. Please try again.');
+          if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
+          return;
+        }
+
+        localStorage.setItem('gbp_auth', JSON.stringify({
+          token: data.token, name: data.name, email: data.email,
+          points: data.points || 100, tier: data.tier || 'Nibbler',
+        }));
+        localStorage.setItem('gbp_customer', JSON.stringify({ name: data.name, email: data.email, phone: phone }));
+
+        document.getElementById('signup-form')?.style.setProperty('display', 'none');
+        document.getElementById('su-success').style.display = 'block';
+        setTimeout(function () { window.location.href = '/account'; }, 1000);
+      } catch (err) {
+        showErr('Network error. Please check your connection.');
+        if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
+      }
+    }
+
+    document.getElementById('su-btn')?.addEventListener('click', doSignup);
+  </script>
+</BaseLayout>
+

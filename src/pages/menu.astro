@@ -1,0 +1,530 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { fetchProducts, getCategories, getSubcategories } from '../lib/fetchProducts.js';
+
+const products = await fetchProducts();
+const categories = getCategories(products);
+const platterSubcats = getSubcategories(products, 'Platters');
+const cheeseArtSubcats = getSubcategories(products, 'Cheese Art');
+const WA = 'https://wa.link/sngzs9';
+---
+<BaseLayout title="Menu — Gobble by Pixie">
+  <section class="menu-hero">
+    <div class="container">
+      <p class="eyebrow">Artisanal Catalog</p>
+      <h1>Our Full Menu</h1>
+      <p class="section-sub">Small-batch, gluten-free, keto-friendly — crafted fresh, delivered across Delhi NCR.</p>
+    </div>
+  </section>
+
+  <section class="menu-body">
+    <div class="container">
+      <!-- Search & Filter Controls -->
+      <div class="menu-controls card">
+        <div class="search-box">
+          <input type="search" id="menuSearch" placeholder="🔍 Search menu by name, flavour, or ingredient..." aria-label="Search menu items" />
+        </div>
+        <div class="dietary-filter-pills" id="dietaryFilters">
+          <button class="dietary-pill active" data-dietary="all">All Dietary</button>
+          <button class="dietary-pill" data-dietary="Veg">🌱 100% Vegetarian</button>
+          <button class="dietary-pill" data-dietary="GF">✨ Gluten-Free</button>
+          <button class="dietary-pill" data-dietary="Keto">🥑 Keto-Friendly</button>
+        </div>
+      </div>
+
+      <!-- Main Category Tabs -->
+      <div class="filter-tabs-wrapper">
+        <div class="filter-tabs" id="filterTabs">
+          <button class="tab active" data-cat="all">All Categories ({products.length})</button>
+          {categories.map((c) => <button class="tab" data-cat={c}>{c}</button>)}
+          <button class="tab" data-cat="Grazing Tables">Grazing Tables</button>
+        </div>
+      </div>
+
+      <!-- Subcategory Filters (Platters & Cheese Art) -->
+      <div class="subcat-bar-wrapper" id="subcatBarWrap" style="display:none;">
+        <div class="subcat-bar" id="subcatBar">
+          <button class="subcat-pill active" data-subcat="all">All Subcategories</button>
+        </div>
+      </div>
+
+      <!-- Matching Count Bar -->
+      <div class="results-bar">
+        <span id="resultsCount" class="results-count">Showing {products.length} products</span>
+        <button id="resetFiltersBtn" class="reset-btn" style="display:none;">Reset Search & Filters</button>
+      </div>
+
+      <!-- Suggest a Flavour — Jars only -->
+      <div class="special-panel" data-panel="Jars" style="display:none;">
+        <div class="card special-card">
+          <p class="eyebrow">Got an Idea?</p>
+          <h3>Suggest a New Jar Flavour</h3>
+          <p>Tell us what flavour you'd love to see next — the best suggestions actually make it onto the menu.</p>
+          <form id="suggestForm" class="special-form">
+            <input type="text" id="suggestName" placeholder="Your name" required />
+            <input type="text" id="suggestFlavour" placeholder="Your flavour idea (e.g. Peri Peri, Mango Chilli...)" required />
+            <button type="submit" class="btn btn-primary">Send Suggestion 💌</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Customize Your Flavour — Butter Candles only -->
+      <div class="special-panel" data-panel="Butter Candles" style="display:none;">
+        <div class="card special-card">
+          <p class="eyebrow">Make It Yours</p>
+          <h3>Customize Your Own Butter Candle Flavour</h3>
+          <p>Beyond our regular flavours, we can craft a custom butter candle just for your event or gift.</p>
+          <form id="customizeForm" class="special-form">
+            <input type="text" id="customizeName" placeholder="Your name" required />
+            <input type="text" id="customizeFlavour" placeholder="Describe your dream flavour" required />
+            <button type="submit" class="btn btn-primary">Request Custom Flavour 🕯️</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Grazing Tables for Parties — service enquiry, not a per-unit SKU -->
+      <div class="special-panel" data-panel="Grazing Tables" style="display:none;">
+        <div class="card special-card grazing-card">
+          <p class="eyebrow">For Big Celebrations</p>
+          <h3>Grazing Table for Parties</h3>
+          <p class="grazing-price">Starting at ₹25,000</p>
+          <p>A full spread grazing table designed for your event — weddings, corporate parties, milestone celebrations. Every table is custom-built around your guest count, theme, and budget.</p>
+          <a href={`${WA}?text=${encodeURIComponent("Hi! I'd like to enquire about a Grazing Table for a party. Could you share more details?")}`} target="_blank" rel="noopener" class="btn btn-primary">Enquire on WhatsApp 🎉</a>
+        </div>
+      </div>
+
+      <!-- Product Grid -->
+      <div class="product-grid" id="productGrid">
+        {products.map((p) => (
+          <div class="grid-item" data-cat={p.category} data-subcat={p.subcategory || ''} data-dietary={(p.dietary || []).join(',')} data-name={p.name.toLowerCase()}>
+            {p.subcategory && <p class="subcat-tag">{p.subcategory}</p>}
+            <ProductCard product={p} />
+          </div>
+        ))}
+      </div>
+
+      <!-- Empty Search State -->
+      <div id="noResultsState" class="card no-results-card" style="display:none;">
+        <span class="no-results-emoji">🧀</span>
+        <h3>No matching items found</h3>
+        <p>Try adjusting your search query or clear the dietary filters.</p>
+        <button id="noResultsResetBtn" class="btn btn-secondary">Clear Search & Show All Items</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Quick View Modal -->
+  <div class="modal-backdrop" id="productModalBackdrop" style="display:none;">
+    <div class="modal-card card">
+      <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Close product view">&times;</button>
+      <div class="modal-grid">
+        <div class="modal-media" id="modalMedia"></div>
+        <div class="modal-info">
+          <div class="modal-badges" id="modalBadges"></div>
+          <h2 id="modalTitle" class="modal-title"></h2>
+          <p id="modalSubcat" class="modal-subcat"></p>
+          <p id="modalWeight" class="modal-weight"></p>
+          <p id="modalDesc" class="modal-desc"></p>
+          <div class="modal-footer">
+            <span id="modalPrice" class="modal-price"></span>
+            <a id="modalWaBtn" href="#" target="_blank" rel="noopener" class="btn btn-primary modal-wa-btn">
+              Order via WhatsApp 💬
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .menu-hero { text-align: center; padding-bottom: var(--space-md); }
+    .section-sub { max-width: 52ch; margin: 0 auto; color: var(--text-espresso-soft); font-size: 1.05rem; }
+
+    /* Search & Controls */
+    .menu-controls {
+      padding: var(--space-md);
+      margin-bottom: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .search-box input {
+      width: 100%;
+      padding: 0.8rem 1.2rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-hairline);
+      font-size: 1rem;
+      background: #ffffff;
+    }
+    .dietary-filter-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .dietary-pill {
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-hairline);
+      background: rgba(255, 255, 255, 0.7);
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-espresso-soft);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .dietary-pill:hover { border-color: var(--accent-gold); }
+    .dietary-pill.active {
+      background: var(--accent-teal);
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    .filter-tabs-wrapper {
+      overflow-x: auto;
+      margin-bottom: var(--space-sm);
+      padding-bottom: 0.4rem;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center;
+      min-width: max-content;
+      padding: 0 0.5rem;
+    }
+    .tab {
+      padding: 0.65rem 1.4rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-hairline);
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-espresso-soft);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+      box-shadow: var(--shadow-ambient);
+    }
+    .tab:hover {
+      border-color: var(--accent-gold);
+      color: var(--text-espresso);
+      transform: translateY(-1px);
+    }
+    .tab.active {
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-coral-deep));
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 6px 18px rgba(232, 87, 61, 0.3);
+    }
+
+    /* Subcategory Bar */
+    .subcat-bar-wrapper {
+      margin-bottom: var(--space-md);
+      overflow-x: auto;
+    }
+    .subcat-bar {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      min-width: max-content;
+    }
+    .subcat-pill {
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-parchment-alt);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent-teal-deep);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .subcat-pill.active {
+      background: var(--accent-teal-deep);
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    .results-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+    .results-count { font-weight: 600; }
+    .reset-btn {
+      background: none;
+      border: none;
+      color: var(--accent-berry-deep);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .special-card { padding: var(--space-lg); margin-bottom: var(--space-lg); text-align: center; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .special-card p { color: var(--text-espresso-soft); }
+    .special-form { display: flex; flex-direction: column; gap: 0.7rem; margin-top: var(--space-md); text-align: left; }
+    .special-form input {
+      border: 1px solid var(--border-hairline);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.9rem;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+    }
+    .grazing-card { background: linear-gradient(150deg, rgba(232,157,23,0.1), var(--bg-parchment)); }
+    .grazing-price { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; color: var(--accent-berry-deep); }
+
+    .subcat-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent-teal-deep);
+      margin: 0 0 0.4rem 0.2rem;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-lg);
+    }
+
+    .no-results-card {
+      text-align: center;
+      padding: var(--space-xl);
+      margin: var(--space-lg) 0;
+    }
+    .no-results-emoji { font-size: 3rem; display: block; margin-bottom: var(--space-xs); }
+
+    /* Modal Styling */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px); z-index: 300; display: flex;
+      align-items: center; justify-content: center; padding: var(--space-md);
+    }
+    .modal-card {
+      width: 100%; max-width: 720px; background: #ffffff; padding: var(--space-lg);
+      position: relative; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-close {
+      position: absolute; top: 15px; right: 15px; background: none; border: none;
+      font-size: 1.8rem; line-height: 1; cursor: pointer; color: var(--text-muted);
+    }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--space-lg); align-items: start; }
+    .modal-media { height: 260px; border-radius: var(--radius-md); background-size: cover; background-position: center; background-color: var(--bg-parchment-alt); display: flex; align-items: center; justify-content: center; }
+    .modal-info { display: flex; flex-direction: column; }
+    .modal-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+    .modal-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .modal-subcat { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--accent-teal-deep); margin-bottom: 0.3rem; }
+    .modal-weight { font-size: 0.88rem; font-weight: 600; color: var(--accent-gold-deep); margin-bottom: 0.6rem; }
+    .modal-desc { font-size: 0.95rem; color: var(--text-espresso-soft); margin-bottom: var(--space-md); line-height: 1.5; }
+    .modal-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-hairline); padding-top: var(--space-sm); }
+    .modal-price { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-espresso); }
+
+    @media (max-width: 900px) {
+      .product-grid { grid-template-columns: repeat(2, 1fr); }
+      .modal-grid { grid-template-columns: 1fr; }
+      .modal-media { height: 200px; }
+    }
+    @media (max-width: 600px) {
+      .product-grid { grid-template-columns: 1fr; }
+      .filter-tabs, .subcat-bar { justify-content: flex-start; }
+    }
+  </style>
+
+  <script is:inline define:vars={{ platterSubcats, cheeseArtSubcats }}>
+    const searchInput = document.getElementById('menuSearch');
+    const tabs = document.querySelectorAll('.tab');
+    const dietaryPills = document.querySelectorAll('.dietary-pill');
+    const items = document.querySelectorAll('.grid-item');
+    const specialPanels = document.querySelectorAll('.special-panel');
+    const productGrid = document.getElementById('productGrid');
+    const subcatWrap = document.getElementById('subcatBarWrap');
+    const subcatBar = document.getElementById('subcatBar');
+    const resultsCount = document.getElementById('resultsCount');
+    const resetBtn = document.getElementById('resetFiltersBtn');
+    const noResults = document.getElementById('noResultsState');
+
+    let state = {
+      search: '',
+      category: 'all',
+      subcategory: 'all',
+      dietary: 'all',
+    };
+
+    function updateSubcategoryBar() {
+      let subcats = [];
+      if (state.category === 'Platters') subcats = platterSubcats;
+      else if (state.category === 'Cheese Art') subcats = cheeseArtSubcats;
+
+      if (subcats.length > 0) {
+        subcatWrap.style.display = 'block';
+        subcatBar.innerHTML = `<button class="subcat-pill ${state.subcategory === 'all' ? 'active' : ''}" data-subcat="all">All ${state.category}</button>` +
+          subcats.map((s) => `<button class="subcat-pill ${state.subcategory === s ? 'active' : ''}" data-subcat="${s}">${s}</button>`).join('');
+
+        subcatBar.querySelectorAll('.subcat-pill').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            state.subcategory = btn.getAttribute('data-subcat');
+            updateSubcategoryBar();
+            filterProducts();
+          });
+        });
+      } else {
+        subcatWrap.style.display = 'none';
+        state.subcategory = 'all';
+      }
+    }
+
+    function filterProducts() {
+      let visibleCount = 0;
+      const totalCount = items.length;
+
+      specialPanels.forEach((p) => {
+        p.style.display = p.getAttribute('data-panel') === state.category ? 'block' : 'none';
+      });
+
+      if (state.category === 'Grazing Tables') {
+        productGrid.style.display = 'none';
+        resultsCount.textContent = 'Service enquiry for Grazing Tables';
+        noResults.style.display = 'none';
+        return;
+      }
+
+      productGrid.style.display = '';
+
+      items.forEach((item) => {
+        const cat = item.getAttribute('data-cat');
+        const subcat = item.getAttribute('data-subcat');
+        const dietary = (item.getAttribute('data-dietary') || '').split(',');
+        const name = item.getAttribute('data-name') || '';
+
+        const matchCat = state.category === 'all' || cat === state.category;
+        const matchSubcat = state.subcategory === 'all' || subcat === state.subcategory;
+        const matchDietary = state.dietary === 'all' || dietary.includes(state.dietary);
+        const matchSearch = !state.search || name.includes(state.search) || cat.toLowerCase().includes(state.search) || subcat.toLowerCase().includes(state.search);
+
+        const visible = matchCat && matchSubcat && matchDietary && matchSearch;
+        item.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+      });
+
+      resultsCount.textContent = `Showing ${visibleCount} of ${totalCount} products`;
+      const isFiltered = state.category !== 'all' || state.subcategory !== 'all' || state.dietary !== 'all' || state.search !== '';
+      resetBtn.style.display = isFiltered ? 'inline-block' : 'none';
+
+      noResults.style.display = (visibleCount === 0 && state.category !== 'Grazing Tables') ? 'block' : 'none';
+    }
+
+    searchInput?.addEventListener('input', (e) => {
+      state.search = e.target.value.toLowerCase().trim();
+      filterProducts();
+    });
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        state.category = tab.getAttribute('data-cat');
+        state.subcategory = 'all';
+        updateSubcategoryBar();
+        filterProducts();
+      });
+    });
+
+    dietaryPills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        dietaryPills.forEach((p) => p.classList.remove('active'));
+        pill.classList.add('active');
+        state.dietary = pill.getAttribute('data-dietary');
+        filterProducts();
+      });
+    });
+
+    function resetAll() {
+      state = { search: '', category: 'all', subcategory: 'all', dietary: 'all' };
+      if (searchInput) searchInput.value = '';
+      tabs.forEach((t) => t.classList.toggle('active', t.getAttribute('data-cat') === 'all'));
+      dietaryPills.forEach((p) => p.classList.toggle('active', p.getAttribute('data-dietary') === 'all'));
+      updateSubcategoryBar();
+      filterProducts();
+    }
+
+    resetBtn?.addEventListener('click', resetAll);
+    document.getElementById('noResultsResetBtn')?.addEventListener('click', resetAll);
+
+    // Quick View Modal
+    const backdrop = document.getElementById('productModalBackdrop');
+    const closeBtn = document.getElementById('modalCloseBtn');
+
+    function openModal(card) {
+      const name = card.dataset.name;
+      const price = card.dataset.price ? `₹${card.dataset.price}` : 'Price on request';
+      const weight = card.dataset.weight ? `Net Weight: ${card.dataset.weight}` : '';
+      const desc = card.dataset.desc || 'Handcrafted fresh in small batches using premium natural ingredients.';
+      const image = card.dataset.image;
+      const subcat = card.dataset.subcategory;
+      const fulfillment = card.dataset.fulfillment;
+      const dietary = (card.dataset.dietary || '').split(',').filter(Boolean);
+
+      document.getElementById('modalTitle').textContent = name;
+      document.getElementById('modalSubcat').textContent = subcat ? `Category: ${card.dataset.category} • ${subcat}` : `Category: ${card.dataset.category}`;
+      document.getElementById('modalWeight').textContent = weight;
+      document.getElementById('modalDesc').textContent = desc;
+      document.getElementById('modalPrice').textContent = price;
+
+      const mediaEl = document.getElementById('modalMedia');
+      if (image) {
+        mediaEl.style.backgroundImage = `url(${image})`;
+        mediaEl.innerHTML = '';
+      } else {
+        mediaEl.style.backgroundImage = 'none';
+        mediaEl.innerHTML = '<div style="text-align:center;"><span style="font-size:3rem;">🧀</span><p style="margin:0;opacity:.6;font-size:0.85rem;font-weight:600;">Photo coming soon</p></div>';
+      }
+
+      const badgesEl = document.getElementById('modalBadges');
+      badgesEl.innerHTML = dietary.map((d) => `<span class="badge badge-${d.toLowerCase()}">${d}</span>`).join('') +
+        `<span class="badge badge-dispatch">${fulfillment}</span>`;
+
+      const msg = `Hi! I'd like to order: ${name} (${price})`;
+      document.getElementById('modalWaBtn').href = `https://wa.link/sngzs9?text=${encodeURIComponent(msg)}`;
+
+      backdrop.style.display = 'flex';
+    }
+
+    document.querySelectorAll('.js-product-card').forEach((card) => {
+      card.addEventListener('click', (e) => {
+        openModal(card);
+      });
+    });
+
+    closeBtn?.addEventListener('click', () => { backdrop.style.display = 'none'; });
+    backdrop?.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.style.display = 'none'; });
+
+    // Forms
+    function sendViaWhatsApp(text) {
+      window.open('https://wa.link/sngzs9?text=' + encodeURIComponent(text), '_blank', 'noopener');
+    }
+
+    document.getElementById('suggestForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('suggestName').value.trim();
+      const flavour = document.getElementById('suggestFlavour').value.trim();
+      sendViaWhatsApp(`Hi! I'm ${name} and I have a flavour suggestion for your Jars: "${flavour}"`);
+    });
+
+    document.getElementById('customizeForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('customizeName').value.trim();
+      const flavour = document.getElementById('customizeFlavour').value.trim();
+      sendViaWhatsApp(`Hi! I'm ${name} and I'd like to request a custom Butter Candle flavour: "${flavour}"`);
+    });
+  </script>
+</BaseLayout>
+

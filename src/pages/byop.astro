@@ -1,0 +1,522 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const sizes = [
+  { id: 'solo', name: 'Solo / Duo Board', pax: '~2 pax', price: 750, quota: { cheese: 2, cracker: 2, pairing: 2 } },
+  { id: 'medium', name: 'Medium Party Board', pax: '~4-6 pax', price: 1800, quota: { cheese: 3, cracker: 3, pairing: 3 } },
+  { id: 'grand', name: 'Grand Feast Board', pax: '~8-10 pax', price: 3200, quota: { cheese: 4, cracker: 4, pairing: 4 } },
+];
+
+const cheeses = ['Onion & Chives', 'Sweet Fig (seasonal)', 'Truffle', 'Roasted Garlic & Herb', 'Chilli Jam'];
+const crackers = ['Gluten-Free Seed Crackers', 'Almond Flour Crisps', 'Artisanal Lavash', 'Keto Chips'];
+const pairings = ['Fresh Berries', 'Dried Figs', 'Caramelized Nuts', 'Stuffed Olives', 'Organic Honey'];
+const occasions = ['Birthday', 'Anniversary', 'House Party', 'Gifting', 'Quiet Night In'];
+---
+<BaseLayout title="Build Your Own Platter — Gobble by Pixie">
+  <section class="byop-hero">
+    <div class="container">
+      <p class="eyebrow">✨ Custom Grazing Experience</p>
+      <h1>Build Your Own Cheese Platter</h1>
+      <p class="section-sub">Curate your personalized artisanal cheese board step-by-step — like having a master cheesemonger in your kitchen.</p>
+    </div>
+  </section>
+
+  <section class="byop-wizard">
+    <div class="container wizard-grid">
+      <div class="wizard-main">
+        <!-- Visual Timeline Track -->
+        <div class="step-timeline" id="stepProgress">
+          <div class="timeline-line"></div>
+          <div class="dot active" data-step="1">
+            <span class="dot-num">1</span>
+            <span class="dot-label">Board Size</span>
+          </div>
+          <div class="dot" data-step="2">
+            <span class="dot-num">2</span>
+            <span class="dot-label">Cheeses</span>
+          </div>
+          <div class="dot" data-step="3">
+            <span class="dot-num">3</span>
+            <span class="dot-label">Crisps</span>
+          </div>
+          <div class="dot" data-step="4">
+            <span class="dot-num">4</span>
+            <span class="dot-label">Pairings</span>
+          </div>
+          <div class="dot" data-step="5">
+            <span class="dot-num">5</span>
+            <span class="dot-label">Gift & Prep</span>
+          </div>
+        </div>
+
+        <div class="wizard-panels card">
+          <!-- Step 1 -->
+          <div class="step-panel active" data-panel="1">
+            <div class="panel-header">
+              <span class="panel-badge badge-gold">Step 1 of 5</span>
+              <h3>Choose Your Board Size</h3>
+              <p>Select the size that best fits your gathering. Every board comes with curated accompaniments.</p>
+            </div>
+            <div class="option-grid" id="sizeOptions">
+              {sizes.map((s) => (
+                <button class="option-card" data-type="size" data-id={s.id} data-price={s.price} data-cheese={s.quota.cheese} data-cracker={s.quota.cracker} data-pairing={s.quota.pairing}>
+                  <div class="option-card-head">
+                    <strong>{s.name}</strong>
+                    <span class="pax-tag">{s.pax}</span>
+                  </div>
+                  <span class="option-price">₹{s.price}</span>
+                  <div class="option-includes">
+                    <span>Included: {s.quota.cheese} Cheeses • {s.quota.cracker} Crisps • {s.quota.pairing} Pairings</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-panel" data-panel="2">
+            <div class="panel-header">
+              <span class="panel-badge badge-coral">Step 2 of 5</span>
+              <h3>Select Cream Cheeses & Dips</h3>
+              <div class="quota-banner">
+                <span>Allowed for board size: <strong id="cheeseQuota">0</strong></span>
+                <span class="quota-separator">•</span>
+                <span>Currently selected: <strong id="cheeseCount">0</strong></span>
+              </div>
+            </div>
+            <div class="chip-grid" data-group="cheese">
+              {cheeses.map((c) => (
+                <button class="chip chip-cheese" data-group="cheese" data-name={c}>
+                  <span class="chip-check">✓</span>
+                  <span>{c}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-panel" data-panel="3">
+            <div class="panel-header">
+              <span class="panel-badge badge-gold">Step 3 of 5</span>
+              <h3>Select Artisanal Crackers & Crisps</h3>
+              <div class="quota-banner">
+                <span>Allowed for board size: <strong id="crackerQuota">0</strong></span>
+                <span class="quota-separator">•</span>
+                <span>Currently selected: <strong id="crackerCount">0</strong></span>
+              </div>
+            </div>
+            <div class="chip-grid" data-group="cracker">
+              {crackers.map((c) => (
+                <button class="chip chip-cracker" data-group="cracker" data-name={c}>
+                  <span class="chip-check">✓</span>
+                  <span>{c}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="step-panel" data-panel="4">
+            <div class="panel-header">
+              <span class="panel-badge badge-teal">Step 4 of 5</span>
+              <h3>Select Gourmet Pairings & Crunch</h3>
+              <div class="quota-banner">
+                <span>Allowed for board size: <strong id="pairingQuota">0</strong></span>
+                <span class="quota-separator">•</span>
+                <span>Currently selected: <strong id="pairingCount">0</strong></span>
+              </div>
+            </div>
+            <div class="chip-grid" data-group="pairing">
+              {pairings.map((p) => (
+                <button class="chip chip-pairing" data-group="pairing" data-name={p}>
+                  <span class="chip-check">✓</span>
+                  <span>{p}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="step-panel" data-panel="5">
+            <div class="panel-header">
+              <span class="panel-badge badge-berry">Step 5 of 5</span>
+              <h3>Gifting & Personal Touch</h3>
+              <p>Add special occasion notes or dietary prep preferences for our kitchen team.</p>
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Occasion</label>
+              <div class="chip-grid" data-group="occasion">
+                {occasions.map((o) => (
+                  <button class="chip chip-occasion" data-group="occasion" data-name={o}>
+                    <span class="chip-check">✓</span>
+                    <span>{o}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="field-label" for="giftNote">Handwritten Note (Optional)</label>
+              <textarea id="giftNote" rows="3" placeholder="Add a sweet personal message to be handwritten on our luxury parchment note card..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="field-label" for="prepNotes">Special Instructions / Allergies</label>
+              <textarea id="prepNotes" rows="2" placeholder="e.g. Extra nut isolation, strict keto crisp preference, separate dipping pots..."></textarea>
+            </div>
+          </div>
+
+          <div class="wizard-nav">
+            <button class="btn btn-secondary" id="prevBtn" disabled>&larr; Back</button>
+            <button class="btn btn-primary" id="nextBtn">Continue to Step 2 &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Sidebar Tray -->
+      <aside class="tray-summary card">
+        <div class="tray-head">
+          <span class="eyebrow">Your Selection</span>
+          <h3>Custom Board</h3>
+        </div>
+
+        <p class="tray-empty" id="traySizeEmpty">Please select a board size in Step 1 to begin curating.</p>
+        <div id="traySize" class="tray-size" style="display:none;"></div>
+        
+        <div class="tray-sections">
+          <div class="tray-section">
+            <strong class="section-tag tag-coral">Cream Cheeses</strong>
+            <div class="tray-chips" id="trayCheese"></div>
+          </div>
+          <div class="tray-section">
+            <strong class="section-tag tag-gold">Crisps & Crackers</strong>
+            <div class="tray-chips" id="trayCracker"></div>
+          </div>
+          <div class="tray-section">
+            <strong class="section-tag tag-teal">Gourmet Pairings</strong>
+            <div class="tray-chips" id="trayPairing"></div>
+          </div>
+        </div>
+
+        <div class="tray-total">
+          <span>Estimated Total</span>
+          <span id="trayTotal" class="total-amount">₹0</span>
+        </div>
+        
+        <a id="trayCta" class="btn btn-primary tray-cta" href="#" target="_blank" rel="noopener">
+          Add Custom Platter to Order
+        </a>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Mobile Floating Sticky Bar -->
+  <div class="mobile-sticky-bar card" id="mobileBar">
+    <div class="mobile-bar-info">
+      <span class="mobile-bar-label">Your Custom Board</span>
+      <span class="mobile-bar-price" id="mobileTotal">₹0</span>
+    </div>
+    <a id="mobileCta" class="btn btn-primary btn-sm" href="#" target="_blank" rel="noopener">Order Board</a>
+  </div>
+
+  <style>
+    .byop-hero { text-align: center; padding-bottom: var(--space-md); }
+    .section-sub { max-width: 52ch; margin: 0 auto; color: var(--text-espresso-soft); font-size: 1.05rem; }
+    
+    .wizard-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: var(--space-xl); align-items: start; }
+    
+    /* Timeline track */
+    .step-timeline {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: var(--space-lg);
+      padding: 0 var(--space-xs);
+    }
+    .timeline-line {
+      position: absolute;
+      top: 18px;
+      left: 30px;
+      right: 30px;
+      height: 3px;
+      background: var(--border-hairline);
+      z-index: 1;
+    }
+    .dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      position: relative;
+      z-index: 2;
+    }
+    .dot-num {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.9);
+      border: 2px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+    .dot-label {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .dot.active .dot-num {
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-coral-deep));
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(232, 87, 61, 0.35);
+    }
+    .dot.active .dot-label { color: var(--text-espresso); font-weight: 700; }
+    .dot.done .dot-num {
+      background: var(--tag-sage);
+      color: #ffffff;
+      border-color: transparent;
+    }
+    .dot.done .dot-num::after { content: '✓'; font-size: 0.85rem; }
+    .dot.done .dot-num span { display: none; }
+
+    /* Wizard Panels Card */
+    .wizard-panels { padding: var(--space-lg); }
+    .step-panel { display: none; animation: fadeIn 0.3s ease; }
+    .step-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .panel-header { margin-bottom: var(--space-lg); }
+    .panel-header h3 { margin: 0.4rem 0 0.3rem; }
+    .panel-badge {
+      display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; padding: 0.25rem 0.7rem; border-radius: var(--radius-pill);
+    }
+    .badge-gold { background: var(--accent-gold-light); color: var(--accent-gold-deep); }
+    .badge-coral { background: var(--accent-coral-light); color: var(--accent-coral-deep); }
+    .badge-teal { background: var(--accent-teal-light); color: var(--accent-teal-deep); }
+    .badge-berry { background: var(--accent-berry-light); color: var(--accent-berry-deep); }
+
+    .quota-banner {
+      background: var(--bg-parchment-alt); padding: 0.55rem 1rem; border-radius: var(--radius-sm);
+      display: flex; gap: 0.6rem; font-size: 0.88rem; color: var(--text-espresso-soft); margin-top: 0.5rem;
+      border: 1px solid var(--border-hairline);
+    }
+    .quota-separator { opacity: 0.5; }
+
+    /* Option Grid (Step 1) */
+    .option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); }
+    .option-card {
+      display: flex; flex-direction: column; justify-content: space-between; gap: 0.6rem; padding: var(--space-md);
+      border-radius: var(--radius-md); border: 1.5px solid var(--border-hairline); background: rgba(255,255,255,0.7);
+      cursor: pointer; text-align: left; transition: all 0.25s ease;
+    }
+    .option-card:hover { border-color: var(--accent-gold); box-shadow: var(--shadow-ambient); }
+    .option-card.selected {
+      border-color: var(--accent-gold); box-shadow: 0 8px 24px rgba(232, 157, 23, 0.25);
+      background: #ffffff; position: relative;
+    }
+    .option-card-head { display: flex; flex-direction: column; gap: 0.2rem; }
+    .option-card-head strong { font-family: var(--font-display); font-size: 1.05rem; }
+    .pax-tag { font-size: 0.78rem; font-weight: 600; color: var(--accent-teal-deep); }
+    .option-price { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--accent-gold-deep); }
+    .option-includes { font-size: 0.76rem; color: var(--text-muted); border-top: 1px solid var(--border-hairline); padding-top: 0.4rem; }
+
+    /* Chip Grid (Steps 2-4) */
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: var(--space-md); }
+    .chip {
+      display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-pill); border: 1px solid var(--border-hairline);
+      background: rgba(255,255,255,0.8); cursor: pointer; font-family: var(--font-body); font-size: 0.9rem;
+      font-weight: 600; color: var(--text-espresso-soft); transition: all 0.25s ease;
+    }
+    .chip-check { display: none; font-size: 0.8rem; }
+    .chip:hover { border-color: var(--accent-gold); transform: translateY(-1px); }
+    .chip.selected .chip-check { display: inline; }
+    
+    .chip-cheese.selected { background: linear-gradient(135deg, var(--accent-coral), var(--accent-coral-deep)); color: #fff; border-color: transparent; }
+    .chip-cracker.selected { background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-deep)); color: #fff; border-color: transparent; }
+    .chip-pairing.selected { background: linear-gradient(135deg, var(--accent-teal), var(--accent-teal-deep)); color: #fff; border-color: transparent; }
+    .chip-occasion.selected { background: linear-gradient(135deg, var(--accent-berry), var(--accent-berry-deep)); color: #fff; border-color: transparent; }
+
+    .form-group { margin-bottom: var(--space-md); }
+    .wizard-nav { display: flex; justify-content: space-between; margin-top: var(--space-xl); border-top: 1px solid var(--border-hairline); padding-top: var(--space-md); }
+
+    /* Tray Summary */
+    .tray-summary { position: sticky; top: 90px; padding: var(--space-lg); }
+    .tray-head h3 { margin: 0 0 var(--space-sm); }
+    .tray-empty { color: var(--text-muted); font-size: 0.9rem; }
+    .tray-size { font-weight: 700; font-family: var(--font-display); font-size: 1.15rem; color: var(--accent-gold-deep); margin-bottom: var(--space-md); }
+    .tray-sections { display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .section-tag { display: block; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem; }
+    .tag-coral { color: var(--accent-coral-deep); }
+    .tag-gold { color: var(--accent-gold-deep); }
+    .tag-teal { color: var(--accent-teal-deep); }
+
+    .tray-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .tray-chips span { font-size: 0.8rem; font-weight: 500; background: var(--bg-parchment-alt); padding: 0.3rem 0.7rem; border-radius: var(--radius-pill); border: 1px solid var(--border-hairline); }
+
+    .tray-total {
+      display: flex; justify-content: space-between; align-items: center; font-family: var(--font-display);
+      border-top: 1px solid var(--border-hairline); padding-top: var(--space-sm); margin-top: var(--space-sm);
+    }
+    .total-amount { font-size: 1.5rem; font-weight: 700; color: var(--text-espresso); }
+    .tray-cta { width: 100%; margin-top: var(--space-md); }
+
+    /* Mobile Sticky Bar */
+    .mobile-sticky-bar {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(253, 251, 242, 0.96); backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-hairline); padding: 0.75rem 1.2rem;
+      z-index: 90; justify-content: space-between; align-items: center;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    }
+    .mobile-bar-info { display: flex; flex-direction: column; }
+    .mobile-bar-label { font-size: 0.76rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+    .mobile-bar-price { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--accent-gold-deep); }
+
+    @media (max-width: 900px) {
+      .wizard-grid { grid-template-columns: 1fr; }
+      .option-grid { grid-template-columns: 1fr; }
+      .tray-summary { display: none; }
+      .mobile-sticky-bar { display: flex; }
+      .step-timeline .dot-label { display: none; }
+    }
+  </style>
+
+  <script>
+    const state = {
+      step: 1,
+      size: null,
+      cheese: [],
+      cracker: [],
+      pairing: [],
+      occasion: null,
+    };
+
+    const panels = document.querySelectorAll('.step-panel');
+    const dots = document.querySelectorAll('.dot');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function showStep(n) {
+      panels.forEach((p) => p.classList.toggle('active', Number(p.dataset.panel) === n));
+      dots.forEach((d) => {
+        const ds = Number(d.dataset.step);
+        d.classList.toggle('active', ds === n);
+        d.classList.toggle('done', ds < n);
+      });
+      prevBtn.disabled = n === 1;
+      nextBtn.textContent = n === 5 ? 'Finish & Review Order' : `Continue to Step ${n + 1} →`;
+      state.step = n;
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    prevBtn.addEventListener('click', () => { if (state.step > 1) showStep(state.step - 1); });
+    nextBtn.addEventListener('click', () => {
+      if (state.step === 1 && !state.size) { alert('Please choose a board size to continue.'); return; }
+      if (state.step < 5) showStep(state.step + 1);
+    });
+
+    document.querySelectorAll('[data-type="size"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-type="size"]').forEach((b) => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.size = {
+          id: btn.dataset.id,
+          name: btn.querySelector('strong').textContent,
+          price: Number(btn.dataset.price),
+          quota: {
+            cheese: Number(btn.dataset.cheese),
+            cracker: Number(btn.dataset.cracker),
+            pairing: Number(btn.dataset.pairing),
+          },
+        };
+        state.cheese = []; state.cracker = []; state.pairing = [];
+        document.querySelectorAll('.chip').forEach((c) => c.classList.remove('selected'));
+        renderTray();
+      });
+    });
+
+    function toggleChip(group, name, btn) {
+      const quota = state.size ? state.size.quota[group] : 0;
+      const list = state[group];
+      const idx = list.indexOf(name);
+      if (idx > -1) {
+        list.splice(idx, 1);
+        btn.classList.remove('selected');
+      } else {
+        if (group !== 'occasion' && quota && list.length >= quota + 3) return;
+        if (group === 'occasion') {
+          state.occasion = name;
+          document.querySelectorAll('[data-group="occasion"]').forEach((c) => c.classList.remove('selected'));
+        }
+        else list.push(name);
+        btn.classList.add('selected');
+      }
+      renderTray();
+    }
+
+    document.querySelectorAll('.chip').forEach((btn) => {
+      btn.addEventListener('click', () => toggleChip(btn.dataset.group, btn.dataset.name, btn));
+    });
+
+    function renderTray() {
+      const emptyEl = document.getElementById('traySizeEmpty');
+      const sizeEl = document.getElementById('traySize');
+      if (!state.size) { emptyEl.style.display = 'block'; sizeEl.style.display = 'none'; }
+      else {
+        emptyEl.style.display = 'none';
+        sizeEl.style.display = 'block';
+        sizeEl.textContent = `${state.size.name} — ₹${state.size.price}`;
+      }
+
+      const quota = state.size ? state.size.quota : { cheese: 0, cracker: 0, pairing: 0 };
+      document.getElementById('cheeseQuota').textContent = quota.cheese;
+      document.getElementById('crackerQuota').textContent = quota.cracker;
+      document.getElementById('pairingQuota').textContent = quota.pairing;
+      document.getElementById('cheeseCount').textContent = state.cheese.length;
+      document.getElementById('crackerCount').textContent = state.cracker.length;
+      document.getElementById('pairingCount').textContent = state.pairing.length;
+
+      document.getElementById('trayCheese').innerHTML = state.cheese.map((c) => `<span>${c}</span>`).join('') || '<span style="opacity:.5">None selected yet</span>';
+      document.getElementById('trayCracker').innerHTML = state.cracker.map((c) => `<span>${c}</span>`).join('') || '<span style="opacity:.5">None selected yet</span>';
+      document.getElementById('trayPairing').innerHTML = state.pairing.map((c) => `<span>${c}</span>`).join('') || '<span style="opacity:.5">None selected yet</span>';
+
+      const extraCheese = state.size ? Math.max(0, state.cheese.length - state.size.quota.cheese) * 100 : 0;
+      const total = (state.size ? state.size.price : 0) + extraCheese;
+      document.getElementById('trayTotal').textContent = `₹${total}`;
+      document.getElementById('mobileTotal').textContent = `₹${total}`;
+
+      const giftNote = document.getElementById('giftNote')?.value || '';
+      const prepNotes = document.getElementById('prepNotes')?.value || '';
+      const lines = [
+        `Hi! I'd like to order a custom cheese platter (#BYOP):`,
+        state.size ? `Board: ${state.size.name} (₹${state.size.price})` : '',
+        state.cheese.length ? `Cream Cheeses: ${state.cheese.join(', ')}` : '',
+        state.cracker.length ? `Crackers: ${state.cracker.join(', ')}` : '',
+        state.pairing.length ? `Pairings: ${state.pairing.join(', ')}` : '',
+        state.occasion ? `Occasion: ${state.occasion}` : '',
+        giftNote ? `Gift note: ${giftNote}` : '',
+        prepNotes ? `Special instructions: ${prepNotes}` : '',
+        `Estimated total: ₹${total}`,
+      ].filter(Boolean).join('\n');
+
+      const waUrl = `https://wa.link/sngzs9?text=${encodeURIComponent(lines)}`;
+      document.getElementById('trayCta').href = waUrl;
+      document.getElementById('mobileCta').href = waUrl;
+    }
+
+    document.getElementById('giftNote')?.addEventListener('input', renderTray);
+    document.getElementById('prepNotes')?.addEventListener('input', renderTray);
+
+    renderTray();
+  </script>
+</BaseLayout>
+
