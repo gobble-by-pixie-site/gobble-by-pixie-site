@@ -2,11 +2,14 @@
 
 Astro storefront for Gobble by Pixie Cream Cheese ([@gobblebypixie](https://www.instagram.com/gobblebypixie/)). Read `CLAUDE.md` first for the "why" behind key decisions; this file is the practical setup/handoff reference.
 
+**Live**: https://gobblebypixie.com
+
 ## Stack
 
 - **Astro** (static output), no UI framework, no Tailwind — vanilla CSS with design tokens.
-- **Content**: Google Sheet published as CSV (see `src/lib/fetchProducts.js`).
-- **Accounts/Rewards**: localStorage session + Google Apps Script backend (same pattern as `theclosetstory.com/tcs-store`) — see `CLAUDE.md` for current status (frontend done, backend script not yet deployed).
+- **Content**: Google Sheet published as CSV (see `src/lib/fetchProducts.js`) — live in production, real 37-item catalog.
+- **Accounts/Rewards**: localStorage session + a deployed, working Google Apps Script backend (`code.gs` in this repo — also the source of truth mirrored into the Sheet's own Script Editor).
+- **Cart**: `public/cart.js`, plain JS + localStorage, shared across every page via `window.GobbleCart`.
 
 ## Local development
 
@@ -22,52 +25,73 @@ npm run build     # production build → dist/
 npm run preview   # preview the production build locally
 ```
 
+## Deploying
+
+No CI — deploys are manual:
+
+```bash
+npm run build
+node_modules/.bin/wrangler pages deploy dist --project-name gobble-by-pixie-site --branch main
+```
+
+Requires being logged into wrangler via OAuth (`wrangler login`) as the client's own Cloudflare account — **not** an API token (hits a reproducible wrangler bug on this project, see `CLAUDE.md`). `git push` alone does not deploy the live site.
+
 ## Environment variables
 
-Create a `.env` file (not committed) with:
+`.env` (gitignored, not committed) needs:
 
 ```
-GOOGLE_SHEET_CSV_URL=   # published-CSV URL for the product/menu Sheet — see fetchProducts.js header comment for column layout
-APPS_SCRIPT_URL=        # Google Apps Script web-app URL backing signup/signin/orders/rewards — not yet deployed, see CLAUDE.md
+GOOGLE_SHEET_CSV_URL=   # published-CSV URL for the Products tab of the backend Sheet
+APPS_SCRIPT_URL=        # deployed Apps Script Web App /exec URL (code.gs)
 ```
 
-Without these, the site builds fine using hardcoded placeholder products and the account pages show the "not configured yet" state instead of erroring.
+Both are live in production. Without them locally, the site builds fine using hardcoded placeholder products and the account pages show a "not configured yet" state instead of erroring — useful for working on layout/design without needing real credentials.
 
 ## File map
 
 ```
+code.gs                    — Google Apps Script backend: auth, points/tiers, orders, coupons,
+                              GST calculation, Razorpay webhook (built, keys pending)
+public/
+  cart.js                  — shared cart engine, window.GobbleCart
+  Logos/                   — real brand logo, red/black/white (black variant in use)
+  Cover photo.JPG          — hero image
+  Green Jar.png            — used in the floating WhatsApp contact button
 src/
   layouts/
-    BaseLayout.astro       — header (nav + account link), footer, fulfillment banner, global <head>
+    BaseLayout.astro       — header (nav, cart icon, account link), cart drawer, mobile drawer,
+                              footer (incl. FSSAI/GSTIN), floating WhatsApp button, global <head>
   components/
-    ProductCard.astro      — single product card used on home + menu
+    ProductCard.astro      — product card used on home + menu; wires "Add to Order" to the cart
+    GlutenFreeIcon.astro   — generic GF icon (not a certification mark — product isn't certified)
   lib/
     fetchProducts.js       — Sheet-CSV fetch + parse + fallback data + formatPrice()
   pages/
     index.astro            — homepage
-    menu.astro              — full catalog with category filter tabs
-    byop.astro              — "Build Your Own Platter" 5-step wizard (client-side state, WhatsApp checkout)
+    menu.astro              — full catalog, category/subcategory/dietary filters, Quick View modal
+    byop.astro              — "Build Your Own Platter" 5-step wizard, adds to cart on completion
     about.astro              — brand story
     faq.astro                — delivery/fulfillment schedule + FAQ accordion
-    account.astro            — logged-in account: Profile / Orders / Rewards tabs
-    login.astro               — sign in
+    account.astro            — logged-in account: Profile / Orders (with Reorder) / Rewards tabs
+    login.astro               — sign in + forgot-password request
     signup.astro               — create account (100pt signup bonus)
   styles/
-    global.css              — ALL design tokens live here (colors, type, spacing, radii, shadows). Change the brand look by editing this file only — components consume var(--token-name), nothing is hardcoded inline except one-off gradients that reference the same tokens.
+    global.css              — ALL design tokens live here. Change the brand look by editing this
+                              file only — components consume var(--token-name), nothing hardcoded.
 ```
 
 ## Design system
 
-All colors/fonts/spacing are CSS custom properties in `src/styles/global.css`, sampled from the client's real Instagram content (not invented — see `../PLAN.md` for the research notes and the canvas-based color-extraction pass that produced them). To retheme:
+Editorial style (client-approved reference: `miampatisserie.com`) — muted dusty-rose/cream palette, sharp corners, unified Cormorant Garamond/EB Garamond. All tokens in `src/styles/global.css`. To retheme:
 
 1. Edit the `:root` block in `global.css` — every component reads from these tokens.
 2. Don't hardcode hex values in component `<style>` blocks; add a token instead if you need a new color.
 
 ## Ordering flow (current state)
 
-There is no checkout/payment backend yet. The BYOP wizard and product cards build a prefilled WhatsApp message and hand off to the client's existing `wa.link/sngzs9` ordering channel — this is intentional (see `../PLAN.md` build order: webhook/BOS wiring is a later phase, not blocking the website launch).
+Real multi-item cart (`public/cart.js`) — customers can add several items across pages, adjust quantities, and check out with one combined WhatsApp message. No payment backend yet (waiting on Razorpay keys), so checkout ends at WhatsApp rather than a real payment — swap that step out once keys are added; `code.gs`'s order-creation and webhook logic is already built for it.
 
 ## Where to look next
 
-- `../PLAN.md` — full scope decisions, phased build order, BOS/backend integration plan, what's confirmed vs. still open with the client.
-- `CLAUDE.md` in this folder — architecture rationale and current known gaps (Apps Script backend, deploy target).
+- `../PLAN.md` — full scope decisions, phased build order, BOS/backend integration plan (one directory up — planning doc, not deployed with the site).
+- `CLAUDE.md` in this folder — architecture rationale and current known gaps.
