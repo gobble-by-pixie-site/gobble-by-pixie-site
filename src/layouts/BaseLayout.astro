@@ -337,28 +337,23 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     }
     .wa-fab-face {
       position: relative;
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 10px 28px -6px rgba(140, 60, 10, 0.45), 0 0 0 4px rgba(255, 251, 242, 0.9);
+      width: 76px;
+      height: 76px;
       display: flex;
       align-items: center;
       justify-content: center;
       animation: wa-bob 2.4s ease-in-out infinite;
       cursor: pointer;
-      overflow: hidden;
     }
     .wa-fab-jar {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      object-position: center 30%;
-      transform: scale(1.6);
+      object-fit: contain;
+      filter: drop-shadow(0 10px 16px rgba(60, 40, 20, 0.35));
     }
     .wa-fab-chat-badge {
       position: absolute;
-      bottom: -2px;
+      bottom: 2px;
       right: -2px;
       width: 22px;
       height: 22px;
@@ -413,7 +408,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       .wa-fab { right: 1rem; bottom: 1rem; }
       body:has(.mobile-sticky-bar) .wa-fab { bottom: 5rem; }
       .wa-fab-bubble { display: none; }
-      .wa-fab-face { width: 52px; height: 52px; }
+      .wa-fab-face { width: 58px; height: 58px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
