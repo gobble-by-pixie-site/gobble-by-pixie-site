@@ -44,15 +44,12 @@ const WA = 'https://wa.link/sngzs9';
 
     .category-subnav {
       position: sticky;
-      top: 117px;
+      top: var(--header-height, 117px); /* set by BaseLayout's updateHeaderHeightVar() script */
       z-index: 90;
       background: rgba(247, 240, 231, 0.95);
       backdrop-filter: blur(12px);
       padding: var(--space-sm) 0;
       border-bottom: 1px solid var(--border-hairline);
-    }
-    @media (max-width: 820px) {
-      .category-subnav { top: 82px; }
     }
     .subnav-links {
       display: flex;

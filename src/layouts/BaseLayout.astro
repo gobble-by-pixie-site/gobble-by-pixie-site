@@ -27,6 +27,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />
@@ -569,6 +570,19 @@ const ogImage = SITE_URL + '/og-image.jpg';
   </style>
 
   <script>
+    // Exposes the real, current header height as --header-height so any page
+    // (e.g. the /menu/* sticky category sub-nav) can offset against it
+    // without hardcoding a pixel value that goes stale the next time the
+    // header's own height changes — this exact offset drifted out of sync
+    // three separate times before switching to this.
+    function updateHeaderHeightVar() {
+      const header = document.querySelector('.site-header');
+      if (!header) return;
+      document.documentElement.style.setProperty('--header-height', header.offsetHeight + 'px');
+    }
+    updateHeaderHeightVar();
+    window.addEventListener('resize', updateHeaderHeightVar);
+
     const toggle = document.getElementById('mobileMenuToggle');
     const drawer = document.getElementById('mobileDrawer');
 
