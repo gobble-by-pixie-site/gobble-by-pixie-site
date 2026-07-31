@@ -1,0 +1,136 @@
+---
+// Shared Quick View modal — used by any page that renders ProductCard.astro
+// with a full product grid (currently only the per-category menu pages).
+// Handles both real "Add to Cart" (priced items) and "Enquire on WhatsApp"
+// (unpriced/"price on request" items) — unpriced items never enter the cart,
+// since the cart's GST breakdown assumes every line has a real price.
+const WA = 'https://wa.link/sngzs9';
+---
+<div class="modal-backdrop" id="productModalBackdrop" style="display:none;">
+  <div class="modal-card card">
+    <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Close product view">&times;</button>
+    <div class="modal-grid">
+      <div class="modal-media" id="modalMedia"></div>
+      <div class="modal-info">
+        <div class="modal-badges" id="modalBadges"></div>
+        <h2 id="modalTitle" class="modal-title"></h2>
+        <p id="modalSubcat" class="modal-subcat"></p>
+        <p id="modalWeight" class="modal-weight"></p>
+        <p id="modalDesc" class="modal-desc"></p>
+        <div class="modal-footer">
+          <span id="modalPrice" class="modal-price"></span>
+          <button type="button" id="modalAddToCartBtn" class="btn btn-primary modal-wa-btn">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px); z-index: 300; display: flex;
+    align-items: center; justify-content: center; padding: var(--space-md);
+  }
+  .modal-card {
+    width: 100%; max-width: 720px; background: #ffffff; padding: var(--space-lg);
+    position: relative; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-close {
+    position: absolute; top: 15px; right: 15px; background: none; border: none;
+    font-size: 1.8rem; line-height: 1; cursor: pointer; color: var(--text-muted);
+  }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--space-lg); align-items: start; }
+  .modal-media { height: 260px; border-radius: var(--radius-sm); background-size: contain; background-repeat: no-repeat; background-position: center; background-color: var(--bg-parchment-alt); display: flex; align-items: center; justify-content: center; }
+  .modal-info { display: flex; flex-direction: column; }
+  .modal-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+  .modal-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .modal-subcat { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.3rem; }
+  .modal-weight { font-size: 0.88rem; font-weight: 600; color: var(--text-espresso); margin-bottom: 0.6rem; }
+  .modal-desc { font-size: 0.95rem; color: var(--text-espresso-soft); margin-bottom: var(--space-md); line-height: 1.5; }
+  .modal-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-hairline); padding-top: var(--space-sm); }
+  .modal-price { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-espresso); }
+
+  @media (max-width: 900px) {
+    .modal-grid { grid-template-columns: 1fr; }
+    .modal-media { height: 200px; }
+  }
+</style>
+
+<script is:inline define:vars={{ WA }}>
+  (function () {
+    const backdrop = document.getElementById('productModalBackdrop');
+    const closeBtn = document.getElementById('modalCloseBtn');
+
+    function openModal(card) {
+      const name = card.dataset.name;
+      const hasPrice = !!card.dataset.price;
+      const price = hasPrice ? `₹${card.dataset.price}` : 'Price on request';
+      const weight = card.dataset.weight ? `Net Weight: ${card.dataset.weight}` : '';
+      const desc = card.dataset.desc || 'Handcrafted fresh in small batches using premium natural ingredients.';
+      const image = card.dataset.image;
+      const subcat = card.dataset.subcategory;
+      const fulfillment = card.dataset.fulfillment;
+      const dietary = (card.dataset.dietary || '').split(',').filter(Boolean);
+
+      document.getElementById('modalTitle').textContent = name;
+      document.getElementById('modalSubcat').textContent = subcat ? `Category: ${card.dataset.category} • ${subcat}` : `Category: ${card.dataset.category}`;
+      document.getElementById('modalWeight').textContent = weight;
+      document.getElementById('modalDesc').textContent = desc;
+      document.getElementById('modalPrice').textContent = price;
+
+      const mediaEl = document.getElementById('modalMedia');
+      if (image) {
+        mediaEl.style.backgroundImage = `url(${image})`;
+        mediaEl.innerHTML = '';
+      } else {
+        mediaEl.style.backgroundImage = 'none';
+        mediaEl.innerHTML = '<div style="text-align:center;"><span style="font-size:3rem;opacity:0.3">🧀</span><p style="margin:0;opacity:.6;font-size:0.85rem;font-weight:600;">Photo coming soon</p></div>';
+      }
+
+      const badgesEl = document.getElementById('modalBadges');
+      badgesEl.innerHTML = dietary.map((d) => `<span class="badge badge-${d.toLowerCase()}">${d}</span>`).join('') +
+        `<span class="badge badge-dispatch">${fulfillment}</span>`;
+
+      const addBtn = document.getElementById('modalAddToCartBtn');
+      const isOutOfStock = card.dataset.instock === 'false';
+      addBtn.disabled = isOutOfStock;
+      addBtn.textContent = isOutOfStock ? 'Sold Out' : (hasPrice ? 'Add to Cart' : 'Enquire on WhatsApp');
+      addBtn.onclick = () => {
+        if (!hasPrice) {
+          // Price-on-request items never enter the cart — the cart's GST
+          // breakdown assumes every line has a real price. Send a direct
+          // WhatsApp enquiry instead.
+          const text = `Hi! I'd like to enquire about ${name} — could you share pricing and availability?`;
+          window.open(WA + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+          backdrop.style.display = 'none';
+          return;
+        }
+        if (!window.GobbleCart) return;
+        window.GobbleCart.add({
+          id: card.dataset.id,
+          name: name,
+          price: Number(card.dataset.price),
+          qty: 1,
+          image: card.dataset.image || '',
+        });
+        addBtn.textContent = 'Added to Cart ✓';
+        setTimeout(() => {
+          backdrop.style.display = 'none';
+          document.getElementById('cartToggle')?.click();
+        }, 500);
+      };
+
+      backdrop.style.display = 'flex';
+    }
+
+    document.querySelectorAll('.js-product-card').forEach((card) => {
+      card.addEventListener('click', () => openModal(card));
+    });
+
+    closeBtn?.addEventListener('click', () => { backdrop.style.display = 'none'; });
+    backdrop?.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.style.display = 'none'; });
+  })();
+</script>

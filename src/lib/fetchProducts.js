@@ -159,13 +159,15 @@ export function getCategories(products) {
   return [...new Set(products.map(p => p.category))];
 }
 
-export function getSubcategories(products, category) {
-  return [...new Set(products.filter(p => p.category === category && p.subcategory).map(p => p.subcategory))];
-}
-
 export function formatPrice(amount) {
   if (amount === null || amount === undefined || amount === 0) return 'Price on request';
   return new Intl.NumberFormat('en-IN', {
     style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0,
   }).format(amount);
+}
+
+// Shared category-name -> URL-slug conversion, used by BaseLayout's Menu
+// dropdown and every /menu/* page so links always agree on the same slug.
+export function slugify(text) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 }

@@ -2,7 +2,7 @@
 import '../styles/global.css';
 import GlutenFreeIcon from '../components/GlutenFreeIcon.astro';
 import { fetchSiteContent } from '../lib/fetchSiteContent.js';
-import { fetchProducts, getCategories } from '../lib/fetchProducts.js';
+import { fetchProducts, getCategories, slugify } from '../lib/fetchProducts.js';
 
 const content = await fetchSiteContent();
 
@@ -12,7 +12,6 @@ const content = await fetchSiteContent();
 // same pattern theclosetstory.com/tcs-store uses for its Categories dropdown.
 const navProducts = await fetchProducts();
 const menuCategories = getCategories(navProducts);
-const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
 const { title = 'Gobble by Pixie — Artisanal Cream Cheese & Cheese Platters', description = `${content.tagline}. Gluten-free, keto-friendly artisanal cream cheese and handcrafted grazing boards, delivered across Delhi NCR.` } = Astro.props;
 
@@ -62,8 +61,8 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
         <div class="dropdown">
           <a href="/menu" class:list={['dropdown-toggle', { active: isActive('/menu') }]}>Menu</a>
           <div class="dropdown-menu">
-            {menuCategories.map((cat) => <a href={`/menu#${slugify(cat)}`}>{cat}</a>)}
-            <a href="/menu#grazing-tables">Grazing Tables</a>
+            {menuCategories.map((cat) => <a href={`/menu/${slugify(cat)}`}>{cat}</a>)}
+            <a href="/menu/grazing-tables">Grazing Tables</a>
           </div>
         </div>
         <a href="/byop" class:list={['nav-byop', { active: isActive('/byop') }]}>#BYOP Platter Builder</a>

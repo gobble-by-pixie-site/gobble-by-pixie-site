@@ -64,17 +64,25 @@ src/
     BaseLayout.astro       — header (nav, cart icon, account link), cart drawer, mobile drawer,
                               footer (incl. FSSAI/GSTIN), floating WhatsApp button, global <head>
   components/
-    ProductCard.astro      — product card used on home + menu; wires "Add to Order" to the cart
-    GlutenFreeIcon.astro   — generic GF icon (not a certification mark — product isn't certified)
+    ProductCard.astro          — product card used on home + menu category pages; wires "Add to
+                                  Cart" for priced items, "Enquire on WhatsApp" for unpriced ones
+    ProductQuickViewModal.astro — shared Quick View modal, included by each /menu/[category] page
+    GlutenFreeIcon.astro       — generic GF icon (not a certification mark — product isn't certified)
   lib/
     fetchProducts.js       — Sheet-CSV fetch + parse + fallback data + formatPrice(); also
-                              exports convertImageUrl() (Drive share link → thumbnail URL),
-                              reused by fetchEvents.js
+                              exports convertImageUrl() (Drive share link → thumbnail URL,
+                              reused by fetchEvents.js) and slugify() (category name → URL
+                              slug, reused by BaseLayout.astro's Menu dropdown and every
+                              /menu/* page so the two always agree)
     fetchSiteContent.js    — SiteContent tab fetch + parse, falls back to hardcoded copy
     fetchEvents.js         — Events tab fetch + parse, filters to published=TRUE rows only
   pages/
     index.astro            — homepage
-    menu.astro              — full catalog, category sections + sticky sub-nav, Quick View modal
+    menu.astro              — category hub: tiles linking to /menu/[category], not a product list
+    menu/
+      [category].astro      — one page per live category (getStaticPaths), sticky cross-category
+                               sub-nav, product grid + Quick View modal
+      grazing-tables.astro  — static "book a grazing table" page, same sub-nav as category pages
     byop.astro              — "Build Your Own Platter" 5-step wizard, adds to cart on completion
     events.astro             — event photo/write-up gallery, reads the Events tab
     about.astro              — brand story

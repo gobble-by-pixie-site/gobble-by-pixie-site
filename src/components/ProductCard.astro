@@ -57,21 +57,32 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
 </article>
 
 <script>
-  // Cards on pages with the Quick View modal (menu.astro) let that page's own
-  // script own the click. Cards on pages without one (e.g. homepage
-  // best-sellers) add straight to cart instead, so the button always does
-  // something rather than silently no-op.
+  // Cards on pages with the Quick View modal (the per-category menu pages)
+  // let that page's own script own the click. Cards on pages without one
+  // (e.g. homepage best-sellers) add straight to cart instead, so the
+  // button always does something rather than silently no-op.
+  const WA_LINK = 'https://wa.link/sngzs9';
+
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.js-quick-view-btn');
     if (!btn) return;
-    if (document.getElementById('productModalBackdrop')) return; // menu.astro handles this itself
+    if (document.getElementById('productModalBackdrop')) return; // category page handles this itself
 
     const card = btn.closest('.js-product-card');
-    if (!card || !window.GobbleCart) return;
-    const price = card.dataset.price ? Number(card.dataset.price) : null;
-    window.GobbleCart.add({ id: card.dataset.id, name: card.dataset.name, price, qty: 1, image: card.dataset.image || '' });
+    if (!card) return;
+
+    if (!card.dataset.price) {
+      // Price-on-request items never enter the cart — send a direct
+      // WhatsApp enquiry instead, same as the Quick View modal does.
+      const text = `Hi! I'd like to enquire about ${card.dataset.name} — could you share pricing and availability?`;
+      window.open(WA_LINK + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+      return;
+    }
+
+    if (!window.GobbleCart) return;
+    window.GobbleCart.add({ id: card.dataset.id, name: card.dataset.name, price: Number(card.dataset.price), qty: 1, image: card.dataset.image || '' });
     const original = btn.textContent;
-    btn.textContent = 'Added! ✓';
+    btn.textContent = 'Added to Cart ✓';
     setTimeout(() => { btn.textContent = original; }, 1200);
   });
 </script>
