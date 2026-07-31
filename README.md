@@ -59,6 +59,14 @@ public/
   Logos/                   — real brand logo, red/black/white (black variant in use)
   Cover photo.JPG          — hero image
   Green Jar.png            — used in the floating WhatsApp contact button
+  favicon-32.png, favicon-16.png, apple-touch-icon.png — generated from the
+                              logo's 'g' mark cropped out of the wordmark
+                              (public/Logos/ is too wide/detailed for a small
+                              tab icon as-is), regenerate via sharp if the
+                              logo ever changes — see git history for the
+                              crop/composite script used
+  og-image.jpg             — 1200×630 social-share preview, full wordmark
+                              centered on the brand's parchment background
 src/
   layouts/
     BaseLayout.astro       — header (nav, cart icon, account link), cart drawer, mobile drawer,

@@ -13,10 +13,14 @@ const content = await fetchSiteContent();
 const navProducts = await fetchProducts();
 const menuCategories = getCategories(navProducts);
 
+const SITE_URL = 'https://gobblebypixie.com';
+
 const { title = 'Gobble by Pixie — Artisanal Cream Cheese & Cheese Platters', description = `${content.tagline}. Gluten-free, keto-friendly artisanal cream cheese and handcrafted grazing boards, delivered across Delhi NCR.` } = Astro.props;
 
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+const canonicalUrl = SITE_URL + path;
+const ogImage = SITE_URL + '/og-image.jpg';
 ---
 <!doctype html>
 <html lang="en">
@@ -25,7 +29,28 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
   <meta name="description" content={description} />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="canonical" href={canonicalUrl} />
+
+  <!-- Favicon — generated from the Gobble logo's 'g' mark, public/Logos/ is
+       the raw wordmark (too wide/detailed for a small tab icon as-is) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+  <!-- Open Graph / social share preview -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Gobble by Pixie" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
+
   <script is:inline src="/cart.js"></script>
 </head>
 <body>
