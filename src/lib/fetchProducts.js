@@ -69,7 +69,7 @@ const FALLBACK_PRODUCTS = [
   })),
 ];
 
-function convertImageUrl(url) {
+export function convertImageUrl(url) {
   if (!url) return url;
   url = url.trim();
   let fileId = null;

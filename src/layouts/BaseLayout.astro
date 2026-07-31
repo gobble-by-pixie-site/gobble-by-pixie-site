@@ -2,8 +2,17 @@
 import '../styles/global.css';
 import GlutenFreeIcon from '../components/GlutenFreeIcon.astro';
 import { fetchSiteContent } from '../lib/fetchSiteContent.js';
+import { fetchProducts, getCategories } from '../lib/fetchProducts.js';
 
 const content = await fetchSiteContent();
+
+// Menu dropdown categories are fetched live here (not hardcoded) so that adding
+// a category row to the Products sheet makes it show up in the header nav on
+// the next rebuild, same as it already does in menu.astro's own sub-nav —
+// same pattern theclosetstory.com/tcs-store uses for its Categories dropdown.
+const navProducts = await fetchProducts();
+const menuCategories = getCategories(navProducts);
+const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
 const { title = 'Gobble by Pixie — Artisanal Cream Cheese & Cheese Platters', description = `${content.tagline}. Gluten-free, keto-friendly artisanal cream cheese and handcrafted grazing boards, delivered across Delhi NCR.` } = Astro.props;
 
@@ -28,30 +37,40 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   </div>
 
   <header class="site-header">
-    <div class="container header-inner">
+    <div class="container header-top">
       <a href="/" class="logo">
         <img src="/Logos/Gobble Logo-TM-Black.png" alt="Gobble by Pixie" class="logo-img" />
       </a>
 
-      <nav class="main-nav" id="desktopNav">
-        <a href="/menu" class:list={{ active: isActive('/menu') }}>Menu</a>
-        <a href="/byop" class:list={['nav-byop', { active: isActive('/byop') }]}>#BYOP Platter Builder</a>
-        <a href="/about" class:list={{ active: isActive('/about') }}>Our Story</a>
-        <a href="/faq" class:list={{ active: isActive('/faq') }}>Delivery & FAQ</a>
-      </nav>
-
       <div class="header-actions">
-        <a href="/account" class:list={['account-link', { active: isActive('/account') }]} aria-label="My Account">Account</a>
+        <a href="/account" class:list={['account-icon-link', { active: isActive('/account') }]} aria-label="My Account">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
         <button class="cart-toggle" id="cartToggle" aria-label="View cart">
-          🛒 <span class="cart-count" id="cartCount" style="display:none;">0</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shopping-bag"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span class="cart-count" id="cartCount" style="display:none;">0</span>
         </button>
-        <a href="/menu" class="btn btn-primary nav-cta">Order Now</a>
         <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
           <span class="hamburger-bar"></span>
           <span class="hamburger-bar"></span>
           <span class="hamburger-bar"></span>
         </button>
       </div>
+    </div>
+    <div class="container header-bottom">
+      <nav class="main-nav" id="desktopNav">
+        <div class="dropdown">
+          <a href="/menu" class:list={['dropdown-toggle', { active: isActive('/menu') }]}>Menu</a>
+          <div class="dropdown-menu">
+            {menuCategories.map((cat) => <a href={`/menu#${slugify(cat)}`}>{cat}</a>)}
+            <a href="/menu#grazing-tables">Grazing Tables</a>
+          </div>
+        </div>
+        <a href="/byop" class:list={['nav-byop', { active: isActive('/byop') }]}>#BYOP Platter Builder</a>
+        <a href="/events" class:list={{ active: isActive('/events') }}>Events</a>
+        <a href="/about" class:list={{ active: isActive('/about') }}>Our Story</a>
+        <a href="/faq" class:list={{ active: isActive('/faq') }}>Delivery & FAQ</a>
+      </nav>
     </div>
   </header>
 
@@ -64,10 +83,13 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       </div>
       <div class="cart-items" id="cartItems"></div>
       <div class="cart-footer">
-        <div class="cart-total-row" id="cartTotalRow" style="display:none;">
-          <span>Estimated Total</span>
-          <span id="cartTotalAmount">₹0</span>
+        <div class="cart-summary" id="cartSummary" style="display:none;">
+          <div class="cart-summary-row"><span>Taxable Value</span><span id="cartTaxableValue">₹0</span></div>
+          <div class="cart-summary-row"><span>CGST (2.5%)</span><span id="cartCgst">₹0</span></div>
+          <div class="cart-summary-row"><span>SGST (2.5%)</span><span id="cartSgst">₹0</span></div>
+          <div class="cart-summary-row cart-summary-total"><span>Total (incl. GST)</span><span id="cartTotalAmount">₹0</span></div>
         </div>
+        <p class="cart-unpriced-note" id="cartUnpricedNote" style="display:none;">Some items are priced on request — final total confirmed on WhatsApp.</p>
         <a href="#" id="cartCheckoutBtn" target="_blank" rel="noopener" class="btn btn-primary cart-checkout-btn">Checkout via WhatsApp 💬</a>
       </div>
     </div>
@@ -81,6 +103,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     <nav class="mobile-nav">
       <a href="/menu" class:list={['mobile-nav-item', { active: isActive('/menu') }]}>Menu</a>
       <a href="/byop" class:list={['mobile-nav-item', 'mobile-nav-byop', { active: isActive('/byop') }]}>✨ Build Your Platter (#BYOP)</a>
+      <a href="/events" class:list={['mobile-nav-item', { active: isActive('/events') }]}>Events</a>
       <a href="/about" class:list={['mobile-nav-item', { active: isActive('/about') }]}>Our Story</a>
       <a href="/faq" class:list={['mobile-nav-item', { active: isActive('/faq') }]}>Delivery & FAQ</a>
       <a href="/account" class:list={['mobile-nav-item', { active: isActive('/account') }]}>My Account / Rewards</a>
@@ -132,7 +155,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     </div>
   </footer>
 
-  <!-- Floating WhatsApp contact button — real product jar, bounces gently, with a chat badge so it clearly reads as "contact us" -->
+  <!-- Floating WhatsApp contact button — real product jar, bounces gently, with a WhatsApp badge so it clearly reads as "contact us" -->
   <a
     href="https://wa.link/sngzs9"
     target="_blank"
@@ -140,17 +163,18 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     class="wa-fab"
     aria-label="Chat with Gobble by Pixie on WhatsApp"
   >
-    <span class="wa-fab-ping"></span>
-    <span class="wa-fab-bubble">Chat with us! 💬</span>
     <span class="wa-fab-face">
+      <span class="wa-fab-ping"></span>
       <img src="/Green Jar.png" alt="" class="wa-fab-jar" />
-      <span class="wa-fab-chat-badge">💬</span>
+      <span class="wa-fab-chat-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.13c-.24.68-1.4 1.3-1.93 1.38-.5.08-1.12.11-1.8-.11-.42-.14-.95-.32-1.64-.62-2.88-1.24-4.76-4.14-4.9-4.33-.14-.19-1.17-1.56-1.17-2.98 0-1.41.74-2.11 1-2.4.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.57.81 1.98.88 2.12.07.14.12.31.02.5-.09.19-.14.31-.28.48-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.21 1.37.28.14.44.12.6-.07.16-.19.69-.8.87-1.08.19-.28.37-.23.62-.14.26.09 1.63.77 1.91.91.28.14.47.21.54.33.07.12.07.68-.17 1.36z"/></svg>
+      </span>
     </span>
   </a>
 
   <style>
     .fulfillment-banner {
-      background: linear-gradient(90deg, var(--accent-berry-deep), var(--accent-coral-deep) 35%, var(--accent-gold-deep) 70%, var(--accent-teal-deep));
+      background: var(--text-espresso);
       color: #ffffff;
       text-align: center;
       font-size: 0.8rem;
@@ -174,16 +198,22 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       top: 0;
       z-index: 100;
     }
-    .header-inner {
+    .header-top {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding-top: var(--space-sm);
+      padding-bottom: var(--space-sm);
+      height: 92px;
+    }
+    .header-bottom {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding-top: var(--space-xs);
-      padding-bottom: var(--space-xs);
-      height: 68px;
+      justify-content: center;
+      padding-bottom: 0.8rem;
     }
-    .logo { display: flex; align-items: center; }
-    .logo-img { height: 38px; width: auto; display: block; }
+    .logo { grid-column: 2; justify-self: center; display: flex; align-items: center; }
+    .logo-img { height: 68px; width: auto; display: block; }
     .footer-brand .logo-img { height: 44px; }
 
     .main-nav {
@@ -223,23 +253,69 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     .nav-byop.active { background: var(--accent-gold); color: #ffffff !important; }
     .nav-byop.active::after { display: none; }
 
-    .header-actions { display: flex; align-items: center; gap: 0.75rem; }
-    .account-link {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--accent-teal-deep);
+    /* Dropdown */
+    .dropdown {
+      position: relative;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--bg-parchment);
+      border: 1px solid var(--border-hairline);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-ambient-lg);
+      padding: 0.5rem 0;
+      min-width: 180px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      z-index: 100;
+    }
+    .dropdown:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+    .dropdown-menu a {
+      display: block;
       padding: 0.5rem 1rem;
-      border: 1.5px solid var(--accent-teal);
-      border-radius: var(--radius-pill);
+      font-size: 0.85rem;
+      color: var(--text-espresso-soft);
+      white-space: nowrap;
+    }
+    .dropdown-menu a::after { display: none; }
+    .dropdown-menu a:hover {
+      background: var(--bg-parchment-alt);
+      color: var(--accent-berry);
+    }
+
+    .header-actions { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 0.75rem; }
+    .account-icon-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      color: var(--text-espresso-soft);
+      border-radius: 50%;
       transition: all 0.2s ease;
     }
-    .account-link:hover, .account-link.active { background: var(--accent-teal); color: #ffffff; }
-    .nav-cta { padding: 0.55rem 1.35rem; font-size: 0.85rem; }
+    .account-icon-link:hover, .account-icon-link.active {
+      color: var(--accent-berry);
+      background: rgba(161, 95, 96, 0.08);
+    }
 
     /* ── Cart toggle + drawer ── */
     .cart-toggle {
-      position: relative; background: none; border: 1.5px solid var(--border-hairline); border-radius: var(--radius-pill);
-      padding: 0.5rem 0.8rem; font-size: 1.05rem; cursor: pointer; line-height: 1;
+      position: relative; background: none; border: none; border-radius: 50%;
+      width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+      color: var(--text-espresso-soft); cursor: pointer; transition: all 0.2s ease;
+    }
+    .cart-toggle:hover {
+      color: var(--accent-berry);
+      background: rgba(161, 95, 96, 0.08);
     }
     .cart-count {
       position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px;
@@ -265,25 +341,22 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     }
     .cart-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-espresso); line-height: 1; }
     .cart-items { flex: 1; overflow-y: auto; padding: var(--space-sm) var(--space-md); }
-    .cart-empty { color: var(--text-muted); font-size: 0.92rem; text-align: center; padding: var(--space-xl) 0; }
-    .cart-empty a { color: var(--accent-teal-deep); font-weight: 600; }
-
-    .cart-item {
-      display: flex; align-items: center; gap: 0.6rem; padding: var(--space-sm) 0; border-bottom: 1px solid var(--border-hairline);
-    }
-    .cart-item-info { flex: 1; min-width: 0; }
-    .cart-item-name { font-weight: 600; font-size: 0.92rem; margin: 0; }
-    .cart-item-note { font-size: 0.78rem; color: var(--text-muted); margin: 0.15rem 0 0; }
-    .cart-item-price { font-size: 0.85rem; color: var(--accent-gold-deep); margin: 0.15rem 0 0; }
-    .cart-item-qty { display: flex; align-items: center; gap: 0.4rem; }
-    .qty-btn {
-      width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border-hairline); background: #fff;
-      cursor: pointer; font-size: 0.9rem; line-height: 1;
-    }
-    .cart-item-remove { background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; }
+    /* .cart-item* / .cart-empty / .qty-btn rules live in global.css, not here —
+       these elements are injected via innerHTML at runtime (renderCart() in the
+       script below), so they never get Astro's scoped data-astro-cid attribute
+       and scoped styles here would silently never match them. */
 
     .cart-footer { padding: var(--space-md); border-top: 1px solid var(--border-hairline); }
-    .cart-total-row { display: flex; justify-content: space-between; font-weight: 700; font-family: var(--font-display); font-size: 1.15rem; margin-bottom: var(--space-sm); }
+    .cart-summary { margin-bottom: var(--space-sm); }
+    .cart-summary-row {
+      display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-espresso-soft);
+      padding: 0.2rem 0;
+    }
+    .cart-summary-total {
+      font-weight: 700; font-family: var(--font-display); font-size: 1.15rem; color: var(--text-espresso);
+      border-top: 1px solid var(--border-hairline); margin-top: 0.35rem; padding-top: 0.5rem;
+    }
+    .cart-unpriced-note { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 var(--space-sm); text-align: center; }
     .cart-checkout-btn { width: 100%; text-align: center; }
 
     @media (max-width: 720px) {
@@ -404,9 +477,6 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       right: 1.4rem;
       bottom: 1.4rem;
       z-index: 200;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
     }
     .wa-fab-face {
       position: relative;
@@ -428,18 +498,21 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       position: absolute;
       bottom: 2px;
       right: -2px;
-      width: 22px;
-      height: 22px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
-      background: var(--accent-teal);
+      background: #25D366; /* WhatsApp brand green, not a site token — real 3rd-party brand color */
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.75rem;
       box-shadow: 0 0 0 2px #fff;
+      z-index: 1;
     }
 
+    /* ping ring sits inside .wa-fab-face so it wraps the 76px jar circle,
+       not the old bubble+jar row (fixed 2026-07-31 — was inset:0 on a
+       sibling of the bubble, so it stretched across the whole flex row) */
     .wa-fab-ping {
       position: absolute;
       inset: 0;
@@ -449,23 +522,6 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       animation: wa-ping 2.4s ease-out infinite;
     }
 
-    .wa-fab-bubble {
-      background: #fff;
-      color: var(--text-espresso);
-      font-family: var(--font-body);
-      font-weight: 700;
-      font-size: 0.82rem;
-      padding: 0.55rem 0.9rem;
-      border-radius: var(--radius-pill);
-      box-shadow: var(--shadow-ambient);
-      border: 1px solid var(--border-hairline);
-      white-space: nowrap;
-      opacity: 1;
-      transform: translateX(0) scale(1);
-      transition: transform 0.2s ease;
-      pointer-events: none;
-    }
-    .wa-fab:hover .wa-fab-bubble { transform: scale(1.06); }
     .wa-fab:hover .wa-fab-face { animation-play-state: paused; transform: scale(1.08) rotate(-4deg); }
 
     @keyframes wa-bob {
@@ -480,7 +536,6 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     @media (max-width: 720px) {
       .wa-fab { right: 1rem; bottom: 1rem; }
       body:has(.mobile-sticky-bar) .wa-fab { bottom: 5rem; }
-      .wa-fab-bubble { display: none; }
       .wa-fab-face { width: 58px; height: 58px; }
     }
 
@@ -513,8 +568,12 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     const cartClose = document.getElementById('cartClose');
     const cartItemsEl = document.getElementById('cartItems');
     const cartCountEl = document.getElementById('cartCount');
-    const cartTotalRow = document.getElementById('cartTotalRow');
+    const cartSummary = document.getElementById('cartSummary');
+    const cartTaxableValue = document.getElementById('cartTaxableValue');
+    const cartCgst = document.getElementById('cartCgst');
+    const cartSgst = document.getElementById('cartSgst');
     const cartTotalAmount = document.getElementById('cartTotalAmount');
+    const cartUnpricedNote = document.getElementById('cartUnpricedNote');
     const cartCheckoutBtn = document.getElementById('cartCheckoutBtn');
 
     function openCart() { cartDrawer?.classList.add('open'); cartBackdrop?.classList.add('open'); }
@@ -523,6 +582,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     cartToggle?.addEventListener('click', openCart);
     cartClose?.addEventListener('click', closeCart);
     cartBackdrop?.addEventListener('click', closeCart);
+
+    function escapeHtml(str) {
+      return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
 
     function renderCart(items) {
       const count = items.reduce((s, i) => s + (i.qty || 1), 0);
@@ -535,33 +598,52 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
 
       if (!items.length) {
         cartItemsEl.innerHTML = '<p class="cart-empty">Your cart is empty. Browse the <a href="/menu">menu</a> to get started!</p>';
-        cartTotalRow.style.display = 'none';
+        cartSummary.style.display = 'none';
+        cartUnpricedNote.style.display = 'none';
         if (cartCheckoutBtn) { cartCheckoutBtn.style.pointerEvents = 'none'; cartCheckoutBtn.style.opacity = '0.5'; }
         return;
       }
       if (cartCheckoutBtn) { cartCheckoutBtn.style.pointerEvents = ''; cartCheckoutBtn.style.opacity = ''; }
 
       cartItemsEl.innerHTML = items.map((item, idx) => {
-        const priceStr = typeof item.price === 'number' ? ('₹' + (item.price * item.qty).toLocaleString('en-IN')) : 'Price on request';
+        const unitPriceStr = typeof item.price === 'number' ? ('₹' + item.price.toLocaleString('en-IN') + ' each') : 'Price on request';
+        const lineTotalStr = typeof item.price === 'number' ? ('₹' + (item.price * item.qty).toLocaleString('en-IN')) : '';
+        const thumb = item.image
+          ? '<div class="cart-item-thumb" style="background-image:url(' + escapeHtml(item.image) + ')"></div>'
+          : '<div class="cart-item-thumb cart-item-thumb-placeholder">🧀</div>';
         return '<div class="cart-item">'
-          + '<div class="cart-item-info"><p class="cart-item-name">' + item.name + '</p>'
-          + (item.note ? '<p class="cart-item-note">' + item.note + '</p>' : '')
-          + '<p class="cart-item-price">' + priceStr + '</p></div>'
-          + '<div class="cart-item-qty">'
-          + '<button class="qty-btn" data-idx="' + idx + '" data-action="dec">−</button>'
-          + '<span>' + item.qty + '</span>'
-          + '<button class="qty-btn" data-idx="' + idx + '" data-action="inc">+</button>'
+          + thumb
+          + '<div class="cart-item-info">'
+          + '<p class="cart-item-name">' + escapeHtml(item.name) + '</p>'
+          + (item.note ? '<p class="cart-item-note">' + escapeHtml(item.note) + '</p>' : '')
+          + '<div class="cart-item-price-row">'
+          + '<span class="cart-item-unit-price">' + unitPriceStr + '</span>'
+          + (lineTotalStr ? '<span class="cart-item-line-total">' + lineTotalStr + '</span>' : '')
           + '</div>'
-          + '<button class="cart-item-remove" data-idx="' + idx + '" aria-label="Remove">&times;</button>'
+          + '<div class="cart-item-controls">'
+          + '<div class="cart-item-qty">'
+          + '<button class="qty-btn" data-idx="' + idx + '" data-action="dec" aria-label="Decrease quantity">−</button>'
+          + '<span>' + item.qty + '</span>'
+          + '<button class="qty-btn" data-idx="' + idx + '" data-action="inc" aria-label="Increase quantity">+</button>'
+          + '</div>'
+          + '<button class="cart-item-remove" data-idx="' + idx + '" aria-label="Remove item">&times;</button>'
+          + '</div>'
+          + '</div>'
           + '</div>';
       }).join('');
 
       const hasUnpriced = window.GobbleCart.hasUnpricedItems();
       if (hasUnpriced) {
-        cartTotalRow.style.display = 'none';
+        cartSummary.style.display = 'none';
+        cartUnpricedNote.style.display = 'block';
       } else {
-        cartTotalRow.style.display = 'flex';
-        cartTotalAmount.textContent = '₹' + window.GobbleCart.total().toLocaleString('en-IN');
+        const gst = window.GobbleCart.gstBreakdown();
+        cartSummary.style.display = 'block';
+        cartUnpricedNote.style.display = 'none';
+        cartTaxableValue.textContent = '₹' + gst.taxableValue.toLocaleString('en-IN');
+        cartCgst.textContent = '₹' + gst.cgst.toLocaleString('en-IN');
+        cartSgst.textContent = '₹' + gst.sgst.toLocaleString('en-IN');
+        cartTotalAmount.textContent = '₹' + gst.total.toLocaleString('en-IN');
       }
 
       if (cartCheckoutBtn) cartCheckoutBtn.href = window.GobbleCart.checkoutWhatsAppUrl();

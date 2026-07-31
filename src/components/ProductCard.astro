@@ -69,7 +69,7 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
     const card = btn.closest('.js-product-card');
     if (!card || !window.GobbleCart) return;
     const price = card.dataset.price ? Number(card.dataset.price) : null;
-    window.GobbleCart.add({ id: card.dataset.id, name: card.dataset.name, price, qty: 1 });
+    window.GobbleCart.add({ id: card.dataset.id, name: card.dataset.name, price, qty: 1, image: card.dataset.image || '' });
     const original = btn.textContent;
     btn.textContent = 'Added! ✓';
     setTimeout(() => { btn.textContent = original; }, 1200);

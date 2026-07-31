@@ -43,6 +43,7 @@ Requires being logged into wrangler via OAuth (`wrangler login`) as the client's
 ```
 GOOGLE_SHEET_CSV_URL=          # published-CSV URL for the Products tab of the backend Sheet
 GOOGLE_SITE_CONTENT_CSV_URL=   # published-CSV URL for the SiteContent tab (see src/lib/fetchSiteContent.js)
+GOOGLE_EVENTS_CSV_URL=         # published-CSV URL for the Events tab (see src/lib/fetchEvents.js)
 APPS_SCRIPT_URL=               # deployed Apps Script Web App /exec URL (code.gs)
 ```
 
@@ -66,12 +67,16 @@ src/
     ProductCard.astro      — product card used on home + menu; wires "Add to Order" to the cart
     GlutenFreeIcon.astro   — generic GF icon (not a certification mark — product isn't certified)
   lib/
-    fetchProducts.js       — Sheet-CSV fetch + parse + fallback data + formatPrice()
+    fetchProducts.js       — Sheet-CSV fetch + parse + fallback data + formatPrice(); also
+                              exports convertImageUrl() (Drive share link → thumbnail URL),
+                              reused by fetchEvents.js
     fetchSiteContent.js    — SiteContent tab fetch + parse, falls back to hardcoded copy
+    fetchEvents.js         — Events tab fetch + parse, filters to published=TRUE rows only
   pages/
     index.astro            — homepage
-    menu.astro              — full catalog, category/subcategory/dietary filters, Quick View modal
+    menu.astro              — full catalog, category sections + sticky sub-nav, Quick View modal
     byop.astro              — "Build Your Own Platter" 5-step wizard, adds to cart on completion
+    events.astro             — event photo/write-up gallery, reads the Events tab
     about.astro              — brand story
     faq.astro                — delivery/fulfillment schedule + FAQ accordion
     account.astro            — logged-in account: Profile / Orders (with Reorder) / Rewards tabs

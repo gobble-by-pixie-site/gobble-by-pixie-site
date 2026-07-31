@@ -84,6 +84,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 150px;
 }
 
 body {
@@ -120,16 +121,12 @@ p { margin: 0 0 var(--space-sm); }
 
 a { color: inherit; text-decoration: none; }
 
-/* Text Gradient Helpers */
+/* Text Gradient Helpers (Simplified to solid colors) */
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent-berry-deep), var(--accent-coral), var(--accent-gold-deep));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--rose-deep);
 }
 .text-gradient-gold {
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-coral));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-espresso);
 }
 
 .eyebrow {
@@ -156,53 +153,52 @@ a { color: inherit; text-decoration: none; }
   justify-content: center;
   gap: 0.55rem;
   padding: 0.85rem 1.85rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 0.95rem;
   letter-spacing: 0.02em;
   cursor: pointer;
-  border: none;
-  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
   text-align: center;
 }
 .btn:hover {
-  transform: translateY(-2px);
+  opacity: 0.85;
 }
 .btn:active {
   transform: translateY(0);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-coral-deep));
+  background: var(--rose-deep);
   color: #ffffff;
-  box-shadow: 0 6px 20px rgba(232, 87, 61, 0.3);
+  border-color: var(--rose-deep);
 }
 .btn-primary:hover {
-  box-shadow: 0 10px 28px rgba(232, 87, 61, 0.42);
-  background: linear-gradient(135deg, #f3a61d, var(--accent-coral));
+  background: var(--rose);
+  border-color: var(--rose);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(8px);
+  background: transparent;
   color: var(--text-espresso);
-  border: 1.5px solid var(--accent-teal);
-  box-shadow: 0 4px 14px rgba(27, 138, 133, 0.08);
+  border-color: var(--border-strong);
 }
 .btn-secondary:hover {
-  background: var(--accent-teal);
-  color: #ffffff;
-  box-shadow: 0 8px 22px rgba(27, 138, 133, 0.25);
+  background: var(--bg-parchment-alt);
+  color: var(--text-espresso);
+  border-color: var(--text-espresso);
 }
 
 .btn-berry {
-  background: linear-gradient(135deg, var(--accent-berry), var(--accent-berry-deep));
+  background: var(--text-espresso);
   color: #ffffff;
-  box-shadow: 0 6px 20px rgba(184, 46, 62, 0.28);
+  border-color: var(--text-espresso);
 }
 .btn-berry:hover {
-  box-shadow: 0 10px 26px rgba(184, 46, 62, 0.38);
+  background: var(--text-espresso-soft);
+  border-color: var(--text-espresso-soft);
 }
 
 /* ── Cards: Frosted Glassmorphism with Warm Borders ── */
@@ -211,12 +207,10 @@ a { color: inherit; text-decoration: none; }
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-ambient);
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s ease;
 }
 .card:hover {
-  box-shadow: var(--shadow-ambient-lg);
   border-color: var(--border-strong);
 }
 
@@ -305,4 +299,35 @@ section {
   section { padding: var(--space-xl) 0; }
   .container { padding: 0 var(--space-sm); }
 }
+
+/* ── Cart drawer items ──
+   Unscoped on purpose: these elements are built via innerHTML in
+   BaseLayout.astro's renderCart() at runtime, so they never carry Astro's
+   scoped data-astro-cid attribute — a scoped <style> block would silently
+   never match them. */
+.cart-empty { color: var(--text-muted); font-size: 0.92rem; text-align: center; padding: var(--space-xl) 0; }
+.cart-empty a { color: var(--accent-teal-deep); font-weight: 600; }
+
+.cart-item {
+  display: flex; align-items: flex-start; gap: 0.75rem; padding: var(--space-sm) 0; border-bottom: 1px solid var(--border-hairline);
+}
+.cart-item-thumb {
+  flex-shrink: 0; width: 56px; height: 56px; border-radius: var(--radius-sm);
+  background-size: cover; background-position: center; background-color: var(--bg-parchment-alt);
+  border: 1px solid var(--border-hairline);
+}
+.cart-item-thumb-placeholder { display: flex; align-items: center; justify-content: center; font-size: 1.5rem; opacity: 0.5; }
+.cart-item-info { flex: 1; min-width: 0; }
+.cart-item-name { font-weight: 600; font-size: 0.92rem; margin: 0; line-height: 1.3; }
+.cart-item-note { font-size: 0.76rem; color: var(--text-muted); margin: 0.2rem 0 0; line-height: 1.4; }
+.cart-item-price-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin: 0.35rem 0 0; }
+.cart-item-unit-price { font-size: 0.78rem; color: var(--text-muted); }
+.cart-item-line-total { font-size: 0.9rem; font-weight: 700; color: var(--text-espresso); }
+.cart-item-controls { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
+.cart-item-qty { display: flex; align-items: center; gap: 0.4rem; }
+.qty-btn {
+  width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border-hairline); background: #fff;
+  cursor: pointer; font-size: 0.9rem; line-height: 1;
+}
+.cart-item-remove { background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; }
 

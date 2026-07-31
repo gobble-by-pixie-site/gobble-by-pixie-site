@@ -5,12 +5,13 @@
  *
  *  Covers: Customer accounts + Gobble Rewards points/tiers, Orders,
  *  Coupon codes, Product catalog sheet setup, Site content sheet setup,
- *  and (once Razorpay keys are added) payment webhook handling.
+ *  Events sheet setup, and (once Razorpay keys are added) payment webhook
+ *  handling.
  *
  *  HOW TO DEPLOY:
  *  1. Create/open a Google Sheet under gobblebypixie@gmail.com — this becomes
- *     the single backend spreadsheet (Products, SiteContent, Customers,
- *     Orders, Coupons all live as tabs in it).
+ *     the single backend spreadsheet (Products, SiteContent, Events,
+ *     Customers, Orders, Coupons all live as tabs in it).
  *  2. Extensions → Apps Script → paste this entire file in, replacing any
  *     existing code.
  *  3. In the function dropdown (top toolbar), select `runInitialSetup` and
@@ -18,13 +19,19 @@
  *     (Advanced → Go to project (unsafe) is normal for your own script).
  *     This creates ALL tabs (Products pre-filled with the current 37-item
  *     placeholder catalog, SiteContent pre-filled with current site copy,
- *     empty Customers/Orders/Coupons with correct headers) and sets sharing
- *     so the CSV export URLs work without login.
+ *     Events with one draft example row, empty Customers/Orders/Coupons
+ *     with correct headers) and sets sharing so the CSV export URLs work
+ *     without login.
  *  4. Check View → Executions (or the Logger output) for:
  *       - Products CSV URL    → paste into GOOGLE_SHEET_CSV_URL
  *       - SiteContent CSV URL → paste into GOOGLE_SITE_CONTENT_CSV_URL
  *         (read by src/lib/fetchSiteContent.js — edit the SiteContent tab's
  *         `value` column and rebuild+redeploy to update site copy)
+ *       - Events CSV URL      → paste into GOOGLE_EVENTS_CSV_URL
+ *         (read by src/lib/fetchEvents.js for the /events page — add a row
+ *         per event, set `published` to TRUE, rebuild+redeploy to show it.
+ *         If Events already existed before you re-pulled this file, run
+ *         `addEventsSheetToExisting` instead of the full `runInitialSetup`.)
  *  5. Deploy → New Deployment → Web App
  *       - Execute as: Me
  *       - Who has access: Anyone
@@ -46,6 +53,7 @@ const CONFIG = {
   ORDERS_SHEET_NAME:       'Orders',
   CUSTOMERS_SHEET_NAME:    'Customers',
   COUPONS_SHEET_NAME:      'Coupons',
+  EVENTS_SHEET_NAME:       'Events',
 
   OWNER_EMAIL:    'gobblebypixie@gmail.com',
   OWNER_NAME:     'Gobble by Pixie',
@@ -950,16 +958,38 @@ function setupCouponsSheet() {
   return sheet;
 }
 
+function setupEventsSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(CONFIG.EVENTS_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(CONFIG.EVENTS_SHEET_NAME);
+  if (sheet.getLastRow() > 0) { Logger.log('Events sheet already has data — skipping seed.'); return sheet; }
+
+  // One row per event. image_url: paste one or more Drive share links,
+  // comma-separated, same as Products. published: TRUE to show it live on
+  // /events, leave FALSE/blank while still drafting.
+  const DATA = [
+    ['id', 'title', 'event_date', 'description', 'image_url', 'published'],
+    ['evt-1', 'Example: Diwali Grazing Table', '2026-10-20', 'A festive spread we put together for a Diwali house party in Gurgaon.', '', 'FALSE'],
+  ];
+  sheet.getRange(1, 1, DATA.length, DATA[0].length).setValues(DATA);
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, DATA[0].length).setBackground('#A15F60').setFontColor('#F7F0E7').setFontWeight('bold');
+  sheet.autoResizeColumns(1, DATA[0].length);
+  return sheet;
+}
+
 /**
  * Run this once. Creates Products (pre-filled), SiteContent (pre-filled),
- * Coupons (with an example row), Customers, and Orders (empty, correct
- * headers) — then sets the whole file to "anyone with the link can view"
- * so the CSV export URLs work without login, and logs every URL you need.
+ * Coupons (with an example row), Events (with one draft example row),
+ * Customers, and Orders (empty, correct headers) — then sets the whole
+ * file to "anyone with the link can view" so the CSV export URLs work
+ * without login, and logs every URL you need.
  */
 function runInitialSetup() {
   setupProductsSheet();
   setupSiteContentSheet();
   setupCouponsSheet();
+  setupEventsSheet();
   getCustomersSheet();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let ordersSheet = ss.getSheetByName(CONFIG.ORDERS_SHEET_NAME);
@@ -970,14 +1000,27 @@ function runInitialSetup() {
 
   const productsGid = ss.getSheetByName(CONFIG.PRODUCTS_SHEET_NAME).getSheetId();
   const contentGid  = ss.getSheetByName(CONFIG.SITE_CONTENT_SHEET_NAME).getSheetId();
+  const eventsGid   = ss.getSheetByName(CONFIG.EVENTS_SHEET_NAME).getSheetId();
   const productsCsv = `https://docs.google.com/spreadsheets/d/${ss.getId()}/export?format=csv&gid=${productsGid}`;
   const contentCsv  = `https://docs.google.com/spreadsheets/d/${ss.getId()}/export?format=csv&gid=${contentGid}`;
+  const eventsCsv   = `https://docs.google.com/spreadsheets/d/${ss.getId()}/export?format=csv&gid=${eventsGid}`;
 
-  Logger.log('✅ All tabs created: Products, SiteContent, Coupons, Customers, Orders');
+  Logger.log('✅ All tabs created: Products, SiteContent, Coupons, Events, Customers, Orders');
   Logger.log('Spreadsheet URL: ' + ss.getUrl());
   Logger.log('Products CSV URL (→ GOOGLE_SHEET_CSV_URL): ' + productsCsv);
   Logger.log('SiteContent CSV URL (→ GOOGLE_SITE_CONTENT_CSV_URL): ' + contentCsv);
+  Logger.log('Events CSV URL (→ GOOGLE_EVENTS_CSV_URL): ' + eventsCsv);
   Logger.log('Next: Deploy → New deployment → Web app → Execute as Me, Who has access: Anyone. Copy that URL → APPS_SCRIPT_URL env var.');
+}
+
+/** Run this if Events was added to an already-set-up spreadsheet, so you
+ * don't have to re-run the whole runInitialSetup() flow. Logs the CSV URL. */
+function addEventsSheetToExisting() {
+  setupEventsSheet();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const eventsGid = ss.getSheetByName(CONFIG.EVENTS_SHEET_NAME).getSheetId();
+  const eventsCsv = `https://docs.google.com/spreadsheets/d/${ss.getId()}/export?format=csv&gid=${eventsGid}`;
+  Logger.log('Events CSV URL (→ GOOGLE_EVENTS_CSV_URL): ' + eventsCsv);
 }
 
 /** Shows the deployed Web App URL — run after deploying */

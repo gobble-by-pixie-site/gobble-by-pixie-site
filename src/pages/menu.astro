@@ -1,15 +1,21 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
-import { fetchProducts, getCategories, getSubcategories } from '../lib/fetchProducts.js';
+import { fetchProducts, getCategories } from '../lib/fetchProducts.js';
 import { fetchSiteContent } from '../lib/fetchSiteContent.js';
 
 const products = await fetchProducts();
 const content = await fetchSiteContent();
 const categories = getCategories(products);
-const platterSubcats = getSubcategories(products, 'Platters');
-const cheeseArtSubcats = getSubcategories(products, 'Cheese Art');
+
+// Group products by category server-side
+const productsByCategory = categories.reduce((acc, cat) => {
+  acc[cat] = products.filter((p) => p.category === cat);
+  return acc;
+}, {});
+
 const WA = 'https://wa.link/sngzs9';
+const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 ---
 <BaseLayout title="Menu — Gobble by Pixie">
   <section class="menu-hero">
@@ -20,95 +26,70 @@ const WA = 'https://wa.link/sngzs9';
     </div>
   </section>
 
+  <!-- Sticky Category Sub-Navigation -->
+  <div class="category-subnav">
+    <div class="container">
+      <nav class="subnav-links">
+        {categories.map((c) => <a href={`#${slugify(c)}`} class="subnav-link">{c}</a>)}
+        <a href="#grazing-tables" class="subnav-link">Grazing Tables</a>
+      </nav>
+    </div>
+  </div>
+
   <section class="menu-body">
     <div class="container">
-      <!-- Filter Controls -->
-      <div class="menu-controls card">
-        <div class="dietary-filter-pills" id="dietaryFilters">
-          <button class="dietary-pill active" data-dietary="all">All Dietary</button>
-          <button class="dietary-pill" data-dietary="Veg">🌱 100% Vegetarian</button>
-          <button class="dietary-pill" data-dietary="GF">✨ Gluten-Free</button>
-          <button class="dietary-pill" data-dietary="Keto">🥑 Keto-Friendly</button>
-        </div>
-      </div>
+      <div class="menu-sections">
+        {categories.map((cat) => (
+          <section id={slugify(cat)} class="menu-category-section">
+            <h2 class="category-title">{cat}</h2>
+            
+            {cat === 'Jars' && (
+              <div class="card special-card">
+                <p class="eyebrow">Got an Idea?</p>
+                <h3>Suggest a New Jar Flavour</h3>
+                <p>Tell us what flavour you'd love to see next — the best suggestions actually make it onto the menu.</p>
+                <form id="suggestForm" class="special-form">
+                  <input type="text" id="suggestName" placeholder="Your name" required />
+                  <input type="text" id="suggestFlavour" placeholder="Your flavour idea (e.g. Peri Peri, Mango Chilli...)" required />
+                  <button type="submit" class="btn btn-primary">Send Suggestion</button>
+                </form>
+              </div>
+            )}
+            
+            {cat === 'Butter Candles' && (
+              <div class="card special-card">
+                <p class="eyebrow">Make It Yours</p>
+                <h3>Customize Your Own Butter Candle Flavour</h3>
+                <p>Beyond our regular flavours, we can craft a custom butter candle just for your event or gift.</p>
+                <form id="customizeForm" class="special-form">
+                  <input type="text" id="customizeName" placeholder="Your name" required />
+                  <input type="text" id="customizeFlavour" placeholder="Describe your dream flavour" required />
+                  <button type="submit" class="btn btn-primary">Request Custom Flavour</button>
+                </form>
+              </div>
+            )}
 
-      <!-- Main Category Tabs -->
-      <div class="filter-tabs-wrapper">
-        <div class="filter-tabs" id="filterTabs">
-          <button class="tab active" data-cat="all">All Categories ({products.length})</button>
-          {categories.map((c) => <button class="tab" data-cat={c}>{c}</button>)}
-          <button class="tab" data-cat="Grazing Tables">Grazing Tables</button>
-        </div>
-      </div>
-
-      <!-- Subcategory Filters (Platters & Cheese Art) -->
-      <div class="subcat-bar-wrapper" id="subcatBarWrap" style="display:none;">
-        <div class="subcat-bar" id="subcatBar">
-          <button class="subcat-pill active" data-subcat="all">All Subcategories</button>
-        </div>
-      </div>
-
-      <!-- Matching Count Bar -->
-      <div class="results-bar">
-        <span id="resultsCount" class="results-count">Showing {products.length} products</span>
-        <button id="resetFiltersBtn" class="reset-btn" style="display:none;">Reset Filters</button>
-      </div>
-
-      <!-- Suggest a Flavour — Jars only -->
-      <div class="special-panel" data-panel="Jars" style="display:none;">
-        <div class="card special-card">
-          <p class="eyebrow">Got an Idea?</p>
-          <h3>Suggest a New Jar Flavour</h3>
-          <p>Tell us what flavour you'd love to see next — the best suggestions actually make it onto the menu.</p>
-          <form id="suggestForm" class="special-form">
-            <input type="text" id="suggestName" placeholder="Your name" required />
-            <input type="text" id="suggestFlavour" placeholder="Your flavour idea (e.g. Peri Peri, Mango Chilli...)" required />
-            <button type="submit" class="btn btn-primary">Send Suggestion 💌</button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Customize Your Flavour — Butter Candles only -->
-      <div class="special-panel" data-panel="Butter Candles" style="display:none;">
-        <div class="card special-card">
-          <p class="eyebrow">Make It Yours</p>
-          <h3>Customize Your Own Butter Candle Flavour</h3>
-          <p>Beyond our regular flavours, we can craft a custom butter candle just for your event or gift.</p>
-          <form id="customizeForm" class="special-form">
-            <input type="text" id="customizeName" placeholder="Your name" required />
-            <input type="text" id="customizeFlavour" placeholder="Describe your dream flavour" required />
-            <button type="submit" class="btn btn-primary">Request Custom Flavour 🕯️</button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Grazing Tables for Parties — service enquiry, not a per-unit SKU -->
-      <div class="special-panel" data-panel="Grazing Tables" style="display:none;">
-        <div class="card special-card grazing-card">
-          <p class="eyebrow">For Big Celebrations</p>
-          <h3>Grazing Table for Parties</h3>
-          <p class="grazing-price">{content.grazing_table_price}</p>
-          <p>A full spread grazing table designed for your event — weddings, corporate parties, milestone celebrations. Every table is custom-built around your guest count, theme, and budget.</p>
-          <a href={`${WA}?text=${encodeURIComponent("Hi! I'd like to enquire about a Grazing Table for a party. Could you share more details?")}`} target="_blank" rel="noopener" class="btn btn-primary">Enquire on WhatsApp 🎉</a>
-        </div>
-      </div>
-
-      <!-- Product Grid -->
-      <div class="product-grid" id="productGrid">
-        {products.map((p) => (
-          <div class="grid-item" data-cat={p.category} data-subcat={p.subcategory || ''} data-dietary={(p.dietary || []).join(',')} data-name={p.name.toLowerCase()}>
-            <p class:list={['subcat-tag', { 'subcat-tag-empty': !p.subcategory }]}>{p.subcategory || ' '}</p>
-            <ProductCard product={p} />
-          </div>
+            <div class="product-grid">
+              {productsByCategory[cat].map((p) => (
+                <div class="grid-item">
+                  <p class:list={['subcat-tag', { 'subcat-tag-empty': !p.subcategory }]}>{p.subcategory || ' '}</p>
+                  <ProductCard product={p} />
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
-      </div>
 
-      <!-- Empty Filter State -->
-      <div id="noResultsState" class="card no-results-card" style="display:none;">
-        <span class="no-results-emoji">🧀</span>
-        <h3>No matching items found</h3>
-        <p>Try clearing the category or dietary filters.</p>
-        <button id="noResultsResetBtn" class="btn btn-secondary">Clear Filters & Show All Items</button>
+        <section id="grazing-tables" class="menu-category-section">
+          <h2 class="category-title">Grazing Tables</h2>
+          <div class="card special-card grazing-card">
+            <p class="eyebrow">For Big Celebrations</p>
+            <h3>Grazing Table for Parties</h3>
+            <p class="grazing-price">{content.grazing_table_price}</p>
+            <p>A full spread grazing table designed for your event — weddings, corporate parties, milestone celebrations. Every table is custom-built around your guest count, theme, and budget.</p>
+            <a href={`${WA}?text=${encodeURIComponent("Hi! I'd like to enquire about a Grazing Table for a party. Could you share more details?")}`} target="_blank" rel="noopener" class="btn btn-primary">Enquire on WhatsApp</a>
+          </div>
+        </section>
       </div>
     </div>
   </section>
@@ -128,7 +109,7 @@ const WA = 'https://wa.link/sngzs9';
           <div class="modal-footer">
             <span id="modalPrice" class="modal-price"></span>
             <button type="button" id="modalAddToCartBtn" class="btn btn-primary modal-wa-btn">
-              Add to Order 🛒
+              Add to Order
             </button>
           </div>
         </div>
@@ -140,122 +121,55 @@ const WA = 'https://wa.link/sngzs9';
     .menu-hero { text-align: center; padding-bottom: var(--space-md); }
     .section-sub { max-width: 52ch; margin: 0 auto; color: var(--text-espresso-soft); font-size: 1.05rem; }
 
-    .menu-controls {
-      padding: var(--space-md);
-      margin-bottom: var(--space-md);
+    .category-subnav {
+      position: sticky;
+      top: 117px; /* Offset for the two-row sticky header (header-top + header-bottom) */
+      z-index: 90;
+      background: rgba(247, 240, 231, 0.95);
+      backdrop-filter: blur(12px);
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+    @media (max-width: 820px) {
+      /* .main-nav (header-bottom) is hidden below this breakpoint, so the
+         sticky header collapses to just header-top's height. */
+      .category-subnav { top: 82px; }
+    }
+    .subnav-links {
       display: flex;
-      flex-direction: column;
-      gap: var(--space-sm);
-    }
-    .dietary-filter-pills {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .dietary-pill {
-      padding: 0.45rem 1rem;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-hairline);
-      background: rgba(255, 255, 255, 0.7);
-      font-family: var(--font-body);
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-espresso-soft);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .dietary-pill:hover { border-color: var(--accent-gold); }
-    .dietary-pill.active {
-      background: var(--accent-teal);
-      color: #ffffff;
-      border-color: transparent;
-    }
-
-    .filter-tabs-wrapper {
-      overflow-x: auto;
-      margin-bottom: var(--space-sm);
-      padding-bottom: 0.4rem;
-      -webkit-overflow-scrolling: touch;
-    }
-    .filter-tabs {
-      display: flex;
-      gap: 0.6rem;
+      gap: 1.5rem;
       justify-content: center;
       min-width: max-content;
-      padding: 0 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.2rem;
     }
-    .tab {
-      padding: 0.65rem 1.4rem;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-hairline);
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(8px);
-      font-family: var(--font-body);
+    .subnav-link {
+      font-family: var(--font-display);
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 1.1rem;
       color: var(--text-espresso-soft);
-      cursor: pointer;
-      transition: all 0.25s ease;
       white-space: nowrap;
-      box-shadow: var(--shadow-ambient);
+      transition: color 0.2s ease;
     }
-    .tab:hover {
-      border-color: var(--accent-gold);
+    .subnav-link:hover {
+      color: var(--rose-deep);
+    }
+
+    .menu-body {
+      padding-top: var(--space-lg);
+    }
+
+    .menu-category-section {
+      margin-bottom: var(--space-2xl);
+      padding-top: var(--space-md); /* extra breathing room */
+    }
+    .category-title {
+      text-align: center;
+      font-size: 2.2rem;
       color: var(--text-espresso);
-      transform: translateY(-1px);
-    }
-    .tab.active {
-      background: linear-gradient(135deg, var(--accent-gold), var(--accent-coral-deep));
-      color: #ffffff;
-      border-color: transparent;
-      box-shadow: 0 6px 18px rgba(232, 87, 61, 0.3);
-    }
-
-    /* Subcategory Bar */
-    .subcat-bar-wrapper {
-      margin-bottom: var(--space-md);
-      overflow-x: auto;
-    }
-    .subcat-bar {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: center;
-      min-width: max-content;
-    }
-    .subcat-pill {
-      padding: 0.4rem 1rem;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-hairline);
-      background: var(--bg-parchment-alt);
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--accent-teal-deep);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .subcat-pill.active {
-      background: var(--accent-teal-deep);
-      color: #ffffff;
-      border-color: transparent;
-    }
-
-    .results-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--space-md);
-      font-size: 0.88rem;
-      color: var(--text-muted);
-    }
-    .results-count { font-weight: 600; }
-    .reset-btn {
-      background: none;
-      border: none;
-      color: var(--accent-berry-deep);
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: underline;
+      margin-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--border-hairline);
+      padding-bottom: var(--space-xs);
     }
 
     .special-card { padding: var(--space-lg); margin-bottom: var(--space-lg); text-align: center; max-width: 600px; margin-left: auto; margin-right: auto; }
@@ -269,17 +183,16 @@ const WA = 'https://wa.link/sngzs9';
       font-size: 0.95rem;
     }
     .grazing-card { background: linear-gradient(150deg, rgba(232,157,23,0.1), var(--bg-parchment)); }
-    .grazing-price { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; color: var(--accent-berry-deep); }
+    .grazing-price { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; color: var(--text-espresso); }
 
     .subcat-tag {
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--accent-teal-deep);
+      color: var(--text-muted);
       margin: 0 0 0.4rem 0.2rem;
       line-height: 1.3;
-      /* always reserved, even when empty, so cards in the same row stay aligned */
     }
     .subcat-tag-empty { visibility: hidden; }
 
@@ -290,13 +203,6 @@ const WA = 'https://wa.link/sngzs9';
     }
     .grid-item { display: flex; flex-direction: column; }
     .grid-item :global(.product-card) { flex: 1; }
-
-    .no-results-card {
-      text-align: center;
-      padding: var(--space-xl);
-      margin: var(--space-lg) 0;
-    }
-    .no-results-emoji { font-size: 3rem; display: block; margin-bottom: var(--space-xs); }
 
     /* Modal Styling */
     .modal-backdrop {
@@ -313,12 +219,12 @@ const WA = 'https://wa.link/sngzs9';
       font-size: 1.8rem; line-height: 1; cursor: pointer; color: var(--text-muted);
     }
     .modal-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--space-lg); align-items: start; }
-    .modal-media { height: 260px; border-radius: var(--radius-md); background-size: cover; background-position: center; background-color: var(--bg-parchment-alt); display: flex; align-items: center; justify-content: center; }
+    .modal-media { height: 260px; border-radius: var(--radius-sm); background-size: cover; background-position: center; background-color: var(--bg-parchment-alt); display: flex; align-items: center; justify-content: center; }
     .modal-info { display: flex; flex-direction: column; }
     .modal-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
     .modal-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.2rem; }
-    .modal-subcat { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--accent-teal-deep); margin-bottom: 0.3rem; }
-    .modal-weight { font-size: 0.88rem; font-weight: 600; color: var(--accent-gold-deep); margin-bottom: 0.6rem; }
+    .modal-subcat { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.3rem; }
+    .modal-weight { font-size: 0.88rem; font-weight: 600; color: var(--text-espresso); margin-bottom: 0.6rem; }
     .modal-desc { font-size: 0.95rem; color: var(--text-espresso-soft); margin-bottom: var(--space-md); line-height: 1.5; }
     .modal-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-hairline); padding-top: var(--space-sm); }
     .modal-price { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-espresso); }
@@ -330,120 +236,11 @@ const WA = 'https://wa.link/sngzs9';
     }
     @media (max-width: 600px) {
       .product-grid { grid-template-columns: 1fr; }
-      .filter-tabs, .subcat-bar { justify-content: flex-start; }
+      .subnav-links { justify-content: flex-start; }
     }
   </style>
 
-  <script is:inline define:vars={{ platterSubcats, cheeseArtSubcats }}>
-    const tabs = document.querySelectorAll('.tab');
-    const dietaryPills = document.querySelectorAll('.dietary-pill');
-    const items = document.querySelectorAll('.grid-item');
-    const specialPanels = document.querySelectorAll('.special-panel');
-    const productGrid = document.getElementById('productGrid');
-    const subcatWrap = document.getElementById('subcatBarWrap');
-    const subcatBar = document.getElementById('subcatBar');
-    const resultsCount = document.getElementById('resultsCount');
-    const resetBtn = document.getElementById('resetFiltersBtn');
-    const noResults = document.getElementById('noResultsState');
-
-    let state = {
-      category: 'all',
-      subcategory: 'all',
-      dietary: 'all',
-    };
-
-    function updateSubcategoryBar() {
-      let subcats = [];
-      if (state.category === 'Platters') subcats = platterSubcats;
-      else if (state.category === 'Cheese Art') subcats = cheeseArtSubcats;
-
-      if (subcats.length > 0) {
-        subcatWrap.style.display = 'block';
-        subcatBar.innerHTML = `<button class="subcat-pill ${state.subcategory === 'all' ? 'active' : ''}" data-subcat="all">All ${state.category}</button>` +
-          subcats.map((s) => `<button class="subcat-pill ${state.subcategory === s ? 'active' : ''}" data-subcat="${s}">${s}</button>`).join('');
-
-        subcatBar.querySelectorAll('.subcat-pill').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            state.subcategory = btn.getAttribute('data-subcat');
-            updateSubcategoryBar();
-            filterProducts();
-          });
-        });
-      } else {
-        subcatWrap.style.display = 'none';
-        state.subcategory = 'all';
-      }
-    }
-
-    function filterProducts() {
-      let visibleCount = 0;
-      const totalCount = items.length;
-
-      specialPanels.forEach((p) => {
-        p.style.display = p.getAttribute('data-panel') === state.category ? 'block' : 'none';
-      });
-
-      if (state.category === 'Grazing Tables') {
-        productGrid.style.display = 'none';
-        resultsCount.textContent = 'Service enquiry for Grazing Tables';
-        noResults.style.display = 'none';
-        return;
-      }
-
-      productGrid.style.display = '';
-
-      items.forEach((item) => {
-        const cat = item.getAttribute('data-cat');
-        const subcat = item.getAttribute('data-subcat');
-        const dietary = (item.getAttribute('data-dietary') || '').split(',');
-
-        const matchCat = state.category === 'all' || cat === state.category;
-        const matchSubcat = state.subcategory === 'all' || subcat === state.subcategory;
-        const matchDietary = state.dietary === 'all' || dietary.includes(state.dietary);
-
-        const visible = matchCat && matchSubcat && matchDietary;
-        item.style.display = visible ? '' : 'none';
-        if (visible) visibleCount++;
-      });
-
-      resultsCount.textContent = `Showing ${visibleCount} of ${totalCount} products`;
-      const isFiltered = state.category !== 'all' || state.subcategory !== 'all' || state.dietary !== 'all';
-      resetBtn.style.display = isFiltered ? 'inline-block' : 'none';
-
-      noResults.style.display = (visibleCount === 0 && state.category !== 'Grazing Tables') ? 'block' : 'none';
-    }
-
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabs.forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        state.category = tab.getAttribute('data-cat');
-        state.subcategory = 'all';
-        updateSubcategoryBar();
-        filterProducts();
-      });
-    });
-
-    dietaryPills.forEach((pill) => {
-      pill.addEventListener('click', () => {
-        dietaryPills.forEach((p) => p.classList.remove('active'));
-        pill.classList.add('active');
-        state.dietary = pill.getAttribute('data-dietary');
-        filterProducts();
-      });
-    });
-
-    function resetAll() {
-      state = { category: 'all', subcategory: 'all', dietary: 'all' };
-      tabs.forEach((t) => t.classList.toggle('active', t.getAttribute('data-cat') === 'all'));
-      dietaryPills.forEach((p) => p.classList.toggle('active', p.getAttribute('data-dietary') === 'all'));
-      updateSubcategoryBar();
-      filterProducts();
-    }
-
-    resetBtn?.addEventListener('click', resetAll);
-    document.getElementById('noResultsResetBtn')?.addEventListener('click', resetAll);
-
+  <script is:inline>
     // Quick View Modal
     const backdrop = document.getElementById('productModalBackdrop');
     const closeBtn = document.getElementById('modalCloseBtn');
@@ -470,7 +267,7 @@ const WA = 'https://wa.link/sngzs9';
         mediaEl.innerHTML = '';
       } else {
         mediaEl.style.backgroundImage = 'none';
-        mediaEl.innerHTML = '<div style="text-align:center;"><span style="font-size:3rem;">🧀</span><p style="margin:0;opacity:.6;font-size:0.85rem;font-weight:600;">Photo coming soon</p></div>';
+        mediaEl.innerHTML = '<div style="text-align:center;"><span style="font-size:3rem;opacity:0.3">🧀</span><p style="margin:0;opacity:.6;font-size:0.85rem;font-weight:600;">Photo coming soon</p></div>';
       }
 
       const badgesEl = document.getElementById('modalBadges');
@@ -480,7 +277,7 @@ const WA = 'https://wa.link/sngzs9';
       const addBtn = document.getElementById('modalAddToCartBtn');
       const isOutOfStock = card.dataset.instock === 'false';
       addBtn.disabled = isOutOfStock;
-      addBtn.textContent = isOutOfStock ? 'Sold Out' : 'Add to Order 🛒';
+      addBtn.textContent = isOutOfStock ? 'Sold Out' : 'Add to Order';
       addBtn.onclick = () => {
         if (!window.GobbleCart) return;
         window.GobbleCart.add({
@@ -488,6 +285,7 @@ const WA = 'https://wa.link/sngzs9';
           name: name,
           price: card.dataset.price ? Number(card.dataset.price) : null,
           qty: 1,
+          image: card.dataset.image || '',
         });
         addBtn.textContent = 'Added! ✓';
         setTimeout(() => {
@@ -528,4 +326,3 @@ const WA = 'https://wa.link/sngzs9';
     });
   </script>
 </BaseLayout>
-
