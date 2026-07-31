@@ -83,7 +83,9 @@ const WA = 'https://wa.link/sngzs9';
   <ProductQuickViewModal />
 
   <style>
-    .menu-hero { text-align: center; padding-bottom: var(--space-md); }
+    .menu-hero { text-align: center; padding-bottom: var(--space-lg); }
+    .menu-hero .eyebrow { margin-bottom: 0.5rem; }
+    .menu-hero h1 { margin-bottom: 0.75rem; }
     .section-sub { max-width: 52ch; margin: 0 auto; color: var(--text-espresso-soft); font-size: 1.05rem; }
 
     .category-subnav {
@@ -92,12 +94,12 @@ const WA = 'https://wa.link/sngzs9';
       z-index: 90;
       background: rgba(247, 240, 231, 0.95);
       backdrop-filter: blur(12px);
-      padding: var(--space-sm) 0;
+      padding: var(--space-md) 0;
       border-bottom: 1px solid var(--border-hairline);
     }
     .subnav-links {
       display: flex;
-      gap: 1.5rem;
+      gap: 2rem;
       justify-content: center;
       min-width: max-content;
       overflow-x: auto;
@@ -109,14 +111,18 @@ const WA = 'https://wa.link/sngzs9';
       font-size: 1.1rem;
       color: var(--text-espresso-soft);
       white-space: nowrap;
-      transition: color 0.2s ease;
+      padding-bottom: 0.3rem;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
     }
     .subnav-link:hover, .subnav-link.active {
       color: var(--rose-deep);
+      border-bottom-color: var(--rose-deep);
     }
 
     .menu-body {
-      padding-top: var(--space-lg);
+      padding-top: var(--space-2xl);
+      padding-bottom: var(--space-xl);
     }
 
     .special-card { padding: var(--space-lg); margin-bottom: var(--space-lg); text-align: center; max-width: 600px; margin-left: auto; margin-right: auto; }
@@ -144,7 +150,8 @@ const WA = 'https://wa.link/sngzs9';
     .product-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-lg);
+      column-gap: var(--space-lg);
+      row-gap: var(--space-xl);
     }
     .grid-item { display: flex; flex-direction: column; }
     .grid-item :global(.product-card) { flex: 1; }
