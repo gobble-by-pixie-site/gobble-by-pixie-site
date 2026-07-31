@@ -219,7 +219,7 @@ const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace
       font-size: 1.8rem; line-height: 1; cursor: pointer; color: var(--text-muted);
     }
     .modal-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--space-lg); align-items: start; }
-    .modal-media { height: 260px; border-radius: var(--radius-sm); background-size: cover; background-position: center; background-color: var(--bg-parchment-alt); display: flex; align-items: center; justify-content: center; }
+    .modal-media { height: 260px; border-radius: var(--radius-sm); background-size: contain; background-repeat: no-repeat; background-position: center; background-color: var(--bg-parchment-alt); display: flex; align-items: center; justify-content: center; }
     .modal-info { display: flex; flex-direction: column; }
     .modal-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
     .modal-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.2rem; }
