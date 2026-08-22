@@ -50,24 +50,46 @@ function parseCSV(csvText) {
 }
 
 export async function fetchSiteContent() {
-  const csvUrl = import.meta.env.GOOGLE_SITE_CONTENT_CSV_URL;
-
-  if (!csvUrl) {
-    console.warn('[GBP] ⚠️  GOOGLE_SITE_CONTENT_CSV_URL not set — using hardcoded site copy.');
-    return FALLBACK_CONTENT;
+  // PRIMARY: Console site-content about+home keys merged over fallbacks
+  // (editable in Console -> Content). FALLBACK: legacy Sheet CSV.
+  const base = import.meta.env.CONSOLE_API_URL;
+  const key = import.meta.env.CONSOLE_STOREFRONT_API_KEY;
+  let merged = { ...FALLBACK_CONTENT };
+  if (base && key) {
+    try {
+      const headers = { 'X-Storefront-Api-Key': key };
+      const [homeRes, aboutRes] = await Promise.all([
+        fetch(base.replace(/\/$/, '') + '/api/public/site-content/home', { headers }),
+        fetch(base.replace(/\/$/, '') + '/api/public/site-content/about', { headers }),
+      ]);
+      const home = homeRes.ok ? await homeRes.json().catch(() => null) : null;
+      const about = aboutRes.ok ? await aboutRes.json().catch(() => null) : null;
+      if (home && (home.tagline || home.heroEyebrow)) {
+        if (home.tagline) merged.tagline = home.tagline;
+        if (home.heroEyebrow) merged.hero_eyebrow = home.heroEyebrow;
+        if (home.fibreBody) merged.about_intro = home.fibreBody;
+      }
+      if (about && Array.isArray(about.storyParagraphs) && about.storyParagraphs[0]) {
+        merged.about_intro = about.storyParagraphs[0];
+      }
+      console.log('[GBP] OK site copy from Linear Console');
+    } catch (err) {
+      console.error('[GBP] Console site content failed (' + err.message + ') - using fallbacks');
+    }
   }
+
+  const csvUrl = import.meta.env.GOOGLE_SITE_CONTENT_CSV_URL;
+  if (!csvUrl) return merged;
 
   try {
     const response = await fetch(csvUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const csvText = await response.text();
-    const fromSheet = parseCSV(csvText);
-    const merged = { ...FALLBACK_CONTENT, ...fromSheet };
-    console.log(`[GBP] ✅ Loaded ${Object.keys(fromSheet).length} site-content fields from Google Sheets`);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const fromSheet = parseCSV(await response.text());
+    merged = { ...merged, ...fromSheet };
+    console.log('[GBP] Loaded ' + Object.keys(fromSheet).length + ' site-content fields from Google Sheets');
     return merged;
   } catch (err) {
-    console.error(`[GBP] ❌ Failed to fetch site content: ${err.message}`);
-    console.warn('[GBP] Falling back to hardcoded site copy.');
-    return FALLBACK_CONTENT;
+    console.error('[GBP] Failed to fetch site content: ' + err.message);
+    return merged;
   }
 }
