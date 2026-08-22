@@ -9,6 +9,11 @@ const products = await fetchProducts();
 const content = await fetchSiteContent();
 const bestSellers = products.slice(0, 3);
 const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
+
+// Live Instagram — hidden until this tenant connects its own Meta account.
+// Console returns { posts: [] } when not connected (no stub tiles).
+let igPosts: { image: string; permalink: string; caption: string }[] = [];
+{ const base = import.meta.env.CONSOLE_API_URL; const key = import.meta.env.CONSOLE_STOREFRONT_API_KEY; if (base && key) { try { const r = await fetch(`${base.replace(/\/$/, '')}/api/public/instagram?limit=6`, { headers: { 'X-Storefront-Api-Key': key } }); if (r.ok) { const j = await r.json(); igPosts = (j.posts ?? []).slice(0, 6); } } catch {} } }
 ---
 <BaseLayout>
   <section class="hero">
@@ -102,6 +107,7 @@ const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
     </div>
   </section>
 
+  {igPosts.length > 0 && (
   <section class="insta-strip">
     <div class="container">
       <div class="section-head">
@@ -110,23 +116,16 @@ const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
         <p class="section-sub">1,700+ fellow cheese lovers already follow along for behind-the-scenes boards, new flavour drops, and #BYOP inspiration.</p>
       </div>
       <div class="insta-scroll">
-        {[
-          { emoji: '🧀', label: 'Cheese Art' },
-          { emoji: '✨', label: '#BYOP' },
-          { emoji: '🐶', label: 'Furry Babies' },
-          { emoji: '💖', label: 'Gobblers' },
-          { emoji: '🕯️', label: 'Butter Candles' },
-          { emoji: '🎬', label: 'Behind the Scenes' },
-        ].map((post) => (
-          <a href="https://www.instagram.com/gobblebypixie/" target="_blank" rel="noopener" class="insta-tile card">
-            <span class="insta-tile-emoji">{post.emoji}</span>
-            <span class="insta-tile-label">{post.label}</span>
+        {igPosts.map((post) => (
+          <a href={post.permalink} target="_blank" rel="noopener" class="insta-tile card" style={`background-image:url(${post.image});background-size:cover;background-position:center`}>
+            <span class="insta-tile-label" style="background:rgba(255,255,255,0.82);padding:0.2rem 0.5rem;border-radius:999px">{post.caption ? post.caption.slice(0,24) : 'View'}</span>
           </a>
         ))}
       </div>
       <a href="https://www.instagram.com/gobblebypixie/" target="_blank" rel="noopener" class="btn btn-secondary insta-follow-btn">Follow @gobblebypixie</a>
     </div>
   </section>
+  )}
 
   <section class="delivery-checker">
     <div class="container">
