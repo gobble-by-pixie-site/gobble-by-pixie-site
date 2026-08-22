@@ -10,7 +10,20 @@ const content = await fetchSiteContent();
 // a category row to the Products sheet makes it show up in the header nav on
 // the next rebuild, same as it already does in menu.astro's own sub-nav —
 // same pattern theclosetstory.com/tcs-store uses for its Categories dropdown.
+import { fetchFromConsoleCollections } from '../lib/console-client.js';
+
 const navProducts = await fetchProducts();
+
+// Cart cross-sells — Console collection 'cross-sells' (per-tenant, owner-editable).
+let crossSells = [];
+try {
+  const ccRes = await fetchFromConsoleCollections();
+  const coll = (ccRes?.collections ?? []).find((c) => c.slug === 'cross-sells');
+  crossSells = (coll?.products ?? [])
+    .filter((p) => p.price != null)
+    .slice(0, 3)
+    .map((p) => ({ id: p.slug, name: p.name, image_url: p.image || '', price: p.discountPrice ?? p.price }));
+} catch {}
 const menuCategories = getCategories(navProducts);
 
 const SITE_URL = 'https://gobblebypixie.com';
@@ -107,6 +120,10 @@ const ogImage = SITE_URL + '/og-image.jpg';
         <button class="cart-close" id="cartClose" aria-label="Close cart">&times;</button>
       </div>
       <div class="cart-items" id="cartItems"></div>
+      <div id="cartCrossSells" style="display:none;" class="cart-cross-sells">
+        <p class="cart-cross-sells-title">Goes well with</p>
+        <div id="cartCrossSellsRow" class="cart-cross-sells-row"></div>
+      </div>
       <div class="cart-footer">
         <div class="cart-summary" id="cartSummary" style="display:none;">
           <div class="cart-summary-row"><span>Taxable Value</span><span id="cartTaxableValue">₹0</span></div>
@@ -116,7 +133,8 @@ const ogImage = SITE_URL + '/og-image.jpg';
         </div>
         <p class="cart-unpriced-note" id="cartUnpricedNote" style="display:none;">Some items are priced on request — final total confirmed on WhatsApp.</p>
         <a href="#" id="cartCheckoutBtn" target="_blank" rel="noopener" class="btn btn-primary cart-checkout-btn">Checkout via WhatsApp 💬</a>
-      </div>
+      
+      <script type="application/json" id="crossSellData" set:html={JSON.stringify(crossSells)}></script></div>
     </div>
   </div>
   <div class="cart-backdrop" id="cartBackdrop"></div>
@@ -697,10 +715,41 @@ const ogImage = SITE_URL + '/og-image.jpg';
       });
       cartItemsEl.querySelectorAll('.cart-item-remove').forEach((btn) => {
         btn.addEventListener('click', () => window.GobbleCart.removeAt(Number(btn.getAttribute('data-idx'))));
+        renderCrossSells(window.GobbleCart.get());
       });
     }
 
-    if (window.GobbleCart) {
+    
+      /* Cross-sells — from Console collection 'cross-sells' (per-tenant). */
+      function renderCrossSells(items) {
+        const wrap = document.getElementById('cartCrossSells');
+        const row = document.getElementById('cartCrossSellsRow');
+        if (!wrap || !row) return;
+        if (!items.length) { wrap.style.display = 'none'; row.innerHTML = ''; return; }
+        let suggestions = [];
+        try { suggestions = JSON.parse(document.getElementById('crossSellData').textContent) || []; } catch {}
+        const inCart = new Set(items.map((i) => i.id));
+        const picks = suggestions.filter((s) => !inCart.has(s.id)).slice(0, 3);
+        if (!picks.length) { wrap.style.display = 'none'; return; }
+        wrap.style.display = '';
+        row.innerHTML = picks.map((p) =>
+          '<button class="cart-xs-card" data-xs-id="' + p.id + '" title="Add to order">'
+          + '<img src="' + p.image_url + '" alt="" />'
+          + '<span class="cart-xs-name">' + p.name + '</span>'
+          + '<span class="cart-xs-price">+' + formatPrice(p.price) + '</span>'
+          + '</button>'
+        ).join('');
+        row.querySelectorAll('.cart-xs-card').forEach((card) => {
+          card.addEventListener('click', () => {
+            const p = suggestions.find((x) => x.id === card.getAttribute('data-xs-id'));
+            if (p) window.GobbleCart.add(p);
+            renderCrossSells(window.GobbleCart.get());
+          });
+        });
+      }
+      renderCrossSells(window.GobbleCart ? window.GobbleCart.get() : []);
+
+if (window.GobbleCart) {
       window.GobbleCart.subscribe(renderCart);
       if (cartCheckoutBtn) cartCheckoutBtn.href = window.GobbleCart.checkoutWhatsAppUrl();
     }
