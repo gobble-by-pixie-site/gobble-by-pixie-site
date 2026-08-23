@@ -1,0 +1,113 @@
+---
+/**
+ * HomeSections — renders owner-composed homepage sections from Linear
+ * Console (Settings → Content → Homepage sections) in Gobble's theme.
+ * collection_grid resolves live products: a collection slug filters via
+ * that Console Collection, otherwise the full catalog; `limit` caps count.
+ */
+import ProductCard from './ProductCard.astro';
+import { fetchFromConsoleCollections } from '../lib/console-client.js';
+
+export type Section = { id: string; type: string; payload: Record<string, any>; visible: boolean };
+
+interface Props {
+  sections: Section[];
+  products: any[];
+}
+
+const { sections, products } = Astro.props;
+
+const str = (p, k) => (typeof p[k] === 'string' ? p[k] : '');
+const list = (p) => (Array.isArray(p.items) ? p.items : []);
+
+const gridCache = new Map();
+for (const s of sections.filter((x) => x.type === 'collection_grid')) {
+  const slug = str(s.payload, 'collectionSlug');
+  const limit = Number(s.payload.limit) > 0 ? Number(s.payload.limit) : 6;
+  let cards = [];
+  if (slug) {
+    const remote = await fetchFromConsoleCollections().catch(() => null);
+    const col = (remote?.collections ?? []).find((c) => c.slug === slug);
+    const byId = new Map(products.map((p) => [p.id, p]));
+    cards = col ? col.products.map((cp) => byId.get(cp.id) ?? byId.get(cp.slug)).filter(Boolean) : [];
+  } else {
+    cards = products;
+  }
+  gridCache.set(s.id, cards.slice(0, limit));
+}
+---
+
+{sections.map((s) => (
+  <section class="home-section">
+    {s.type === 'announce_bar' && (
+      <div class="announce-bar" style="background:#2f5d3a;color:#fff;text-align:center;padding:.75rem 1.25rem;font-weight:600;">
+        {str(s.payload, 'text')}
+      </div>
+    )}
+
+    <div class="container" style="padding:3.5rem 1.25rem;">
+      {s.type === 'hero' && (
+        <div style="max-width:46rem;margin:0 auto;text-align:center;">
+          {str(s.payload, 'eyebrow') && <p class="eyebrow" style="margin-bottom:.75rem;">{str(s.payload, 'eyebrow')}</p>}
+          {str(s.payload, 'headline') && <h1>{str(s.payload, 'headline')}</h1>}
+          {str(s.payload, 'subheadline') && <p class="hero-sub">{str(s.payload, 'subheadline')}</p>}
+          {str(s.payload, 'imageUrl') && (
+            <img src={str(s.payload, 'imageUrl')} alt="" style="margin-top:1.75rem;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;" loading="lazy" />
+          )}
+          {str(s.payload, 'ctaText') && (
+            <a href={str(s.payload, 'ctaHref') || '#'} class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;">{str(s.payload, 'ctaText')}</a>
+          )}
+        </div>
+      )}
+
+      {s.type === 'collection_grid' && (
+        <div>
+          <h2 style="text-align:center;margin-bottom:1.75rem;">{str(s.payload, 'title')}</h2>
+          <div class="product-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;">
+            {(gridCache.get(s.id) ?? []).map((p) => <ProductCard product={p} />)}
+          </div>
+        </div>
+      )}
+
+      {s.type === 'usp' && (
+        <div style="max-width:56rem;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:2rem;">
+          {list(s.payload).map((it) => (
+            <div>
+              <h3 style="margin-bottom:.35rem;">{it.title}</h3>
+              <p style="color:#556;opacity:.8;">{it.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {s.type === 'testimonial' && (
+        <blockquote style="max-width:44rem;margin:0 auto;text-align:center;font-size:1.45rem;font-style:italic;line-height:1.5;">
+          &ldquo;{str(s.payload, 'quote')}&rdquo;
+          {(str(s.payload, 'author') || str(s.payload, 'source')) && (
+            <footer style="margin-top:1rem;font-size:.9rem;font-style:normal;opacity:.65;">
+              {str(s.payload, 'author')}{str(s.payload, 'source') ? ` · ${str(s.payload, 'source')}` : ''}
+            </footer>
+          )}
+        </blockquote>
+      )}
+
+      {s.type === 'faq' && (
+        <div style="max-width:42rem;margin:0 auto;">
+          {list(s.payload).map((it) => (
+            <div style="padding:1rem 0;border-bottom:1px solid rgba(0,0,0,.08);">
+              <h3 style="margin-bottom:.3rem;">{it.q}</h3>
+              <p style="color:#556;opacity:.85;">{it.a}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {s.type === 'rich_text' && (
+        <div style="max-width:42rem;margin:0 auto;">
+          {str(s.payload, 'heading') && <h2 style="margin-bottom:1rem;">{str(s.payload, 'heading')}</h2>}
+          {str(s.payload, 'body') && <p style="white-space:pre-wrap;line-height:1.75;color:#445;">{str(s.payload, 'body')}</p>}
+        </div>
+      )}
+    </div>
+  </section>
+))}

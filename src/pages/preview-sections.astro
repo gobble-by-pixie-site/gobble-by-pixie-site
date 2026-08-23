@@ -1,0 +1,21 @@
+---
+// /preview-sections — pixel-true preview of Console homepage sections in
+// THIS site's theme, including hidden/draft rows. Console's section
+// editor links here. noindex.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { fetchSiteSections } from '../lib/console-client.js';
+import HomeSections from '../components/HomeSections.astro';
+import { fetchProducts } from '../lib/fetchProducts.js';
+
+const products = await fetchProducts();
+const sections = await fetchSiteSections();
+---
+
+<BaseLayout title="Sections Preview">
+  {sections.length === 0 && (
+    <div class="container" style="padding:8rem 1.25rem;text-align:center;opacity:.6;">
+      <p>No homepage sections configured yet — the storefront is using its built-in layout.</p>
+    </div>
+  )}
+  <HomeSections sections={sections} products={products} />
+</BaseLayout>
