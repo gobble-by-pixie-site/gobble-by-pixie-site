@@ -754,6 +754,27 @@ if (window.GobbleCart) {
       if (cartCheckoutBtn) cartCheckoutBtn.href = window.GobbleCart.checkoutWhatsAppUrl();
     }
   </script>
+
+  <!-- Console live-draft (Settings → Content "Vision"): when this page is
+       iframed by the Console content editor (?livedraft=1), unsaved copy
+       edits stream in via postMessage and patch the [data-lc] hooks.
+       Inert for normal visitors (no query param, no listener). -->
+  <script is:inline>
+    (function () {
+      if (new URLSearchParams(location.search).get('livedraft') !== '1') return;
+      var PAGE = { '/': 'home', '/about': 'about', '/preview-sections': 'sections' }[location.pathname] || '';
+      window.addEventListener('message', function (e) {
+        var d = e.data || {};
+        if (d.type !== 'lc-content-preview' || !d.patch) return;
+        document.querySelectorAll('[data-lc]').forEach(function (el) {
+          var v = d.patch[el.getAttribute('data-lc')];
+          if (v === undefined || v === null) return;
+          el.textContent = String(v);
+        });
+      });
+      parent.postMessage({ type: 'lc-content-ready', page: PAGE }, '*');
+    })();
+  </script>
 </body>
 </html>
 

@@ -40,7 +40,7 @@ for (const s of sections.filter((x) => x.type === 'collection_grid')) {
 {sections.map((s) => (
   <section class="home-section">
     {s.type === 'announce_bar' && (
-      <div class="announce-bar" style="background:#2f5d3a;color:#fff;text-align:center;padding:.75rem 1.25rem;font-weight:600;">
+      <div class="announce-bar" style="background:#2f5d3a;color:#fff;text-align:center;padding:.75rem 1.25rem;font-weight:600;" data-lc={`sec:${s.id}:text`}>
         {str(s.payload, 'text')}
       </div>
     )}
@@ -48,21 +48,21 @@ for (const s of sections.filter((x) => x.type === 'collection_grid')) {
     <div class="container" style="padding:3.5rem 1.25rem;">
       {s.type === 'hero' && (
         <div style="max-width:46rem;margin:0 auto;text-align:center;">
-          {str(s.payload, 'eyebrow') && <p class="eyebrow" style="margin-bottom:.75rem;">{str(s.payload, 'eyebrow')}</p>}
-          {str(s.payload, 'headline') && <h1>{str(s.payload, 'headline')}</h1>}
-          {str(s.payload, 'subheadline') && <p class="hero-sub">{str(s.payload, 'subheadline')}</p>}
+          {str(s.payload, 'eyebrow') && <p class="eyebrow" style="margin-bottom:.75rem;" data-lc={`sec:${s.id}:eyebrow`}>{str(s.payload, 'eyebrow')}</p>}
+          {str(s.payload, 'headline') && <h1 data-lc={`sec:${s.id}:headline`}>{str(s.payload, 'headline')}</h1>}
+          {str(s.payload, 'subheadline') && <p class="hero-sub" data-lc={`sec:${s.id}:subheadline`}>{str(s.payload, 'subheadline')}</p>}
           {str(s.payload, 'imageUrl') && (
             <img src={str(s.payload, 'imageUrl')} alt="" style="margin-top:1.75rem;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;" loading="lazy" />
           )}
           {str(s.payload, 'ctaText') && (
-            <a href={str(s.payload, 'ctaHref') || '#'} class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;">{str(s.payload, 'ctaText')}</a>
+            <a href={str(s.payload, 'ctaHref') || '#'} class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;" data-lc={`sec:${s.id}:ctaText`}>{str(s.payload, 'ctaText')}</a>
           )}
         </div>
       )}
 
       {s.type === 'collection_grid' && (
         <div>
-          <h2 style="text-align:center;margin-bottom:1.75rem;">{str(s.payload, 'title')}</h2>
+          <h2 style="text-align:center;margin-bottom:1.75rem;" data-lc={`sec:${s.id}:title`}>{str(s.payload, 'title')}</h2>
           <div class="product-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;">
             {(gridCache.get(s.id) ?? []).map((p) => <ProductCard product={p} />)}
           </div>
@@ -71,10 +71,10 @@ for (const s of sections.filter((x) => x.type === 'collection_grid')) {
 
       {s.type === 'usp' && (
         <div style="max-width:56rem;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:2rem;">
-          {list(s.payload).map((it) => (
+          {list(s.payload).map((it, i) => (
             <div>
-              <h3 style="margin-bottom:.35rem;">{it.title}</h3>
-              <p style="color:#556;opacity:.8;">{it.text}</p>
+              <h3 style="margin-bottom:.35rem;" data-lc={`sec:${s.id}:items:${i}:title`}>{it.title}</h3>
+              <p style="color:#556;opacity:.8;" data-lc={`sec:${s.id}:items:${i}:text`}>{it.text}</p>
             </div>
           ))}
         </div>
@@ -82,10 +82,10 @@ for (const s of sections.filter((x) => x.type === 'collection_grid')) {
 
       {s.type === 'testimonial' && (
         <blockquote style="max-width:44rem;margin:0 auto;text-align:center;font-size:1.45rem;font-style:italic;line-height:1.5;">
-          &ldquo;{str(s.payload, 'quote')}&rdquo;
+          &ldquo;<span data-lc={`sec:${s.id}:quote`}>{str(s.payload, 'quote')}</span>&rdquo;
           {(str(s.payload, 'author') || str(s.payload, 'source')) && (
             <footer style="margin-top:1rem;font-size:.9rem;font-style:normal;opacity:.65;">
-              {str(s.payload, 'author')}{str(s.payload, 'source') ? ` · ${str(s.payload, 'source')}` : ''}
+              <span data-lc={`sec:${s.id}:author`}>{str(s.payload, 'author')}</span>{str(s.payload, 'source') ? <span> · <span data-lc={`sec:${s.id}:source`}>{str(s.payload, 'source')}</span></span> : ''}
             </footer>
           )}
         </blockquote>
@@ -93,10 +93,10 @@ for (const s of sections.filter((x) => x.type === 'collection_grid')) {
 
       {s.type === 'faq' && (
         <div style="max-width:42rem;margin:0 auto;">
-          {list(s.payload).map((it) => (
+          {list(s.payload).map((it, i) => (
             <div style="padding:1rem 0;border-bottom:1px solid rgba(0,0,0,.08);">
-              <h3 style="margin-bottom:.3rem;">{it.q}</h3>
-              <p style="color:#556;opacity:.85;">{it.a}</p>
+              <h3 style="margin-bottom:.3rem;" data-lc={`sec:${s.id}:items:${i}:q`}>{it.q}</h3>
+              <p style="color:#556;opacity:.85;" data-lc={`sec:${s.id}:items:${i}:a`}>{it.a}</p>
             </div>
           ))}
         </div>
@@ -104,8 +104,8 @@ for (const s of sections.filter((x) => x.type === 'collection_grid')) {
 
       {s.type === 'rich_text' && (
         <div style="max-width:42rem;margin:0 auto;">
-          {str(s.payload, 'heading') && <h2 style="margin-bottom:1rem;">{str(s.payload, 'heading')}</h2>}
-          {str(s.payload, 'body') && <p style="white-space:pre-wrap;line-height:1.75;color:#445;">{str(s.payload, 'body')}</p>}
+          {str(s.payload, 'heading') && <h2 style="margin-bottom:1rem;" data-lc={`sec:${s.id}:heading`}>{str(s.payload, 'heading')}</h2>}
+          {str(s.payload, 'body') && <p style="white-space:pre-wrap;line-height:1.75;color:#445;" data-lc={`sec:${s.id}:body`}>{str(s.payload, 'body')}</p>}
         </div>
       )}
     </div>

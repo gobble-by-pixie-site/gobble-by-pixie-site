@@ -33,9 +33,9 @@ let igPosts: { image: string; permalink: string; caption: string }[] = [];
     <span class="hero-sprinkle hero-sprinkle-4" aria-hidden="true">✨</span>
     <div class="container hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow">✨ {content.hero_eyebrow}</p>
+        <p class="eyebrow">✨ <span data-lc="home:heroEyebrow">{content.hero_eyebrow}</span></p>
         <h1>Handmade <span class="text-gradient">Flavoured Cream Cheese</span></h1>
-        <p class="hero-sub">{content.hero_sub}</p>
+        <p class="hero-sub" data-lc="home:heroSub">{content.hero_sub}</p>
         <div class="hero-badges">
           <span class="badge badge-veg">🌱 100% Vegetarian</span>
           <span class="badge badge-gf"><GlutenFreeIcon /> Gluten-Free</span>
@@ -45,7 +45,7 @@ let igPosts: { image: string; permalink: string; caption: string }[] = [];
           <a href="/byop" class="btn btn-primary">Build Your Cheese Platter</a>
           <a href="/menu" class="btn btn-secondary">Shop Cream Cheeses</a>
         </div>
-        <p class="hero-trust">{content.hero_trust}</p>
+        <p class="hero-trust" data-lc="home:heroTrust">{content.hero_trust}</p>
       </div>
       <div class="hero-image-wrap">
         <div class="hero-image" style="background-image: url('/Cover photo.JPG')"></div>

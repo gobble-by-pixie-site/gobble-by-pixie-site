@@ -17,6 +17,25 @@ export async function fetchFromConsoleCollections() {
 }
 
 /**
+ * Generic Console public-API GET. Returns parsed JSON or null on any
+ * failure — callers supply their own fallbacks.
+ */
+export async function fetchFromConsole(path) {
+  const base = import.meta.env.CONSOLE_API_URL;
+  const key = import.meta.env.CONSOLE_STOREFRONT_API_KEY;
+  if (!base || !key) return null;
+  try {
+    const res = await fetch(`${base.replace(/\/$/, '')}${path}`, {
+      headers: { 'X-Storefront-Api-Key': key },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Homepage sections composed in Console (Settings → Content → Homepage
  * sections). Visible rows only; empty array = storefront keeps its
  * built-in layout.

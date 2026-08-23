@@ -1,8 +1,30 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { fetchSiteContent } from '../lib/fetchSiteContent.js';
+import { fetchFromConsole } from '../lib/console-client.js';
 
 const content = await fetchSiteContent();
+
+// Owner-editable About copy (Console → Settings → Content → About).
+// Falls back to the hand-written page copy for any missing field / failed
+// fetch, so a blank Console row renders exactly what shipped before wiring.
+// (Build-time fetch — this is a static site; saved edits appear on rebuild.)
+const savedAbout = await fetchFromConsole('/api/public/site-content/about').catch(() => null);
+const aboutCopy = {
+  eyebrow: savedAbout?.eyebrow || 'The Artisanal Philosophy',
+  heading: savedAbout?.heading || '',
+  intro: content.about_intro,
+  values:
+    Array.isArray(savedAbout?.values) && savedAbout.values.length
+      ? savedAbout.values
+      : [
+          { title: 'Zero Preservatives', description: 'Nothing artificial, ever. What you taste is pure, authentic cream cheese made from natural ingredients.' },
+          { title: 'Small-Batch Craft', description: 'Handcrafted fresh in small batches to preserve rich creaminess and fearless flavour profiles.' },
+          { title: 'Delhi NCR Doorstep', description: 'Delivered direct from our kitchen across Delhi, Gurgaon, Noida, Ghaziabad & Faridabad.' },
+        ],
+};
+const valueIcons = ['🌿', '🧀', '🚀'];
+const valueThemes = ['card-gold', 'card-coral', 'card-teal'];
 ---
 <BaseLayout title="Our Story — Gobble by Pixie">
   <section class="about-hero">
@@ -11,9 +33,13 @@ const content = await fetchSiteContent();
         <div class="about-image" style="background-image: url('https://images.unsplash.com/photo-1631206753348-db44968fd440?w=1000&q=80')"></div>
       </div>
       <div class="about-copy">
-        <p class="eyebrow">The Artisanal Philosophy</p>
-        <h1>Made with love, <span class="text-gradient">never shortcuts</span></h1>
-        <p>{content.about_intro}</p>
+        <p class="eyebrow" data-lc="about:eyebrow">{aboutCopy.eyebrow}</p>
+        {aboutCopy.heading ? (
+          <h1 data-lc="about:heading">{aboutCopy.heading}</h1>
+        ) : (
+          <h1>Made with love, <span class="text-gradient">never shortcuts</span></h1>
+        )}
+        <p data-lc="about:story:0">{aboutCopy.intro}</p>
         <p>We're gluten-free and keto-friendly by design, not as an afterthought — so everyone around the table can gobble without compromise.</p>
       </div>
     </div>
@@ -25,23 +51,15 @@ const content = await fetchSiteContent();
         <p class="eyebrow">Why Choose Pixie</p>
         <h2>Our Uncompromising Standards</h2>
       </div>
-      
+
       <div class="values-grid">
-        <div class="value-card card card-gold">
-          <span class="value-icon">🌿</span>
-          <h3>Zero Preservatives</h3>
-          <p>Nothing artificial, ever. What you taste is pure, authentic cream cheese made from natural ingredients.</p>
-        </div>
-        <div class="value-card card card-coral">
-          <span class="value-icon">🧀</span>
-          <h3>Small-Batch Craft</h3>
-          <p>Handcrafted fresh in small batches to preserve rich creaminess and fearless flavour profiles.</p>
-        </div>
-        <div class="value-card card card-teal">
-          <span class="value-icon">🚀</span>
-          <h3>Delhi NCR Doorstep</h3>
-          <p>Delivered direct from our kitchen across Delhi, Gurgaon, Noida, Ghaziabad & Faridabad.</p>
-        </div>
+        {aboutCopy.values.map((v, i) => (
+          <div class={`value-card card ${valueThemes[i % valueThemes.length]}`}>
+            <span class="value-icon">{valueIcons[i % valueIcons.length]}</span>
+            <h3 data-lc={`about:values:${i}:title`}>{v.title}</h3>
+            <p data-lc={`about:values:${i}:description`}>{v.description}</p>
+          </div>
+        ))}
       </div>
     </div>
   </section>
