@@ -37,7 +37,7 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
       ))}
       <span class="badge badge-dispatch">{dispatchLabel}</span>
     </div>
-    <h3 class="product-title">{product.name}</h3>
+    <h3 class="product-title" data-lp="name" data-lp-slug={product.id}>{product.name}</h3>
     {product.rating && (
       <div class="rating-row" aria-label={`Rated ${product.rating} out of 5`}>
         <span class="stars" style={`--fill: ${Math.round((product.rating / 5) * 100)}%`} aria-hidden="true">★★★★★</span>
@@ -46,9 +46,9 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
       </div>
     )}
     {product.net_weight && <p class="product-weight">{product.net_weight}</p>}
-    {product.description && <p class="product-desc">{product.description}</p>}
+    {product.description && <p class="product-desc" data-lp="description" data-lp-slug={product.id}>{product.description}</p>}
     <div class="product-footer">
-      <span class="product-price">{formatPrice(product.price)}</span>
+      <span class="product-price" data-lp="price" data-lp-fmt="inr" data-lp-slug={product.id} data-raw-price={product.price || ''}>{formatPrice(product.price)}</span>
       <button type="button" class="btn btn-primary btn-sm js-quick-view-btn" disabled={!product.in_stock}>
         {product.in_stock ? 'Quick View / Order' : 'Sold Out'}
       </button>
@@ -85,6 +85,40 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
     btn.textContent = 'Added to Cart ✓';
     setTimeout(() => { btn.textContent = original; }, 1200);
   });
+</script>
+
+<!-- Console live-draft preview: patches card fields when this page is
+     iframed by the product editor (?livedraft=1). Inert otherwise.
+     is:inline because it must run per-instance alongside the card markup. -->
+<script is:inline>
+  (function () {
+    if (window.__gbpLiveDraftHooked) return;
+    window.__gbpLiveDraftHooked = true;
+    var params = new URLSearchParams(location.search);
+    if (params.get('livedraft') !== '1') return;
+    window.addEventListener('message', function (e) {
+      var d = e.data || {};
+      if (d.type !== 'lc-product-preview' || !d.patch || !d.slug) return;
+      document.querySelectorAll('[data-lp]').forEach(function (el) {
+        if ((el.getAttribute('data-lp-slug') || '') !== d.slug) return;
+        var k = el.getAttribute('data-lp');
+        var v = d.patch[k];
+        if (v === undefined || v === null) {
+          if (k === 'price' && !el.getAttribute('data-raw-price')) el.textContent = 'Price on request';
+          return;
+        }
+        if (k === 'image') {
+          if (el.tagName === 'IMG') el.src = v; else el.style.backgroundImage = "url('" + v + "')";
+          return;
+        }
+        el.textContent = el.getAttribute('data-lp-fmt') === 'inr'
+          ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(v))
+          : String(v);
+        if (k === 'price') el.setAttribute('data-raw-price', String(v));
+      });
+    });
+    parent.postMessage({ type: 'lc-preview-ready' }, '*');
+  })();
 </script>
 
 <style>
