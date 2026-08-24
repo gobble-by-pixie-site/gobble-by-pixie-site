@@ -7,14 +7,15 @@ import { fetchSiteContent } from '../lib/fetchSiteContent.js';
 import { fetchSiteSections } from '../lib/console-client';
 import HomeSections from '../components/HomeSections.astro';
 
-const products = await fetchProducts();
-const content = await fetchSiteContent();
+// Parallel: four independent Console fetches — sequential they stacked to
+// a ~3.5-5s TTFB on every home hit.
+const [products, content, homeSections] = await Promise.all([
+  fetchProducts(),
+  fetchSiteContent(),
+  fetchSiteSections(),
+]);
 const bestSellers = products.slice(0, 3);
 const zones = ['Delhi', 'Gurgaon', 'Noida', 'Ghaziabad', 'Faridabad'];
-
-// Homepage sections (Settings → Content → Homepage sections). When at
-// least one exists, they render instead of the built-in layout below.
-const homeSections = await fetchSiteSections();
 
 // Live Instagram — hidden until this tenant connects its own Meta account.
 // Console returns { posts: [] } when not connected (no stub tiles).
