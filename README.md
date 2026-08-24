@@ -46,3 +46,11 @@ Full audit against live SSR deploy: /api/search returns real JSON results
 (q=gift -> 6 hits), catalog pages healthy. Search endpoints on all three
 storefronts (gobble/nanoliss/tcs) verified same day. Nothing to fix;
 no deploy triggered.
+
+## Deployment
+
+- **Normal:** git push to `main` (CF Pages auto-builds).
+- **Fallback (GitHub down):** `bash deploy.sh` - builds locally, assembles
+  the Pages worker, deploys straight to project `gobble-by-pixie-site`.
+  OAuth login is the only working auth for this project (API-token auth is
+  broken - see _Secrets reference, Account 3). Out-of-band deploy: verify live.
