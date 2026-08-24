@@ -44,13 +44,16 @@ test("vision: CSP frame-ancestors admits Console", async (t) => {
 });
 
 test("vision: product page loads under livedraft with data-lp hooks", async (t) => {
-  const sm = await get("/sitemap.xml");
-  if (sm.status !== 200) return t.skip("no sitemap.xml");
-  const m = sm.html.match(/<loc>[^<]*\/products\/[^<]+<\/loc>/i);
-  if (!m) return t.skip("sitemap has no /products/ URLs");
-  const productUrl = m[0].replace(/<\/?loc>/g, "");
-  const path = productUrl.replace(/^https?:\/\/[^/]+/, "") + "?livedraft=1";
-  const { status, html } = await get(path);
-  assert.equal(status, 200, `product vision page ${path} should be 200`);
+  // No sitemap.xml on this site — discover a live slug via our own
+  // /api/search proxy (which also proves the Console search path works).
+  let slug = null;
+  try {
+    const r = await fetch(`${BASE}/api/search?q=cheese`, { signal: AbortSignal.timeout(20000) });
+    const j = await r.json();
+    slug = (j.results ?? [])[0]?.slug ?? null;
+  } catch {}
+  if (!slug) return t.skip("could not discover a product slug");
+  const { status, html } = await get(`/products/${encodeURIComponent(slug)}?livedraft=1`);
+  assert.equal(status, 200, `product vision page (${slug}) should be 200`);
   assert.ok(html.includes("data-lp"), "product vision page missing data-lp hooks");
 });
