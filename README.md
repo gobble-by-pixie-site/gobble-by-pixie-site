@@ -38,3 +38,11 @@ Deliberately compact (client feedback: jars looked oversized): 168px image well,
 ## Legacy
 
 `code.gs` / Google Sheets CSV fallbacks remain in `lib/*.js` as dead-code fallback paths only; Console owns all data since the 2026-08 cutover.
+
+
+## 2026-08-24 - Verification pass (no code changes)
+
+Full audit against live SSR deploy: /api/search returns real JSON results
+(q=gift -> 6 hits), catalog pages healthy. Search endpoints on all three
+storefronts (gobble/nanoliss/tcs) verified same day. Nothing to fix;
+no deploy triggered.
