@@ -928,16 +928,39 @@ if (window.GobbleCart) {
 
   <!-- Console live-draft (Settings → Content "Vision"): when this page is
        iframed by the Console content editor (?livedraft=1), unsaved copy
-       edits stream in via postMessage and patch the [data-lc] hooks.
-       Inert for normal visitors (no query param, no listener). -->
+       edits stream in via postMessage and patch the [data-lc] hooks, and
+       [data-lc] elements become click-to-edit — typing streams back to the
+       Console form via postMessage (lc-content-edit). Inert for normal
+       visitors (no query param, no listeners). -->
   <script is:inline>
     (function () {
       if (new URLSearchParams(location.search).get('livedraft') !== '1') return;
       var PAGE = { '/': 'home', '/about': 'about', '/preview-sections': 'sections' }[location.pathname] || '';
+
+      document.body.classList.add('lc-live');
+      var style = document.createElement('style');
+      style.textContent =
+        '.lc-live [data-lc]{cursor:text;outline:1px dashed transparent;transition:outline-color .15s}' +
+        '.lc-live [data-lc]:hover{outline-color:rgba(37,99,235,.55)}' +
+        '.lc-live [data-lc]:focus{outline:2px solid rgba(37,99,235,.85);outline-offset:2px}';
+      document.head.appendChild(style);
+
+      document.querySelectorAll('[data-lc]').forEach(function (el) {
+        el.setAttribute('contenteditable', 'plaintext-only');
+        if (!el.isContentEditable) el.setAttribute('contenteditable', 'true');
+        el.addEventListener('click', function (e) {
+          if (el.closest('a')) e.preventDefault();
+        });
+        el.addEventListener('input', function () {
+          parent.postMessage({ type: 'lc-content-edit', id: el.getAttribute('data-lc'), value: el.innerText }, '*');
+        });
+      });
+
       window.addEventListener('message', function (e) {
         var d = e.data || {};
         if (d.type !== 'lc-content-preview' || !d.patch) return;
         document.querySelectorAll('[data-lc]').forEach(function (el) {
+          if (document.activeElement === el) return; // never clobber the caret mid-edit
           var v = d.patch[el.getAttribute('data-lc')];
           if (v === undefined || v === null) return;
           el.textContent = String(v);
