@@ -9,7 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "node --test tests/smoke/site.test.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.0",

@@ -14,6 +14,11 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  // Who may iframe this site: itself + Console's Vision panels. Missing
+  // this meant ANY third party could embed the storefront (clickjacking).
+  // Same directive Nanoliss/TCS already ship.
+  "Content-Security-Policy":
+    "frame-ancestors 'self' https://linear-console.vercel.app",
 };
 
 export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
