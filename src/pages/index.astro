@@ -34,7 +34,7 @@ let igPosts: { image: string; permalink: string; caption: string }[] = [];
     <div class="container hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">✨ <span data-lc="home:heroEyebrow">{content.hero_eyebrow}</span></p>
-        <h1>Handmade <span class="text-gradient">Flavoured Cream Cheese</span></h1>
+        <h1 data-lc="home:hero_title">{content.hero_title ? content.hero_title : <>Handmade <span class="text-gradient">Flavoured Cream Cheese</span></>}</h1>
         <p class="hero-sub" data-lc="home:heroSub">{content.hero_sub}</p>
         <div class="hero-badges">
           <span class="badge badge-veg">🌱 100% Vegetarian</span>
@@ -57,9 +57,9 @@ let igPosts: { image: string; permalink: string; caption: string }[] = [];
   <section class="byop-teaser">
     <div class="container">
       <div class="teaser-header">
-        <p class="eyebrow">#BYOP Experience</p>
-        <h2>Build Your Own Platter</h2>
-        <p class="section-sub">Curate your custom cheese board in four easy steps — like having a personal cheesemonger in your kitchen.</p>
+        <p class="eyebrow" data-lc="home:byop_eyebrow">{content.byop_eyebrow ?? '#BYOP Experience'}</p>
+        <h2 data-lc="home:byop_title">{content.byop_title ?? 'Build Your Own Platter'}</h2>
+        <p class="section-sub" data-lc="home:byop_sub">{content.byop_sub ?? 'Curate your custom cheese board in four easy steps — like having a personal cheesemonger in your kitchen.'}</p>
       </div>
       
       <div class="teaser-steps">
@@ -93,8 +93,8 @@ let igPosts: { image: string; permalink: string; caption: string }[] = [];
   <section class="bestsellers">
     <div class="container">
       <div class="section-head">
-        <p class="eyebrow">Fan Favourites</p>
-        <h2>Curated Best-Sellers</h2>
+        <p class="eyebrow" data-lc="home:best_eyebrow">{content.best_eyebrow ?? 'Fan Favourites'}</p>
+        <h2 data-lc="home:best_title">{content.best_title ?? 'Curated Best-Sellers'}</h2>
       </div>
       <div class="product-grid">
         {bestSellers.map((p) => <ProductCard product={p} />)}
