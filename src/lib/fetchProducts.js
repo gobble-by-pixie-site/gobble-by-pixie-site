@@ -148,3 +148,19 @@ export function formatPrice(amount) {
 export function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 }
+
+export async function fetchProductBySlug(slug) {
+  const base = consoleUrl();
+  const key = consoleKey();
+  if (!base || !key) return null;
+  try {
+    const res = await fetch(`${base.replace(/\/$/, '')}/api/public/products/${encodeURIComponent(slug)}`, {
+      headers: { 'X-Storefront-Api-Key': key },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.product ? consoleToStore(data.product) : null;
+  } catch {
+    return null;
+  }
+}
