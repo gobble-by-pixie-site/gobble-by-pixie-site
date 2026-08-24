@@ -71,7 +71,8 @@ export async function fetchSiteContent() {
         if (home.fibreBody) merged.about_intro = home.fibreBody;
       }
       // Food-vertical home fields are stored snake_case and copied 1:1.
-      ['hero_title', 'hero_sub', 'hero_trust', 'byop_eyebrow', 'byop_title', 'byop_sub', 'best_eyebrow', 'best_title'].forEach((k) => {
+      ['hero_title', 'hero_sub', 'hero_trust', 'byop_eyebrow', 'byop_title', 'byop_sub', 'best_eyebrow', 'best_title',
+       'tagline', 'fulfillment_platters', 'fulfillment_jars', 'grazing_table_price', 'fssai_number', 'gstin'].forEach((k) => {
         if (home && home[k]) merged[k] = home[k];
       });
       if (about && Array.isArray(about.storyParagraphs) && about.storyParagraphs[0]) {
