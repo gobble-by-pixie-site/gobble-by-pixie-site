@@ -56,7 +56,7 @@ function parseCSV(csvText) {
 }
 
 export async function fetchEvents() {
-  const csvUrl = import.meta.env.GOOGLE_EVENTS_CSV_URL;
+  const csvUrl = (await import('./env')).getEnv().GOOGLE_EVENTS_CSV_URL;
 
   if (!csvUrl) {
     console.warn('[GBP] ⚠️  GOOGLE_EVENTS_CSV_URL not set — Events page will show no events.');

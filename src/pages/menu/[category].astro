@@ -4,20 +4,16 @@ import ProductCard from '../../components/ProductCard.astro';
 import ProductQuickViewModal from '../../components/ProductQuickViewModal.astro';
 import { fetchProducts, getCategories, slugify } from '../../lib/fetchProducts.js';
 
-export async function getStaticPaths() {
-  const products = await fetchProducts();
-  const categories = getCategories(products);
-  return categories.map((category) => ({
-    params: { category: slugify(category) },
-    props: {
-      category,
-      products: products.filter((p) => p.category === category),
-      allCategories: categories,
-    },
-  }));
+// SSR: the menu is live Console data — no getStaticPaths, no rebuilds.
+// Unknown categories render the empty state instead of 404ing.
+const allProducts = await fetchProducts();
+const allCategories = getCategories(allProducts);
+const category =
+  allCategories.find((c) => slugify(c) === Astro.params.category) ?? null;
+if (!category) {
+  return new Response(null, { status: 404 });
 }
-
-const { category, products, allCategories } = Astro.props;
+const products = allProducts.filter((p) => p.category === category);
 const WA = 'https://wa.link/sngzs9';
 ---
 <BaseLayout title={`${category} — Gobble by Pixie`}>

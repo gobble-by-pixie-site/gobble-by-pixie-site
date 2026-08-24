@@ -6,7 +6,7 @@
  * that Console Collection, otherwise the full catalog; `limit` caps count.
  */
 import ProductCard from './ProductCard.astro';
-import { fetchFromConsoleCollections } from '../lib/console-client.js';
+import { fetchFromConsoleCollections } from '../lib/console-client';
 
 export type Section = { id: string; type: string; payload: Record<string, any>; visible: boolean };
 

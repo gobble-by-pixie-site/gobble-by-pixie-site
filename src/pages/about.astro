@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { fetchSiteContent } from '../lib/fetchSiteContent.js';
-import { fetchFromConsole } from '../lib/console-client.js';
+import { fetchFromConsole } from '../lib/console-client';
 
 const content = await fetchSiteContent();
 

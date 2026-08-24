@@ -1,15 +1,14 @@
 /**
  * Console-backed product fetch with Google-Sheet CSV fallback.
  *
- * PRIMARY: Linear Console's public storefront API (same pattern as
- * theclosetstory.com/tcs-store) — set CONSOLE_API_URL +
- * CONSOLE_STOREFRONT_API_KEY env vars and products/categories/images come
- * from the Console admin, fully editable without deploys.
- *
- * FALLBACK: if either env var is unset (pre-cutover state) this reads the
- * original published Sheet CSV exactly as before — zero behavior change
- * until cutover.
+ * PRIMARY: Linear Console's public storefront API — CONSOLE_API_URL (or
+ * CONSOLE_API_BASE_URL) + CONSOLE_STOREFRONT_API_KEY via the lazy
+ * getEnv() in lib/env.ts. NEVER read import.meta.env directly here: it
+ * is build-time-only under the Cloudflare adapter and silently served a
+ * placeholder catalog to production once already (fixed 2026-08-24).
  */
+import { consoleUrl, consoleKey, getEnv } from './env';
+
 const FALLBACK_PRODUCTS = [
   ...Array.from({ length: 8 }, (_, i) => ({
     id: `gbp-jar-${i + 1}`, name: `Jar Flavour ${i + 1}`, category: 'Jars', subcategory: '',
@@ -51,13 +50,18 @@ function consoleToStore(p) {
     description: p.description || '',
     dietary: attrs.dietary || [],
     fulfillment: attrs.fulfillment || 'next-day',
-    in_stock: !!p.inStock,
+    // Console exposes stockQty, never an inStock boolean — derive it.
+    // (!!p.inStock was always false and rendered the whole catalog Sold
+    // Out whenever Console data did load.)
+    stockQty: Number(p.stockQty) || 0,
+    in_stock: Number(p.stockQty) > 0,
+    badge: p.badge || null,
   };
 }
 
 async function fetchFromConsoleProducts() {
-  const base = import.meta.env.CONSOLE_API_URL;
-  const key = import.meta.env.CONSOLE_STOREFRONT_API_KEY;
+  const base = consoleUrl();
+  const key = consoleKey();
   if (!base || !key) return null;
   try {
     const res = await fetch(`${base.replace(/\/$/, '')}/api/public/products`, {
@@ -112,7 +116,7 @@ export async function fetchProducts() {
   const viaConsole = await fetchFromConsoleProducts();
   if (viaConsole) return viaConsole;
 
-  const csvUrl = import.meta.env.GOOGLE_SHEET_CSV_URL;
+  const csvUrl = getEnv().GOOGLE_SHEET_CSV_URL;
   if (!csvUrl) {
     console.warn('[GBP] ⚠ No Console config and no Sheet URL — using placeholder catalog.');
     return FALLBACK_PRODUCTS;

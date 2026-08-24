@@ -1,7 +1,10 @@
 {
   "name": "gobble-by-pixie",
   "type": "module",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -9,10 +12,13 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.2.0",
     "@astrojs/sitemap": "^3.1.0",
-    "astro": "^4.15.0"
+    "astro": "^7.2.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3",
     "wrangler": "^4.116.0"
   }
 }

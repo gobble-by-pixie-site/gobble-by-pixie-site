@@ -4,7 +4,7 @@ import ProductCard from '../components/ProductCard.astro';
 import GlutenFreeIcon from '../components/GlutenFreeIcon.astro';
 import { fetchProducts } from '../lib/fetchProducts.js';
 import { fetchSiteContent } from '../lib/fetchSiteContent.js';
-import { fetchSiteSections } from '../lib/console-client.js';
+import { fetchSiteSections } from '../lib/console-client';
 import HomeSections from '../components/HomeSections.astro';
 
 const products = await fetchProducts();
@@ -19,7 +19,7 @@ const homeSections = await fetchSiteSections();
 // Live Instagram — hidden until this tenant connects its own Meta account.
 // Console returns { posts: [] } when not connected (no stub tiles).
 let igPosts: { image: string; permalink: string; caption: string }[] = [];
-{ const base = import.meta.env.CONSOLE_API_URL; const key = import.meta.env.CONSOLE_STOREFRONT_API_KEY; if (base && key) { try { const r = await fetch(`${base.replace(/\/$/, '')}/api/public/instagram?limit=6`, { headers: { 'X-Storefront-Api-Key': key } }); if (r.ok) { const j = await r.json(); igPosts = (j.posts ?? []).slice(0, 6); } } catch {} } }
+{ const { consoleUrl, consoleKey } = await import('../lib/env'); const base = consoleUrl(); const key = consoleKey(); if (base && key) { try { const r = await fetch(`${base.replace(/\/$/, '')}/api/public/instagram?limit=6`, { headers: { 'X-Storefront-Api-Key': key } }); if (r.ok) { const j = await r.json(); igPosts = (j.posts ?? []).slice(0, 6); } } catch {} } }
 ---
 <BaseLayout>
 {homeSections.length > 0 ? (

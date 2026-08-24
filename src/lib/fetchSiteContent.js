@@ -52,8 +52,9 @@ function parseCSV(csvText) {
 export async function fetchSiteContent() {
   // PRIMARY: Console site-content about+home keys merged over fallbacks
   // (editable in Console -> Content). FALLBACK: legacy Sheet CSV.
-  const base = import.meta.env.CONSOLE_API_URL;
-  const key = import.meta.env.CONSOLE_STOREFRONT_API_KEY;
+  const { consoleUrl, consoleKey } = await import('./env');
+  const base = consoleUrl();
+  const key = consoleKey();
   let merged = { ...FALLBACK_CONTENT };
   if (base && key) {
     try {
@@ -78,7 +79,7 @@ export async function fetchSiteContent() {
     }
   }
 
-  const csvUrl = import.meta.env.GOOGLE_SITE_CONTENT_CSV_URL;
+  const csvUrl = (await import('./env')).getEnv().GOOGLE_SITE_CONTENT_CSV_URL;
   if (!csvUrl) return merged;
 
   try {
