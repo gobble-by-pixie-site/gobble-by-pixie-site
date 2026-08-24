@@ -40,7 +40,7 @@ Deliberately compact (client feedback: jars looked oversized): 168px image well,
 `code.gs` / Google Sheets CSV fallbacks remain in `lib/*.js` as dead-code fallback paths only; Console owns all data since the 2026-08 cutover.
 
 
-## 2026-08-24 - Verification pass (no code changes)
+## 2026-08-24 - Verification pass + full audit (no code changes)
 
 Full audit against live SSR deploy: /api/search returns real JSON results
 (q=gift -> 6 hits), catalog pages healthy. Search endpoints on all three
