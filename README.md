@@ -4,117 +4,37 @@ Astro storefront for Gobble by Pixie Cream Cheese ([@gobblebypixie](https://www.
 
 **Live**: https://gobblebypixie.com
 
-## Stack
+## Stack (2026-08-24 — SSR migration)
 
-- **Astro** (static output), no UI framework, no Tailwind — vanilla CSS with design tokens.
-- **Content**: Google Sheet published as CSV (see `src/lib/fetchProducts.js`) — live in production, real 37-item catalog. Site copy (hero text, fulfillment banner, FSSAI/GSTIN, etc.) reads from the SiteContent tab the same way (see `src/lib/fetchSiteContent.js`).
-- **Accounts/Rewards**: localStorage session + a deployed, working Google Apps Script backend (`code.gs` in this repo — also the source of truth mirrored into the Sheet's own Script Editor).
-- **Cart**: `public/cart.js`, plain JS + localStorage, shared across every page via `window.GobbleCart`.
+- **Astro 7, `output: 'server'`** on `@astrojs/cloudflare` v14 — same stack as nanoliss.com. Deployed to Cloudflare Pages project **`gobble-by-pixie-site`** (client's own account), git-connected: every push to `main` auto-builds and goes live.
+- **`.node-version` pins Node 22.12** — Astro 7 requires it; without the pin the Pages build fails on older defaults and the previous deployment stays live silently.
+- **Console is the source of truth**: menu/products/collections/site copy/analytics IDs all come from Linear Console's `/api/public/*` at request time with a 60s in-memory cache. Console edits are live in ≤60s — no rebuilds.
+- **Env rule (critical)**: never read `import.meta.env.*` for server config — it's build-time-only under the Cloudflare adapter and once served a placeholder catalog to production (2026-08-24 incident). Everything goes through `src/lib/env.ts` (`getEnv()`, populated by `src/middleware.ts` capturing worker runtime env) which accepts both `CONSOLE_API_URL` and `CONSOLE_API_BASE_URL`. Same pattern as nanoliss.com.
+- **Stock**: Console exposes `stockQty`, never a boolean. `in_stock = stockQty > 0` is derived in `fetchProducts.js`.
+- **Cart/checkout**: WhatsApp-based ordering (`public/cart.js` + wa.link deep links, GST breakdown client-side). Standalone-tenant Razorpay checkout via Console (`orders/create` + `verify-payment`) is the documented upgrade path once Razorpay keys are seeded for this tenant.
+- **Search**: header search overlay → `/api/search` → Console search API.
+- **Waitlist/newsletter**: footer "First Bites" + category waitlists POST `/api/newsletter` → upserts into Console `newsletter_subscribers` (Settings → Newsletter campaigns send to that list).
+- **Analytics**: GA4/GTM/Meta Pixel snippets render from Console store-config when IDs are set.
 
 ## Local development
 
 ```bash
 npm install
-npm run dev
+npm run dev      # port 3005 (see astro.config.mjs)
+npm run build    # production build -> dist/client + dist/server
 ```
 
-Runs on `http://localhost:3005` by default (see `astro.config.mjs` → `server.port`). A `.claude/launch.json` entry named `gobblebypixie-dev` is already registered for browser-preview tooling.
+`.env.local` mirrors the Pages dashboard vars:
 
-```bash
-npm run build     # production build → dist/
-npm run preview   # preview the production build locally
-```
+| Var | Value |
+|---|---|
+| `CONSOLE_API_URL` | `https://linear-console.vercel.app` |
+| `CONSOLE_STOREFRONT_API_KEY` | tenant key from `_Secrets/PROJECT_SECRETS_REFERENCE.md` §14 |
 
-## Deploying
+## Product cards
 
-No CI — deploys are manual:
+Deliberately compact (client feedback: jars looked oversized): 168px image well, tight type scale, 2-line clamped descriptions. Adjust in `ProductCard.astro`'s scoped styles.
 
-```bash
-npm run build
-node_modules/.bin/wrangler pages deploy dist --project-name gobble-by-pixie-site --branch main
-```
+## Legacy
 
-Requires being logged into wrangler via OAuth (`wrangler login`) as the client's own Cloudflare account — **not** an API token (hits a reproducible wrangler bug on this project, see `CLAUDE.md`). `git push` alone does not deploy the live site.
-
-## Environment variables
-
-`.env` (gitignored, not committed) needs:
-
-```
-GOOGLE_SHEET_CSV_URL=          # published-CSV URL for the Products tab of the backend Sheet
-GOOGLE_SITE_CONTENT_CSV_URL=   # published-CSV URL for the SiteContent tab (see src/lib/fetchSiteContent.js)
-GOOGLE_EVENTS_CSV_URL=         # published-CSV URL for the Events tab (see src/lib/fetchEvents.js)
-APPS_SCRIPT_URL=               # deployed Apps Script Web App /exec URL (code.gs)
-```
-
-Both are live in production. Without them locally, the site builds fine using hardcoded placeholder products and the account pages show a "not configured yet" state instead of erroring — useful for working on layout/design without needing real credentials.
-
-## File map
-
-```
-code.gs                    — Google Apps Script backend: auth, points/tiers, orders, coupons,
-                              GST calculation, Razorpay webhook (built, keys pending)
-public/
-  cart.js                  — shared cart engine, window.GobbleCart
-  Logos/                   — real brand logo, red/black/white (black variant in use)
-  Cover photo.JPG          — hero image
-  Green Jar.png            — used in the floating WhatsApp contact button
-  favicon-32.png, favicon-16.png, apple-touch-icon.png — generated from the
-                              logo's 'g' mark cropped out of the wordmark
-                              (public/Logos/ is too wide/detailed for a small
-                              tab icon as-is), regenerate via sharp if the
-                              logo ever changes — see git history for the
-                              crop/composite script used
-  og-image.jpg             — 1200×630 social-share preview, full wordmark
-                              centered on the brand's parchment background
-src/
-  layouts/
-    BaseLayout.astro       — header (nav, cart icon, account link), cart drawer, mobile drawer,
-                              footer (incl. FSSAI/GSTIN), floating WhatsApp button, global <head>
-  components/
-    ProductCard.astro          — product card used on home + menu category pages; wires "Add to
-                                  Cart" for priced items, "Enquire on WhatsApp" for unpriced ones
-    ProductQuickViewModal.astro — shared Quick View modal, included by each /menu/[category] page
-    GlutenFreeIcon.astro       — generic GF icon (not a certification mark — product isn't certified)
-  lib/
-    fetchProducts.js       — Sheet-CSV fetch + parse + fallback data + formatPrice(); also
-                              exports convertImageUrl() (Drive share link → thumbnail URL,
-                              reused by fetchEvents.js) and slugify() (category name → URL
-                              slug, reused by BaseLayout.astro's Menu dropdown and every
-                              /menu/* page so the two always agree)
-    fetchSiteContent.js    — SiteContent tab fetch + parse, falls back to hardcoded copy
-    fetchEvents.js         — Events tab fetch + parse, filters to published=TRUE rows only
-  pages/
-    index.astro            — homepage
-    menu.astro              — category hub: tiles linking to /menu/[category], not a product list
-    menu/
-      [category].astro      — one page per live category (getStaticPaths), sticky cross-category
-                               sub-nav, product grid + Quick View modal
-      grazing-tables.astro  — static "book a grazing table" page, same sub-nav as category pages
-    byop.astro              — "Build Your Own Platter" 5-step wizard, adds to cart on completion
-    events.astro             — event photo/write-up gallery, reads the Events tab
-    about.astro              — brand story
-    faq.astro                — delivery/fulfillment schedule + FAQ accordion
-    account.astro            — logged-in account: Profile / Orders (with Reorder) / Rewards tabs
-    login.astro               — sign in + forgot-password request
-    signup.astro               — create account (100pt signup bonus)
-  styles/
-    global.css              — ALL design tokens live here. Change the brand look by editing this
-                              file only — components consume var(--token-name), nothing hardcoded.
-```
-
-## Design system
-
-Editorial style (client-approved reference: `miampatisserie.com`) — muted dusty-rose/cream palette, sharp corners, unified Cormorant Garamond/EB Garamond. All tokens in `src/styles/global.css`. To retheme:
-
-1. Edit the `:root` block in `global.css` — every component reads from these tokens.
-2. Don't hardcode hex values in component `<style>` blocks; add a token instead if you need a new color.
-
-## Ordering flow (current state)
-
-Real multi-item cart (`public/cart.js`) — customers can add several items across pages, adjust quantities, and check out with one combined WhatsApp message. No payment backend yet (waiting on Razorpay keys), so checkout ends at WhatsApp rather than a real payment — swap that step out once keys are added; `code.gs`'s order-creation and webhook logic is already built for it.
-
-## Where to look next
-
-- `../PLAN.md` — full scope decisions, phased build order, BOS/backend integration plan (one directory up — planning doc, not deployed with the site).
-- `CLAUDE.md` in this folder — architecture rationale and current known gaps.
+`code.gs` / Google Sheets CSV fallbacks remain in `lib/*.js` as dead-code fallback paths only; Console owns all data since the 2026-08 cutover.
