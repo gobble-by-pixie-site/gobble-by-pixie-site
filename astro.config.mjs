@@ -11,8 +11,9 @@ export default defineConfig({
   // prerender individually.
   output: 'server',
   site: 'https://gobblebypixie.com',
+  session: false,
   compressHTML: true,
-  adapter: cloudflare(),
+  adapter: cloudflare({ imageService: 'passthrough' }),
   integrations: [sitemap()],
   build: {
     inlineStylesheets: 'never',

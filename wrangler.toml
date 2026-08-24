@@ -1,7 +1,0 @@
-name = "gobble-by-pixie-site"
-# 2025-04-01: enables nodejs_populate_process_env by default — bindings are
-# mirrored into process.env, which src/lib/env.ts uses as a fallback when
-# the cloudflare:workers env export is unavailable.
-compatibility_date = "2025-04-01"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = "dist/client"
