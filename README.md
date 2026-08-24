@@ -4,7 +4,7 @@ Astro storefront for Gobble by Pixie Cream Cheese ([@gobblebypixie](https://www.
 
 **Live**: https://gobblebypixie.com
 
-## Stack (2026-08-24 — SSR migration)
+## Stack (2026-08-24 — SSR migration + Console content backfill)
 
 - **Astro 7, `output: 'server'`** on `@astrojs/cloudflare` v14 — same stack as nanoliss.com. Deployed to Cloudflare Pages project **`gobble-by-pixie-site`** (client's own account), git-connected: every push to `main` auto-builds and goes live.
 - **`.node-version` pins Node 22.12** — Astro 7 requires it; without the pin the Pages build fails on older defaults and the previous deployment stays live silently.
