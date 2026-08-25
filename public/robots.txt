@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /login
+Disallow: /preview-sections
+Disallow: /api/
+
+Sitemap: https://gobblebypixie.com/sitemap.xml

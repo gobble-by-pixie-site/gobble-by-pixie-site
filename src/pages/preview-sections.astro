@@ -12,6 +12,9 @@ const sections = await fetchSiteSections();
 ---
 
 <BaseLayout title="Sections Preview">
+  <Fragment slot="head">
+    <meta name="robots" content="noindex, nofollow" />
+  </Fragment>
   {sections.length === 0 && (
     <div class="container" style="padding:8rem 1.25rem;text-align:center;opacity:.6;">
       <p>No homepage sections configured yet — the storefront is using its built-in layout.</p>

@@ -17,6 +17,26 @@ const SITE = 'https://gobblebypixie.com';
 ---
 
 <BaseLayout title={`${product.name} — Gobble by Pixie`}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.name,
+      description: product.description || `${product.name} — handmade flavoured cream cheese by Gobble by Pixie.`,
+      image: product.image_url ? [product.image_url] : undefined,
+      category: product.category,
+      brand: { "@type": "Brand", name: "Gobble by Pixie" },
+      offers: {
+        "@type": "Offer",
+        url: `${SITE}/products/${product.id}/`,
+        priceCurrency: "INR",
+        price: String(product.price),
+        availability: product.in_stock
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      },
+    })} />
+  </Fragment>
   <section class="product-page">
     <div class="container">
       <nav class="breadcrumb">

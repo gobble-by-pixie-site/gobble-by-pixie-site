@@ -66,6 +66,20 @@ const ogImage = SITE_URL + '/og-image.jpg';
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImage} />
 
+  <!-- Organization structured data — sitewide, real data only. -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Gobble by Pixie",
+    url: SITE_URL,
+    logo: `${SITE_URL}/Logos/Gobble Logo-TM-Black.png`,
+    description: "Handmade flavoured cream cheese and handcrafted grazing boards — 100% vegetarian, gluten-free, keto-friendly. Delhi NCR.",
+    sameAs: ["https://www.instagram.com/gobblebypixie/"],
+  })} />
+
+  <!-- Per-page head extras (Product JSON-LD, noindex, etc.) -->
+  <slot name="head" />
+
   <script is:inline src="/cart.js"></script>
 
   <!-- Analytics — IDs come from Console → Business (store-config API);
