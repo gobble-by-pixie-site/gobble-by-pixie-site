@@ -150,17 +150,10 @@ export function slugify(text) {
 }
 
 export async function fetchProductBySlug(slug) {
-  const base = consoleUrl();
-  const key = consoleKey();
-  if (!base || !key) return null;
-  try {
-    const res = await fetch(`${base.replace(/\/$/, '')}/api/public/products/${encodeURIComponent(slug)}`, {
-      headers: { 'X-Storefront-Api-Key': key },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.product ? consoleToStore(data.product) : null;
-  } catch {
-    return null;
-  }
+  // One cached list fetch instead of a per-slug call: each distinct slug
+  // re-ran the Console function once per TTL hour (x 37 products), keeping
+  // Neon's compute from ever reaching its 5-min idle suspend. The list
+  // payload is full-fidelity, so PDPs filter it locally.
+  const list = await fetchFromConsoleProducts();
+  return list ? list.find((p) => p.id === slug) || null : null;
 }
