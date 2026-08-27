@@ -50,7 +50,7 @@ export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
   // Add cache headers for static content (bots get cached HTML at edge)
   const pathname = new URL(context.request.url).pathname;
   if (isCacheablePath(pathname)) {
-    headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=60");
+    headers.set("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=60");
     headers.set("Vary", "Accept-Encoding");
   } else {
     headers.set("Cache-Control", "private, no-store");
