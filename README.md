@@ -28,7 +28,7 @@ npm run build    # production build -> dist/client + dist/server
 
 | Var | Value |
 |---|---|
-| `CONSOLE_API_URL` | `https://linear-console.vercel.app` |
+| `CONSOLE_API_URL` | `https://console.linearventures.in` |
 | `CONSOLE_STOREFRONT_API_KEY` | tenant key from `_Secrets/PROJECT_SECRETS_REFERENCE.md` §14 |
 
 ## Product cards

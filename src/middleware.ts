@@ -23,7 +23,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   // this meant ANY third party could embed the storefront (clickjacking).
   // Same directive Nanoliss/TCS already ship.
   "Content-Security-Policy":
-    "frame-ancestors 'self' https://linear-console.vercel.app",
+    "frame-ancestors 'self' https://console.linearventures.in",
 };
 
 const isCacheablePath = (pathname: string): boolean => {
