@@ -56,7 +56,10 @@ export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
     headers.set("Cache-Control", "private, no-store");
   }
 
-  return new Response(upstream.body, {
+  // Buffer the body so Cloudflare CDN can cache the response (streamed
+  // bodies are never cached — cf-cache-status stays DYNAMIC).
+  const body = await upstream.text();
+  return new Response(body, {
     status: upstream.status,
     statusText: upstream.statusText,
     headers,
