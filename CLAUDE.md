@@ -18,3 +18,22 @@
 - **SEO (fixed 2026-08-30):** custom `src/pages/sitemap.xml.js` — curated static pages + product URLs pulled LIVE from Console (new jars appear without a deploy); @astrojs/sitemap removed (its build output missed every product and listed account/login/preview-sections). `public/robots.txt` carries the `Sitemap:` line (CF's managed content-signals block prepends to it). Organization JSON-LD sitewide in BaseLayout (new `head` slot), Product JSON-LD on `/products/[slug]` (price/availability/image from Console data), `preview-sections` now actually noindex. Verified live: 45 URLs incl. all 37 products. (cutover from Squarespace completed 2026-07-30/31 â€” DNS migrated to Cloudflare, SSL active, MX/email records preserved).
 
 See `README.md` for local dev setup and full file map.
+
+## 2026-09-01 - Cross-tenant leak fix (CRITICAL)
+
+- **Console API env (CRITICAL):** this site's CF Pages dashboard MUST use its
+  OWN `CONSOLE_STOREFRONT_API_KEY`:
+  `396d9b1deb929b7a635afd26ae21866e62b64e19f48ad8a756f4168df7a2b658` and
+  `CONSOLE_API_URL=https://console.linearventures.in`.
+- **What happened:** on 2026-09-01 the dashboard had TCS's key, so this site
+  rendered TCS products/hero copy/images. The console scopes by key, so a
+  wrong key returns the wrong tenant's data (RLS was NOT the cause).
+- **Verify after any env edit:** fetch the live site and confirm Gobble
+  products/images, not TCS.
+- **Revalidation secret:** set `REVALIDATE_SECRET` =
+  `f62750bb322621c712be35724324bcfb479e96b5c7bffa7905f917a3e8242bc8` as an
+  encrypted secret (matches the console fallback) for instant purge.
+- **Edge cache (2026-09-01):** middleware sets `s-maxage=60,
+  stale-while-revalidate=30`. The old "Cache HTML 1hr" Cache Rule was deleted
+  from this zone - do NOT re-create it (it made console edits take 1h to
+  show). Console edits now appear within ~1 minute.
