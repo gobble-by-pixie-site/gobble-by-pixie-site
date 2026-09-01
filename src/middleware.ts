@@ -47,10 +47,13 @@ export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
     headers.set(key, value);
   }
 
-  // Add cache headers for static content (bots get cached HTML at edge)
+  // Add cache headers for static content (bots get cached HTML at edge).
+  // TTL kept short (60s) so owner edits in the Console reach the live site
+  // within ~a minute even if the revalidation purge fails (no purge token /
+  // signature mismatch). Longer TTLs + a working purge were the old setup.
   const pathname = new URL(context.request.url).pathname;
   if (isCacheablePath(pathname)) {
-    headers.set("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=60");
+    headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=30");
     headers.set("Vary", "Accept-Encoding");
   } else {
     headers.set("Cache-Control", "private, no-store");

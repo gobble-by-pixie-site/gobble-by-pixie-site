@@ -6,10 +6,10 @@ interface RevalidatePayload {
   signature: string;
 }
 
-const SHARED_SECRET = import.meta.env.REVALIDATE_SECRET;
-const CF_ACCOUNT_ID = import.meta.env.CF_ACCOUNT_ID;
-const CF_ZONE_ID = import.meta.env.CF_ZONE_ID;
-const CF_API_TOKEN = import.meta.env.CF_API_TOKEN;
+const SHARED_SECRET = process.env.REVALIDATE_SECRET || import.meta.env.REVALIDATE_SECRET;
+const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID || import.meta.env.CF_ACCOUNT_ID;
+const CF_ZONE_ID = process.env.CF_ZONE_ID || import.meta.env.CF_ZONE_ID;
+const CF_API_TOKEN = process.env.CF_API_TOKEN || import.meta.env.CF_API_TOKEN;
 
 async function verifySignature(payload: RevalidatePayload): Promise<boolean> {
   if (!SHARED_SECRET) return false;
