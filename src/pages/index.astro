@@ -35,7 +35,7 @@ let igPosts: { image: string; permalink: string; caption: string }[] = [];
     <div class="container hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">✨ <span data-lc="home:heroEyebrow">{content.hero_eyebrow}</span></p>
-        <h1 data-lc="home:hero_title">{content.hero_title ? content.hero_title : <>Handmade <span class="text-gradient">Flavoured Cream Cheese</span></>}</h1>
+        <h1 data-lc="home:hero_title">{content.hero_title ?? (<>Handmade <span class="text-gradient">Flavoured Cream Cheese</span></>)}</h1>
         <p class="hero-sub" data-lc="home:heroSub">{content.hero_sub}</p>
         <div class="hero-badges">
           <span class="badge badge-veg">🌱 100% Vegetarian</span>

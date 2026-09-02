@@ -65,16 +65,23 @@ export async function fetchSiteContent() {
       ]);
       const home = homeRes.ok ? await homeRes.json().catch(() => null) : null;
       const about = aboutRes.ok ? await aboutRes.json().catch(() => null) : null;
-      if (home && (home.tagline || home.heroEyebrow)) {
-        if (home.tagline) merged.tagline = home.tagline;
-        if (home.heroEyebrow) merged.hero_eyebrow = home.heroEyebrow;
-        if (home.fibreBody) merged.about_intro = home.fibreBody;
-      }
       // Food-vertical home fields are stored snake_case and copied 1:1.
-      ['hero_title', 'hero_sub', 'hero_trust', 'byop_eyebrow', 'byop_title', 'byop_sub', 'best_eyebrow', 'best_title',
-       'tagline', 'fulfillment_platters', 'fulfillment_jars', 'grazing_table_price', 'fssai_number', 'gstin'].forEach((k) => {
-        if (home && home[k]) merged[k] = home[k];
-      });
+      // Copy EVERY key the console returns, including explicit "" for a
+      // field the owner cleared — so a blank field renders empty instead
+      // of falling back to the built-in copy. Missing keys (never
+      // configured) keep the fallback via the initial spread.
+      const SNAKE_HOME_KEYS = [
+        'hero_eyebrow', 'hero_title', 'hero_sub', 'hero_trust',
+        'byop_eyebrow', 'byop_title', 'byop_sub',
+        'best_eyebrow', 'best_title',
+        'tagline', 'fulfillment_platters', 'fulfillment_jars',
+        'grazing_table_price', 'fssai_number', 'gstin',
+      ];
+      if (home) {
+        for (const k of SNAKE_HOME_KEYS) {
+          if (k in home) merged[k] = home[k];
+        }
+      }
       if (about && Array.isArray(about.storyParagraphs) && about.storyParagraphs[0]) {
         merged.about_intro = about.storyParagraphs[0];
       }
