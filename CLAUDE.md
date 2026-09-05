@@ -37,3 +37,16 @@ See `README.md` for local dev setup and full file map.
   stale-while-revalidate=30`. The old "Cache HTML 1hr" Cache Rule was deleted
   from this zone - do NOT re-create it (it made console edits take 1h to
   show). Console edits now appear within ~1 minute.
+
+## 2026-09-05 - Instant purge live
+
+- **CF_API_TOKEN** (Zone Cache Purge on gobblebypixie.com only) set as an
+  encrypted secret + redeployed — signed probe to `/api/revalidate`
+  returns `success:true`. Console edits now purge instantly, not in ~60s.
+- **Compat is load-bearing:** this repo has no `wrangler.toml`, so Pages runs
+  workerd defaults where `process.env`/`Buffer` don't exist and
+  `revalidate.ts` 500s on every call (probed 2026-09-05). Fixed
+  dashboard-only: Settings → Functions → Compatibility Date `2025-04-01` +
+  flag `nodejs_compat` (mirrors nanoliss-store). Do NOT remove these without
+  adding a `wrangler.toml` equivalent — any route reading `process.env` at
+  module scope breaks silently the same way.
