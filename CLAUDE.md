@@ -50,3 +50,20 @@ See `README.md` for local dev setup and full file map.
   flag `nodejs_compat` (mirrors nanoliss-store). Do NOT remove these without
   adding a `wrangler.toml` equivalent — any route reading `process.env` at
   module scope breaks silently the same way.
+
+## 2026-09-08 - Console-side additions (no storefront change needed)
+
+- **OAuth scopes** now include pages + Instagram (`instagram_basic`,
+  `pages_read_engagement`, … — same app, same approval umbrella as BOS),
+  and connects record "Authorized as". Nothing to do here until this
+  tenant connects Meta.
+- **IG feed guard:** Console's `/api/public/instagram` skips
+  system-provisioned WhatsApp rows, so a future WhatsApp provisioning can
+  never leak another tenant's feed here. Live feed still needs this
+  tenant's own token + Page-linked IG.
+- **Console UI only** (no action): new-product images at create,
+  Storage folder names, Marketing Overview + ad builder + catalog (all
+  read this tenant's own connection when present).
+- **Hero per-device fields** (`mobileUrl`, `fit`, `visibleOn`) exist in
+  the Console API but this storefront doesn't read them yet — hero
+  behavior unchanged. Say the word to wire the TCS treatment here.
