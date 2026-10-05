@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Page Not Found — Gobble by Pixie"
+  description="The page you're looking for doesn't exist."
+>
+  <section class="nf">
+    <p class="nf-code">404</p>
+    <h1 class="nf-heading">This page has wandered off the menu</h1>
+    <p class="nf-body">
+      The page you're looking for doesn't exist — it may have moved, or the
+      link is out of date.
+    </p>
+    <a class="nf-btn" href="/">Back to the good stuff</a>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    min-height: 55vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1rem;
+    padding: 6rem 1.5rem;
+    background: var(--bg-parchment);
+    color: var(--text-espresso);
+  }
+  .nf-code {
+    margin: 0;
+    font-size: 0.875rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--rose-deep);
+  }
+  .nf-heading {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    line-height: 1.15;
+    color: var(--text-espresso);
+  }
+  .nf-body {
+    max-width: 34rem;
+    margin: 0;
+    color: var(--text-espresso-soft);
+  }
+  .nf-btn {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.8rem 2rem;
+    border-radius: var(--radius-pill);
+    background: var(--rose);
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.2s ease;
+  }
+  .nf-btn:hover {
+    background: var(--rose-deep);
+  }
+</style>
