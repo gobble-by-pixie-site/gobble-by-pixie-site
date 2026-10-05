@@ -1,0 +1,153 @@
+---
+// Custom-page catch-all (Item 4) — owner-authored pages composed in Console
+// (Settings → Content → Pages) rendered at /<slug>.
+//
+// Astro resolves EXPLICIT routes before dynamic ones, so this only ever sees a
+// URL no real page claims. That is also why the console refuses reserved slugs
+// (src/lib/page-slugs.ts there): a page at /about would silently never render.
+//
+// Every failure mode — unknown slug, a draft with no valid token, the Console
+// being unreachable — renders this site's real 404 with a real 404 status.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { fetchFromConsole } from '../lib/console-client';
+
+const raw = Astro.url.pathname.replace(/^\/+|\/+$/g, '');
+const parts = raw.split('/').filter(Boolean);
+
+// A page slug never contains a slash (console enforces lowercase
+// [a-z0-9]+(-[a-z0-9]+)*, max 80 chars). Deeper paths are real routes we don't
+// own — 404 WITHOUT calling the Console, so a crawler walking /a/b/c can't
+// turn this into an API-amplification vector.
+const segment = parts.length === 1 ? parts[0].toLowerCase() : null;
+
+// Cheap plausibility gate before any network call — the Console rejects these
+// shapes at creation time, so such a request can never be a real page.
+const PLAUSIBLE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const implausible = !segment || segment.length > 80 || !PLAUSIBLE.test(segment);
+
+const previewToken = Astro.url.searchParams.get('previewToken') || '';
+
+// Pass the token through VERBATIM. Never minted, never rewritten — the Console
+// signs it against tenant+slug and this storefront has no key to forge one.
+const apiPath = implausible
+  ? null
+  : `/api/public/pages/${encodeURIComponent(segment)}${previewToken ? `?previewToken=${encodeURIComponent(previewToken)}` : ''}`;
+
+const res = apiPath ? await fetchFromConsole(apiPath) : null;
+
+const page = (res && res.page) || null;
+const isDraftPreview = Boolean(res && res.preview === true);
+const blocks = page && page.content && Array.isArray(page.content.blocks) ? page.content.blocks : [];
+
+// Render helpers mirroring this site's HomeSections.astro — same inline
+// styles, same guards. An unrecognised block type is skipped rather than
+// thrown on: a type this build doesn't know must not 500 a live page.
+const str = (b, k) => (typeof b[k] === 'string' ? b[k] : '');
+const list = (b, k) => (Array.isArray(b[k]) ? b[k] : []);
+const hasText = (s) => typeof s === 'string' && s.trim().length > 0;
+
+if (!page) {
+  // Inline 404 rather than Astro.rewrite('/404'): a rewrite renders the
+  // target's markup but does NOT reliably carry a 404 status through the SSR
+  // adapter, and a soft 404 is worse than duplicated markup — search engines
+  // index it as real content at a URL that should not exist. Note this repo
+  // gains 404.astro from the Item 7a branch this branch is stacked on.
+  Astro.response.status = 404;
+}
+---
+
+<BaseLayout
+  title={page ? `${page.title} — Gobble by Pixie` : 'Page Not Found — Gobble by Pixie'}
+  description={page && page.metaDescription ? page.metaDescription : undefined}
+>
+  {page ? (
+    <main style="padding:2rem 1.25rem 5rem;">
+      {isDraftPreview && (
+        <div style="background:#b8860b;color:#fff;text-align:center;padding:.65rem 1.25rem;font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2.5rem;border-radius:8px;">
+          Draft preview — not publicly visible
+        </div>
+      )}
+
+      {blocks.map((b) => (
+        <>
+          {b.type === 'announce_bar' && hasText(str(b, 'text')) && (
+            <div style="background:#2f5d3a;color:#fff;text-align:center;padding:.75rem 1.25rem;font-weight:600;margin-bottom:2.5rem;border-radius:8px;">
+              {str(b, 'text')}
+            </div>
+          )}
+
+          {b.type === 'hero' && (
+            <div style="max-width:46rem;margin:0 auto 4rem;text-align:center;">
+              {hasText(str(b, 'eyebrow')) && <p class="eyebrow" style="margin-bottom:.75rem;">{str(b, 'eyebrow')}</p>}
+              {hasText(str(b, 'headline')) && <h1>{str(b, 'headline')}</h1>}
+              {hasText(str(b, 'subheadline')) && <p class="hero-sub">{str(b, 'subheadline')}</p>}
+              {hasText(str(b, 'imageUrl')) && (
+                <img src={str(b, 'imageUrl')} alt={str(b, 'headline') || page.title || ''} style="margin-top:1.75rem;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;" loading="lazy" />
+              )}
+              {hasText(str(b, 'ctaText')) && (
+                <a href={str(b, 'ctaHref') || '#'} class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;">{str(b, 'ctaText')}</a>
+              )}
+            </div>
+          )}
+
+          {b.type === 'rich_text' && (
+            <div style="max-width:42rem;margin:0 auto 4rem;">
+              {hasText(str(b, 'heading')) && <h2 style="margin-bottom:1rem;">{str(b, 'heading')}</h2>}
+              {hasText(str(b, 'body')) && <p style="white-space:pre-wrap;line-height:1.75;color:#445;">{str(b, 'body')}</p>}
+            </div>
+          )}
+
+          {b.type === 'usp' && (
+            <div style="max-width:56rem;margin:0 auto 4rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:2rem;">
+              {list(b, 'items').map((it) => (
+                <div>
+                  <h3 style="margin-bottom:.35rem;">{String(it.title || '')}</h3>
+                  <p style="color:#556;opacity:.8;">{String(it.text || '')}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {b.type === 'testimonial' && (
+            <div style="max-width:44rem;margin:0 auto 4rem;text-align:center;">
+              <blockquote style="font-size:1.45rem;font-style:italic;line-height:1.5;">
+                "{str(b, 'quote')}"
+                {(hasText(str(b, 'author')) || hasText(str(b, 'source'))) && (
+                  <footer style="margin-top:1rem;font-size:.9rem;font-style:normal;opacity:.65;">
+                    {hasText(str(b, 'author')) && <span>— {str(b, 'author')}</span>}
+                    {hasText(str(b, 'source')) && <span> · {str(b, 'source')}</span>}
+                  </footer>
+                )}
+              </blockquote>
+            </div>
+          )}
+
+          {b.type === 'faq' && (
+            <div style="max-width:42rem;margin:0 auto 4rem;">
+              {list(b, 'items').map((it) => (
+                <div style="padding:1rem 0;border-bottom:1px solid rgba(0,0,0,.08);">
+                  <h3 style="margin-bottom:.3rem;">{String(it.q || '')}</h3>
+                  <p style="color:#556;opacity:.85;">{String(it.a || '')}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ))}
+
+      {/* Zero blocks is legal: the title alone is a real page. */}
+      {blocks.length === 0 && (
+        <div style="max-width:42rem;margin:0 auto;padding:2rem 0;">
+          <h1>{page.title}</h1>
+        </div>
+      )}
+    </main>
+  ) : (
+    <div class="container" style="padding:6rem 1.25rem;text-align:center;">
+      <p style="font-size:3rem;font-weight:700;margin-bottom:.5rem;">404</p>
+      <h1 style="margin-bottom:1rem;">We couldn't find that page.</h1>
+      <p style="opacity:.7;margin-bottom:2rem;">It may have moved, or the item is no longer on the menu.</p>
+      <a href="/" class="btn btn-primary" style="display:inline-block;">Back to Home</a>
+    </div>
+  )}
+</BaseLayout>

@@ -1,4 +1,5 @@
 import { fetchProducts } from "../lib/fetchProducts.js";
+import { fetchFromConsole } from "../lib/console-client";
 
 const SITE = "https://gobblebypixie.com";
 
@@ -32,10 +33,27 @@ export async function GET() {
     // Console unreachable — ship the static set rather than a broken sitemap
   }
 
-  const all = [...staticPaths, ...productUrls]
+  // Custom pages (Item 4) — owner-authored pages composed in Console and
+  // served by the [...slug] catch-all. Published only; the endpoint never
+  // returns a draft. Same graceful-degradation rule as products above: a
+  // failed fetch adds nothing and changes nothing.
+  let pageUrls = [];
+  try {
+    const custom = await fetchFromConsole("/api/public/pages");
+    pageUrls = (custom?.pages ?? []).map((p) => ({
+      path: `/${p.slug}`,
+      priority: 0.6,
+      changefreq: "monthly",
+      lastmod: new Date(p.updatedAt || Date.now()).toISOString().split("T")[0],
+    }));
+  } catch {
+    // Console unreachable — ship the static + product set unchanged.
+  }
+
+  const all = [...staticPaths, ...productUrls, ...pageUrls]
     .map(
       (p) => `  <url>
-    <loc>${SITE}${p.path}</loc>
+    <loc>${SITE}${p.path}</loc>${p.lastmod ? `\n    <lastmod>${p.lastmod}</lastmod>` : ""}
     <changefreq>${p.changefreq}</changefreq>
     <priority>${p.priority.toFixed(1)}</priority>
   </url>`,

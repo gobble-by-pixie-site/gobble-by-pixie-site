@@ -22,6 +22,11 @@ export async function fetchFromConsole<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(`${BASE_URL.replace(/\/$/, "")}${path}`, {
       headers: { "X-Storefront-Api-Key": API_KEY },
+      // A hung Console must never hang SSR to the platform timeout. Matches
+      // Nanoliss (src/lib/api/console-client.ts); TCS gets this in Item 7a,
+      // which is still unmerged. Timeout only — nothing else about the client
+      // changed (it already had the 60s success cache).
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as T;
