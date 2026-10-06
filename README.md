@@ -69,3 +69,14 @@ no deploy triggered.
   src) + posts `{type:"lc-applied", key}` acks; HomeSections hero images and
   custom-page blocks carry `data-lc` hooks (`sec:<id>:imageUrl` /
   `page:<i>:<field>`) for the Console vision panel's image swap + live edit.
+- **Navigate-follow** (commit `af1c97f`): the Console sends `lc-editable` and
+  the listener intercepts ONLY those into `lc-navigate`, so `/menu`, `/events`,
+  `/faq`, `/byop`, `/account` and the rest still navigate normally. The
+  product grid is quick-view MODAL buttons rather than links, and HomeSections
+  renders an unset section CTA as `href='#'`, so the interceptor bails on
+  `button` / `[data-lc]` / hash hrefs. This site has no `/contact` page (and
+  none in the PAGE map), which matches the Console hiding that tab for food
+  tenants. `lcNormPath` matches the Console's `normPath`
+  (`src/lib/vision-paths.ts`). `lc-content-ready` now carries the current
+  `path` so the Console can say "no editor for this page" instead of going
+  blank.

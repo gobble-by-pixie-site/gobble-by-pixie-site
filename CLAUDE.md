@@ -81,3 +81,16 @@ See `README.md` for local dev setup and full file map.
   custom-page blocks carry `data-lc` hooks for the Console vision panel
   (`sec:<id>:imageUrl` / `page:<i>:<field>`). All listener behavior stays
   inside the `?livedraft=1` guard.
+- **Navigate-follow (2026-10-06, commit `af1c97f`).** Same protocol as the
+  other storefronts: the Console sends `lc-editable` and the listener
+  intercepts ONLY those into `lc-navigate`, so `/menu`, `/events`, `/faq`,
+  `/byop`, `/account` and the rest still navigate normally. **Gobble-specific:**
+  the product grid is quick-view MODAL buttons rather than links, and
+  HomeSections renders an unset section CTA as `href='#'`, so the interceptor
+  bails on `button` / `[data-lc]` / hash hrefs. This site has **no `/contact`
+  page** (and none in the PAGE map), which matches the Console hiding that tab
+  for food tenants — the interception is driven purely by the list the Console
+  sends, so the two cannot drift. `lcNormPath` must match the Console's
+  `normPath` (`src/lib/vision-paths.ts`). `lc-content-ready` now carries the
+  current `path` so the Console can say "no editor for this page" instead of
+  going blank.
