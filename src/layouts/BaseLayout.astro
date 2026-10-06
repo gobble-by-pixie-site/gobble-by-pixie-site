@@ -960,25 +960,54 @@ if (window.GobbleCart) {
       document.head.appendChild(style);
 
       document.querySelectorAll('[data-lc]').forEach(function (el) {
+        var hook = el.getAttribute('data-lc');
+        // Image hooks are receive-only (Item 6b): no text to edit, and making
+        // an <img> contenteditable lets a stray input event clear the Console
+        // field with an empty value. Report a click instead so the Console
+        // opens its image picker for this hook.
+        if (el.tagName === 'IMG') {
+          el.addEventListener('click', function (e) {
+            e.preventDefault();
+            parent.postMessage({ type: 'lc-content-edit', id: hook, value: el.getAttribute('src') || '' }, '*');
+          });
+          return;
+        }
         el.setAttribute('contenteditable', 'plaintext-only');
         if (!el.isContentEditable) el.setAttribute('contenteditable', 'true');
         el.addEventListener('click', function (e) {
           if (el.closest('a')) e.preventDefault();
         });
         el.addEventListener('input', function () {
-          parent.postMessage({ type: 'lc-content-edit', id: el.getAttribute('data-lc'), value: el.innerText }, '*');
+          parent.postMessage({ type: 'lc-content-edit', id: hook, value: el.innerText }, '*');
         });
       });
 
       window.addEventListener('message', function (e) {
         var d = e.data || {};
         if (d.type !== 'lc-content-preview' || !d.patch) return;
+        var applied = [];
         document.querySelectorAll('[data-lc]').forEach(function (el) {
           if (document.activeElement === el) return; // never clobber the caret mid-edit
-          var v = d.patch[el.getAttribute('data-lc')];
+          var key = el.getAttribute('data-lc');
+          var v = d.patch[key];
           if (v === undefined || v === null) return;
-          el.textContent = String(v);
+          // Image hooks (Item 6b) — patch src, never textContent: writing
+          // text into an <img> is a silent no-op. Mirrors the branch TCS
+          // already had.
+          if (el.tagName === 'IMG') {
+            if (v) el.src = String(v);
+          } else {
+            el.textContent = String(v);
+          }
+          applied.push(key);
         });
+        // Ack so the Console's "live" indicator can confirm a patch LANDED.
+        // Additive: an older Console ignores this type.
+        if (applied.length && window.parent !== window) {
+          for (var i = 0; i < applied.length; i++) {
+            parent.postMessage({ type: 'lc-applied', key: applied[i] }, '*');
+          }
+        }
       });
       parent.postMessage({ type: 'lc-content-ready', page: PAGE }, '*');
     })();

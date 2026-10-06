@@ -52,7 +52,7 @@ for (const s of sections.filter((x) => x.type === 'collection_grid')) {
           {str(s.payload, 'headline') && <h1 data-lc={`sec:${s.id}:headline`}>{str(s.payload, 'headline')}</h1>}
           {str(s.payload, 'subheadline') && <p class="hero-sub" data-lc={`sec:${s.id}:subheadline`}>{str(s.payload, 'subheadline')}</p>}
           {str(s.payload, 'imageUrl') && (
-            <img src={str(s.payload, 'imageUrl')} alt="" style="margin-top:1.75rem;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;" loading="lazy" />
+            <img src={str(s.payload, 'imageUrl')} alt="" style="margin-top:1.75rem;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;" loading="lazy" data-lc={`sec:${s.id}:imageUrl`} />
           )}
           {str(s.payload, 'ctaText') && (
             <a href={str(s.payload, 'ctaHref') || '#'} class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;" data-lc={`sec:${s.id}:ctaText`}>{str(s.payload, 'ctaText')}</a>
