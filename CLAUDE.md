@@ -67,3 +67,17 @@ See `README.md` for local dev setup and full file map.
 - **Hero per-device fields** (`mobileUrl`, `fit`, `visibleOn`) exist in
   the Console API but this storefront doesn't read them yet — hero
   behavior unchanged. Say the word to wire the TCS treatment here.
+- **2026-10-06 — 404 page, custom pages, vision hooks.** `src/pages/404.astro`
+  now exists (previously NO 404 anywhere in src). `src/pages/[...slug].astro`
+  renders Console-authored custom pages at `/<slug>` (Settings → Content →
+  Pages, gated per tenant by the `pages` capability flag): published only,
+  `?previewToken=` unlocks drafts with a DRAFT PREVIEW banner, and every
+  failure (unknown/malformed slug, Console down) renders the real 404 with
+  status 404 — never a soft 404. `sitemap.xml.js` appends published pages
+  (fetch failure leaves the sitemap unchanged). `console-client.ts` now
+  sends a 10s AbortSignal timeout on its fetches. BaseLayout's livedraft
+  listener branches on IMG (patches src, not textContent) and posts
+  `{type:"lc-applied", key}` acks; HomeSections hero images and
+  custom-page blocks carry `data-lc` hooks for the Console vision panel
+  (`sec:<id>:imageUrl` / `page:<i>:<field>`). All listener behavior stays
+  inside the `?livedraft=1` guard.
