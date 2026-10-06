@@ -951,6 +951,34 @@ if (window.GobbleCart) {
       if (new URLSearchParams(location.search).get('livedraft') !== '1') return;
       var PAGE = { '/': 'home', '/about': 'about', '/preview-sections': 'sections' }[location.pathname] || '';
 
+      // ── Navigate-follow (Item 7a) ──────────────────────────────────────
+      // The Console tells us which paths it has editors for. We intercept ONLY
+      // those and hand the intent back via lc-navigate; every other link
+      // navigates normally, so this stays a working browser for cart, account,
+      // /menu, /events, /faq and the rest. Defaults empty, so an older Console
+      // that never sends lc-editable intercepts nothing — exactly today's
+      // behaviour.
+      //
+      // Note there is no /contact in the map above and none in the Console's
+      // editable list either: Gobble has no contact page, so the Console hides
+      // that tab for food tenants. The interception is driven purely by the
+      // list the Console sends, so the two can never drift.
+      var EDITABLE = [];
+
+      // Must agree with the Console's normPath (src/lib/vision-paths.ts):
+      // strip query/hash, decode, force a leading slash, drop any trailing
+      // slash, lowercase. Our own section CTAs carry an arbitrary href
+      // (HomeSections.astro falls back to '#'), which the guards below skip.
+      function lcNormPath(p) {
+        var s = String(p || '/');
+        var cut = s.search(/[?#]/);
+        if (cut >= 0) s = s.slice(0, cut);
+        try { s = decodeURI(s); } catch (err) {}
+        if (s.charAt(0) !== '/') s = '/' + s;
+        if (s.length > 1) s = s.replace(/\/+$/, '');
+        return s.toLowerCase() || '/';
+      }
+
       document.body.classList.add('lc-live');
       var style = document.createElement('style');
       style.textContent =
@@ -984,6 +1012,12 @@ if (window.GobbleCart) {
 
       window.addEventListener('message', function (e) {
         var d = e.data || {};
+        // The Console's editable-path list (Item 7a). Handled in this same
+        // listener rather than adding a second one on window.
+        if (d.type === 'lc-editable' && d.paths) {
+          EDITABLE = Array.prototype.slice.call(d.paths);
+          return;
+        }
         if (d.type !== 'lc-content-preview' || !d.patch) return;
         var applied = [];
         document.querySelectorAll('[data-lc]').forEach(function (el) {
@@ -1009,7 +1043,45 @@ if (window.GobbleCart) {
           }
         }
       });
-      parent.postMessage({ type: 'lc-content-ready', page: PAGE }, '*');
+      // ── Navigate-follow: intercept ONLY the paths the Console said it can edit.
+      // Capture phase so it runs before any component handler, but we never
+      // stopPropagation: the product grid is quick-view MODAL buttons rather
+      // than links, and their handlers must keep working.
+      document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        // Editing wins over navigating — clicking editable text must place a
+        // caret, not leave the page.
+        if (t.closest('[data-lc]')) return;
+        // A control nested INSIDE a link owns its own click. The quick-view
+        // button on every product card is one of these.
+        if (t.closest('button,[role=button],input,select,textarea')) return;
+        var a = t.closest('a[href]');
+        if (!a) return;
+        if (a.hasAttribute('download') || a.target === '_blank') return;
+        var href = a.getAttribute('href') || '';
+        // '#' is how HomeSections renders an unset section CTA.
+        if (!href || href.charAt(0) === '#') return;
+        if (/^(https?:)?\/\//i.test(href)) return;
+        if (/^(mailto:|tel:|sms:|javascript:)/i.test(href)) return;
+        var norm = lcNormPath(href);
+        // Not ours — let the browser navigate. This is the safety property:
+        // we never preventDefault a click the Console cannot service. It is
+        // what leaves /menu, /events, /faq, /byop and /account working.
+        if (EDITABLE.indexOf(norm) === -1) return;
+        e.preventDefault();
+        if (window.parent !== window) {
+          parent.postMessage({ type: 'lc-navigate', path: norm }, '*');
+        }
+      }, true);
+
+      // `path` is new in this handshake (Item 7a): it lets the Console see a
+      // navigation it did NOT intercept and say so, instead of the panel
+      // going blank on a page it has no editor for.
+      parent.postMessage(
+        { type: 'lc-content-ready', page: PAGE, path: lcNormPath(location.pathname) },
+        '*',
+      );
     })();
   </script>
 </body>
