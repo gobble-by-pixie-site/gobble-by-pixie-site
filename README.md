@@ -54,3 +54,18 @@ no deploy triggered.
   the Pages worker, deploys straight to project `gobble-by-pixie-site`.
   OAuth login is the only working auth for this project (API-token auth is
   broken - see _Secrets reference, Account 3). Out-of-band deploy: verify live.
+
+## 2026-10-06 - 404 page + custom pages + vision hooks
+
+- **404 page**: `src/pages/404.astro` exists (previously NO 404 anywhere in
+  src — Astro served a bare platform error for unknown routes).
+- **Custom pages**: `src/pages/[...slug].astro` renders Console-authored
+  pages (Settings → Content → Pages, `pages` capability flag) at `/<slug>`
+  — published only, `?previewToken=` for drafts (DRAFT PREVIEW banner),
+  real 404s with status 404 on every failure path. `sitemap.xml.js`
+  appends published pages (fetch failure leaves it unchanged).
+- **console-client.ts**: fetches now carry a 10s AbortSignal timeout.
+- **Vision hooks**: BaseLayout's livedraft listener branches on IMG (patches
+  src) + posts `{type:"lc-applied", key}` acks; HomeSections hero images and
+  custom-page blocks carry `data-lc` hooks (`sec:<id>:imageUrl` /
+  `page:<i>:<field>`) for the Console vision panel's image swap + live edit.
