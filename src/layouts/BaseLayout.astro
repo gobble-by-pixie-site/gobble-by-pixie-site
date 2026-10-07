@@ -171,6 +171,25 @@ const ogImage = SITE_URL + '/og-image.jpg';
         </div>
         <p class="cart-unpriced-note" id="cartUnpricedNote" style="display:none;">Some items are priced on request — final total confirmed on WhatsApp.</p>
         <a href="#" id="cartCheckoutBtn" target="_blank" rel="noopener" class="btn btn-primary cart-checkout-btn">Checkout via WhatsApp 💬</a>
+        {/* COD (2026-10-07): creates a real Console order via /api/checkout/cod
+            (needs clients.cod_enabled — 501 otherwise). WhatsApp stays for
+            custom platters, unpriced items, and anyone who prefers chat. */}
+        <button type="button" id="cartCodBtn" class="btn btn-secondary cart-checkout-btn" style="margin-top:0.6rem;">Pay on Delivery 💵</button>
+        <div id="codForm" style="display:none;margin-top:0.9rem;">
+          <p class="cod-form-title">Delivery details</p>
+          <input id="codName" class="cod-input" type="text" placeholder="Full name" autocomplete="name" />
+          <input id="codPhone" class="cod-input" type="tel" placeholder="Phone (10 digits)" autocomplete="tel" />
+          <input id="codEmail" class="cod-input" type="email" placeholder="Email (order updates)" autocomplete="email" />
+          <input id="codAddress" class="cod-input" type="text" placeholder="Delivery address" autocomplete="street-address" />
+          <input id="codPincode" class="cod-input" type="text" inputmode="numeric" placeholder="Pincode" autocomplete="postal-code" />
+          <p id="codError" class="cod-error" style="display:none;"></p>
+          <button type="button" id="codSubmit" class="btn btn-primary cart-checkout-btn">Place COD Order</button>
+        </div>
+        <div id="codSuccess" style="display:none;" class="cod-success">
+          <p class="cod-success-title">Order placed! 🎉</p>
+          <p>Order <strong id="codOrderNumber"></strong> · <strong id="codOrderTotal"></strong></p>
+          <p class="cod-success-sub">Pay in cash or UPI when your box arrives. A confirmation is on its way to your email.</p>
+        </div>
       
       <script type="application/json" id="crossSellData" set:html={JSON.stringify(crossSells)}></script></div>
     </div>
@@ -466,6 +485,19 @@ const ogImage = SITE_URL + '/og-image.jpg';
     }
     .cart-unpriced-note { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 var(--space-sm); text-align: center; }
     .cart-checkout-btn { width: 100%; text-align: center; }
+    /* COD form (drawer). Inputs can't reuse page-scoped .text-field (it lives
+       in products/[slug]'s <style>), so the drawer carries its own. */
+    .cod-form-title { font-weight: 700; font-size: 0.9rem; color: var(--text-espresso); margin: 0 0 0.5rem; }
+    .cod-input {
+      width: 100%; box-sizing: border-box; margin-bottom: 0.5rem; padding: 0.6rem 0.75rem;
+      font: inherit; font-size: 0.9rem; color: var(--text-espresso);
+      background: #fff; border: 1px solid var(--border-hairline); border-radius: var(--radius-sm);
+    }
+    .cod-input:focus { outline: 2px solid var(--accent-gold-deep); outline-offset: 0; border-color: var(--accent-gold-deep); }
+    .cod-error { color: var(--accent-berry-deep); font-size: 0.85rem; font-weight: 600; margin: 0.2rem 0 0.6rem; }
+    .cod-success { margin-top: 0.9rem; padding: 1rem; text-align: center; background: var(--bg-parchment-alt); border-radius: var(--radius-sm); }
+    .cod-success-title { font-family: var(--font-display); font-size: 1.3rem; color: var(--text-espresso); margin: 0 0 0.4rem; }
+    .cod-success-sub { font-size: 0.85rem; color: var(--text-espresso-soft); margin: 0.4rem 0 0; }
 
     @media (max-width: 720px) {
       .cart-toggle { padding: 0.4rem 0.6rem; }
@@ -780,9 +812,13 @@ const ogImage = SITE_URL + '/og-image.jpg';
         cartSummary.style.display = 'none';
         cartUnpricedNote.style.display = 'none';
         if (cartCheckoutBtn) { cartCheckoutBtn.style.pointerEvents = 'none'; cartCheckoutBtn.style.opacity = '0.5'; }
+        const codBtn = document.getElementById('cartCodBtn') as HTMLButtonElement | null;
+        if (codBtn) { codBtn.disabled = true; codBtn.style.opacity = '0.5'; }
         return;
       }
       if (cartCheckoutBtn) { cartCheckoutBtn.style.pointerEvents = ''; cartCheckoutBtn.style.opacity = ''; }
+      const codBtn = document.getElementById('cartCodBtn') as HTMLButtonElement | null;
+      if (codBtn) { codBtn.disabled = false; codBtn.style.opacity = ''; }
 
       cartItemsEl.innerHTML = items.map((item, idx) => {
         const unitPriceStr = typeof item.price === 'number' ? ('₹' + item.price.toLocaleString('en-IN') + ' each') : 'Price on request';
@@ -876,6 +912,74 @@ if (window.GobbleCart) {
       window.GobbleCart.subscribe(renderCart);
       if (cartCheckoutBtn) cartCheckoutBtn.href = window.GobbleCart.checkoutWhatsAppUrl();
     }
+
+    // ── COD checkout (Console order via /api/checkout/cod) ──
+    // The WhatsApp button above stays untouched: custom platters and
+    // priced-on-request items can ONLY go through WhatsApp (the proxy says
+    // so with a plain message), and some shoppers simply prefer chat.
+    const cartCodBtn = document.getElementById('cartCodBtn') as HTMLButtonElement | null;
+    const codForm = document.getElementById('codForm');
+    const codError = document.getElementById('codError');
+    const codSubmit = document.getElementById('codSubmit') as HTMLButtonElement | null;
+    const codSuccess = document.getElementById('codSuccess');
+
+    function codShowError(msg: string) {
+      if (!codError) return;
+      codError.textContent = msg;
+      codError.style.display = 'block';
+    }
+
+    cartCodBtn?.addEventListener('click', () => {
+      if (!codForm) return;
+      const open = codForm.style.display !== 'none';
+      codForm.style.display = open ? 'none' : 'block';
+      if (codError) codError.style.display = 'none';
+      if (codSuccess) codSuccess.style.display = 'none';
+    });
+
+    codSubmit?.addEventListener('click', async () => {
+      if (codError) codError.style.display = 'none';
+      const items = window.GobbleCart ? window.GobbleCart.get() : [];
+      if (!items.length) return codShowError('Your cart is empty.');
+      const val = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.value.trim() || '';
+      const customer = {
+        name: val('codName'),
+        phone: val('codPhone'),
+        email: val('codEmail'),
+        address: val('codAddress'),
+        pincode: val('codPincode'),
+      };
+      if (codSubmit) { codSubmit.disabled = true; codSubmit.textContent = 'Placing order…'; }
+      try {
+        const res = await fetch('/api/checkout/cod', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: items.map((i: any) => ({ slug: i.id, qty: i.qty || 1 })),
+            customer,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          codShowError(data.error || 'Could not place the order. Please try again.');
+          return;
+        }
+        // Real order now exists in Console (stock decremented, totals
+        // server-priced) — the local cart must go, or a refresh would
+        // re-sell the same box.
+        window.GobbleCart.clear();
+        if (codForm) codForm.style.display = 'none';
+        const num = document.getElementById('codOrderNumber');
+        const tot = document.getElementById('codOrderTotal');
+        if (num) num.textContent = '#' + data.orderNumber;
+        if (tot) tot.textContent = formatPrice(data.total);
+        if (codSuccess) codSuccess.style.display = 'block';
+      } catch {
+        codShowError('Network error — please check your connection.');
+      } finally {
+        if (codSubmit) { codSubmit.disabled = false; codSubmit.textContent = 'Place COD Order'; }
+      }
+    });
 
     // ── Search overlay (Console-backed via /api/search) ──
     const searchOverlay = document.getElementById('searchOverlay');
