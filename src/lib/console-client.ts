@@ -54,10 +54,23 @@ export function fetchStoreConfig() {
 
 /**
  * Homepage sections composed in Console (Settings → Content → Homepage
- * sections). Visible rows only; empty array = storefront keeps its
- * built-in layout.
+ * sections). Empty array = storefront keeps its built-in layout.
+ *
+ * DEFAULT IS VISIBLE-ONLY, and that default is load-bearing: the live
+ * homepage (index.astro) calls this with no options, and the Console's
+ * endpoint filters to `visible = true` AND an open scheduling window
+ * (migration 0087, judged in SQL against Postgres `now()`).
+ *
+ * `{ all: true }` adds `?all=1`, which drops both filters. The Console's own
+ * doc comment says that flag "is used exclusively by each storefront's
+ * /preview-sections page so editors see the FULL picture" — so pass it there
+ * and ONLY there. Nanoliss and TCS both send it on the preview page; this
+ * helper did not, which is why Gobble's preview silently omitted hidden and
+ * scheduled sections while its page comment claimed it showed them.
  */
-export async function fetchSiteSections(): Promise<unknown[]> {
-  const data = await fetchFromConsole<{ sections?: unknown[] }>("/api/public/site-sections");
+export async function fetchSiteSections(opts?: { all?: boolean }): Promise<unknown[]> {
+  const data = await fetchFromConsole<{ sections?: unknown[] }>(
+    `/api/public/site-sections${opts?.all ? "?all=1" : ""}`
+  );
   return data?.sections ?? [];
 }

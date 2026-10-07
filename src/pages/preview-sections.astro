@@ -8,7 +8,14 @@ import HomeSections from '../components/HomeSections.astro';
 import { fetchProducts } from '../lib/fetchProducts.js';
 
 const products = await fetchProducts();
-const sections = await fetchSiteSections();
+// all: true -> ?all=1, which bypasses BOTH the `visible` filter and the
+// scheduling window (migration 0087). Without it this page shows only what is
+// live, so a section the owner has just hidden - or scheduled for next month -
+// is absent from the preview and there is no way to see it in-theme. This is
+// the preview's whole purpose, and the Console documents ?all=1 as being for
+// exactly this page. It is NOT a leak onto the live site: index.astro calls
+// the same helper without the option and stays visible-only.
+const sections = await fetchSiteSections({ all: true });
 ---
 
 <BaseLayout title="Sections Preview">
