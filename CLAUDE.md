@@ -17,6 +17,10 @@
 - **Live domain**: https://gobblebypixie.com
 - **SEO (fixed 2026-08-30):** custom `src/pages/sitemap.xml.js` — curated static pages + product URLs pulled LIVE from Console (new jars appear without a deploy); @astrojs/sitemap removed (its build output missed every product and listed account/login/preview-sections). `public/robots.txt` carries the `Sitemap:` line (CF's managed content-signals block prepends to it). Organization JSON-LD sitewide in BaseLayout (new `head` slot), Product JSON-LD on `/products/[slug]` (price/availability/image from Console data), `preview-sections` now actually noindex. Verified live: 45 URLs incl. all 37 products. (cutover from Squarespace completed 2026-07-30/31 â€” DNS migrated to Cloudflare, SSL active, MX/email records preserved).
 
+- **Wishlist (2026-10-07, parity with TCS/Nanoliss).** `src/pages/api/account/wishlist.ts` proxies Console `/api/public/customers/me/wishlist`, resolving SLUG -> UUID against the LIVE catalog first (Console 400s a non-uuid, and cards speak slugs), so an unavailable product gets a real label instead of vanishing. Sign-in is inferred from the `gbp_session` cookie; a 401 means guest, not error. Hearts render unfilled for everyone, then paint from either source — a shopper who saved elsewhere is not left staring at empty hearts. Local key `gbp_wishlist`.
+- **Abandoned-cart capture (2026-10-07).** `src/pages/api/cart/save.ts` POSTs the cart to Console's abandoned-cart endpoint once an email is known; fired from `saveAbandonedCart()` on `codEmail` input, signature-deduped + 60s-throttled, and every failure returns `200 {saved:false}` on purpose so a broken save can never block checkout.
+- **COD coupon field (2026-10-07).** The COD form takes an optional code and forwards `couponCode` to `orders/create-cod`; Console re-validates and recomputes server-side, so the drawer never decides a discount.
+
 See `README.md` for local dev setup and full file map.
 
 ## 2026-09-01 - Cross-tenant leak fix (CRITICAL)
