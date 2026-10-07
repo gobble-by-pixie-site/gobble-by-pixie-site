@@ -6,3 +6,8 @@ dist/
 !.env.example
 .DS_Store
 .wrangler/
+
+# Legacy Google Apps Script — payment-webhook era, replaced by Console.
+# The file remains on disk; only its tracking is removed.
+code.gs
+
