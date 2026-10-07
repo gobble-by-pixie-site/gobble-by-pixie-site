@@ -19,11 +19,16 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-  // Who may iframe this site: itself + Console's Vision panels. Missing
-  // this meant ANY third party could embed the storefront (clickjacking).
-  // Same directive Nanoliss/TCS already ship.
+  // Who may iframe this site: itself + Console's Vision panels + this tenant's
+  // own admin host. The admin host is where the Console's content editor runs
+  // its iframe preview from — without it, every Vision panel on Gobble is
+  // refused by the browser. Both siblings already ship their own admin host;
+  // Gobble's comment claimed parity it did not have.
+  // Verified against src/proxy.ts: tenant resolution is by hostname, and
+  // console.linearventures.in short-circuits BEFORE tenant resolution, so the
+  // editor iframe hits admin.gobblebypixie.com — which must be in this list.
   "Content-Security-Policy":
-    "frame-ancestors 'self' https://console.linearventures.in",
+    "frame-ancestors 'self' https://admin.gobblebypixie.com https://console.linearventures.in",
 };
 
 const isCacheablePath = (pathname: string): boolean => {

@@ -750,6 +750,19 @@ const ogImage = SITE_URL + '/og-image.jpg';
       return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    // Local copy of fetchProducts.js's formatPrice. That function is a server
+    // export — L846 called it here without importing it, so the first
+    // cross-sell render threw ReferenceError and aborted the rest of this
+    // module (which is also what killed GobbleCart.subscribe, the drawer and
+    // the WhatsApp checkout URL). Duplicated rather than imported to avoid a
+    // cross-bundle dependency on a 6-line formatter.
+    function formatPrice(amount) {
+      if (amount === null || amount === undefined || amount === 0) return 'Price on request';
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0,
+      }).format(amount);
+    }
+
     function renderCart(items) {
       const count = items.reduce((s, i) => s + (i.qty || 1), 0);
       if (cartCountEl) {
@@ -840,9 +853,9 @@ const ogImage = SITE_URL + '/og-image.jpg';
         if (!picks.length) { wrap.style.display = 'none'; return; }
         wrap.style.display = '';
         row.innerHTML = picks.map((p) =>
-          '<button class="cart-xs-card" data-xs-id="' + p.id + '" title="Add to order">'
-          + '<img src="' + p.image_url + '" alt="" />'
-          + '<span class="cart-xs-name">' + p.name + '</span>'
+          '<button class="cart-xs-card" data-xs-id="' + escapeHtml(p.id) + '" title="Add to order">'
+          + '<img src="' + escapeHtml(p.image_url) + '" alt="" />'
+          + '<span class="cart-xs-name">' + escapeHtml(p.name) + '</span>'
           + '<span class="cart-xs-price">+' + formatPrice(p.price) + '</span>'
           + '</button>'
         ).join('');
