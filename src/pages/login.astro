@@ -1,9 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
 ---
 <BaseLayout title="Sign In — Gobble by Pixie" description="Sign in to your account.">
-  <div id="li-config" data-url={appsScriptUrl} style="display:none"></div>
 
   <section class="auth-section">
     <div class="container auth-wrap">
@@ -50,12 +48,12 @@ const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
   </style>
 
   <script is:inline>
-    async function hashPassword(password) {
-      var enc = new TextEncoder();
-      var buf = await crypto.subtle.digest('SHA-256', enc.encode(password));
-      return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
-    }
-
+    // Console-native auth (2026-10-07): POSTs to our own /api/auth/login proxy,
+    // which forwards to Console and sets the session as an httpOnly cookie.
+    // The old path hashed the password client-side and sent it to a Google
+    // Apps Script web app that kept customers in a Sheet — that backend is
+    // retired, so there is nothing to hash for anymore and nothing in
+    // localStorage to write. Matches the TCS login page shape.
     async function doLogin() {
       var email = document.getElementById('li-email')?.value.trim();
       var pass = document.getElementById('li-pass')?.value;
@@ -67,30 +65,21 @@ const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
       if (!email || !pass) return showErr('Please enter your email and password.');
       if (errEl) errEl.style.display = 'none';
 
-      var url = document.getElementById('li-config')?.getAttribute('data-url');
-      if (!url) return showErr('Account system not configured yet — check back soon.');
-
       if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
 
       try {
-        var ph = await hashPassword(pass);
-        var params = new URLSearchParams({ action: 'signin', email: email, ph: ph });
-        var res = await fetch(url + '?' + params.toString());
+        var res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: pass }),
+        });
         var data = await res.json();
 
-        if (!data.success) {
+        if (!res.ok || !data.success) {
           showErr(data.error || 'Sign in failed. Please try again.');
           if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
           return;
         }
-
-        localStorage.setItem('gbp_auth', JSON.stringify({
-          token: data.token, name: data.name, email: data.email,
-          points: data.points, tier: data.tier,
-        }));
-        localStorage.setItem('gbp_customer', JSON.stringify({
-          name: data.name, email: data.email, phone: data.phone || '', address: data.address || '',
-        }));
 
         document.getElementById('login-form')?.style.setProperty('display', 'none');
         document.getElementById('li-success').style.display = 'block';
@@ -102,13 +91,6 @@ const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
     }
 
     document.getElementById('li-btn')?.addEventListener('click', doLogin);
-
-    (function () {
-      try {
-        var auth = JSON.parse(localStorage.getItem('gbp_auth') || 'null');
-        if (auth && auth.token) window.location.href = '/account';
-      } catch (e) {}
-    })();
   </script>
 </BaseLayout>
 

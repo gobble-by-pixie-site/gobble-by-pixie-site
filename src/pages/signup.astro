@@ -1,9 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
 ---
 <BaseLayout title="Create Account — Gobble by Pixie" description="Join Gobble by Pixie Rewards.">
-  <div id="su-config" data-url={appsScriptUrl} style="display:none"></div>
 
   <section class="auth-section">
     <div class="container auth-wrap">
@@ -72,12 +70,11 @@ const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
   </style>
 
   <script is:inline>
-    async function hashPassword(password) {
-      var enc = new TextEncoder();
-      var buf = await crypto.subtle.digest('SHA-256', enc.encode(password));
-      return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
-    }
-
+    // Console-native auth (2026-10-07): same shape as login.astro — POST to our
+    // own proxy, session lands in an httpOnly cookie, no hashing, no
+    // localStorage. (The old success path even seeded "100 pts / Nibbler" into
+    // localStorage; points now live on the customer row in Console and the
+    // account page reads them from /api/account/loyalty.)
     async function doSignup() {
       var name = document.getElementById('su-name')?.value.trim();
       var email = document.getElementById('su-email')?.value.trim();
@@ -91,28 +88,21 @@ const appsScriptUrl = import.meta.env.APPS_SCRIPT_URL || '';
       if (!name || !email || !pass) return showErr('Please fill in name, email, and password.');
       if (errEl) errEl.style.display = 'none';
 
-      var url = document.getElementById('su-config')?.getAttribute('data-url');
-      if (!url) return showErr('Account system not configured yet — check back soon.');
-
       if (btn) { btn.disabled = true; btn.textContent = 'Creating account…'; }
 
       try {
-        var ph = await hashPassword(pass);
-        var params = new URLSearchParams({ action: 'signup', name: name, email: email, phone: phone, ph: ph });
-        var res = await fetch(url + '?' + params.toString());
+        var res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, email: email, phone: phone, password: pass }),
+        });
         var data = await res.json();
 
-        if (!data.success) {
+        if (!res.ok || !data.success) {
           showErr(data.error || 'Could not create account. Please try again.');
           if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
           return;
         }
-
-        localStorage.setItem('gbp_auth', JSON.stringify({
-          token: data.token, name: data.name, email: data.email,
-          points: data.points || 100, tier: data.tier || 'Nibbler',
-        }));
-        localStorage.setItem('gbp_customer', JSON.stringify({ name: data.name, email: data.email, phone: phone }));
 
         document.getElementById('signup-form')?.style.setProperty('display', 'none');
         document.getElementById('su-success').style.display = 'block';
