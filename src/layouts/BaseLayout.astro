@@ -182,6 +182,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
           <input id="codEmail" class="cod-input" type="email" placeholder="Email (order updates)" autocomplete="email" />
           <input id="codAddress" class="cod-input" type="text" placeholder="Delivery address" autocomplete="street-address" />
           <input id="codPincode" class="cod-input" type="text" inputmode="numeric" placeholder="Pincode" autocomplete="postal-code" />
+          <input id="codCoupon" class="cod-input" type="text" placeholder="Coupon code (optional)" autocomplete="off" />
           <p id="codError" class="cod-error" style="display:none;"></p>
           <button type="button" id="codSubmit" class="btn btn-primary cart-checkout-btn">Place COD Order</button>
         </div>
@@ -949,6 +950,7 @@ if (window.GobbleCart) {
         address: val('codAddress'),
         pincode: val('codPincode'),
       };
+      const couponCode = val('codCoupon') || undefined;
       if (codSubmit) { codSubmit.disabled = true; codSubmit.textContent = 'Placing order…'; }
       try {
         const res = await fetch('/api/checkout/cod', {
@@ -957,6 +959,7 @@ if (window.GobbleCart) {
           body: JSON.stringify({
             items: items.map((i: any) => ({ slug: i.id, qty: i.qty || 1 })),
             customer,
+            couponCode,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -980,6 +983,38 @@ if (window.GobbleCart) {
         if (codSubmit) { codSubmit.disabled = false; codSubmit.textContent = 'Place COD Order'; }
       }
     });
+
+    // ── Abandoned-cart capture (Console recovery cron) ──
+    // Same contract as Nanoliss/TCS: POST once we have an email, deduped by
+    // cart signature, at most every 60s, best-effort. The COD form email is
+    // the capture point — the drawer itself never sees an address.
+    let lastCartSaveKey = "";
+    let lastCartSaveAt = 0;
+    function saveAbandonedCart() {
+      try {
+        const emailEl = document.getElementById('codEmail') as HTMLInputElement | null;
+        const email = (emailEl?.value || '').trim();
+        const items = window.GobbleCart ? window.GobbleCart.get() : [];
+        if (!email || email.indexOf('@') < 0 || !items.length) return;
+        const key = email + '|' + items.map((i: any) => i.id + 'x' + (i.qty || 1)).join(',');
+        if (key === lastCartSaveKey || Date.now() - lastCartSaveAt < 60000) return;
+        lastCartSaveKey = key;
+        lastCartSaveAt = Date.now();
+        const nameEl = document.getElementById('codName') as HTMLInputElement | null;
+        fetch('/api/cart/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            name: (nameEl?.value || '').trim() || undefined,
+            items: items.map((i: any) => ({ slug: i.id, name: i.name, price: i.price, qty: i.qty || 1, image: i.image })),
+            total: window.GobbleCart.total(),
+          }),
+        }).catch(() => {});
+      } catch {}
+    }
+
+    document.getElementById('codEmail')?.addEventListener('input', saveAbandonedCart);
 
     // ── Search overlay (Console-backed via /api/search) ──
     const searchOverlay = document.getElementById('searchOverlay');
