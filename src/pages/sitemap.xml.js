@@ -10,6 +10,12 @@ const SITE = "https://gobblebypixie.com";
  * jars appear without a deploy.
  */
 export async function GET() {
+  // No /contact here: Gobble has no contact page (verified — there is no
+  // contact.astro, and "contact" is a RESERVED_SLUG in the Console so the
+  // [...slug] catch-all can never serve one either). This entry advertised a
+  // permanent 404: measured live, /contact/ returned 404 while /about/ returned
+  // 200, and it was the only non-200 of the 45 URLs this sitemap advertises.
+  // Enquiries go through the WhatsApp/order flow instead.
   const staticPaths = [
     { path: "/", priority: 1.0, changefreq: "weekly" },
     { path: "/menu/", priority: 0.9, changefreq: "daily" },
@@ -18,7 +24,6 @@ export async function GET() {
     { path: "/events/", priority: 0.7, changefreq: "monthly" },
     { path: "/about/", priority: 0.6, changefreq: "monthly" },
     { path: "/faq/", priority: 0.6, changefreq: "monthly" },
-    { path: "/contact/", priority: 0.5, changefreq: "yearly" },
   ];
 
   let productUrls = [];
