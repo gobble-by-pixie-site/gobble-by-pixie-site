@@ -72,7 +72,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
     "@type": "Organization",
     name: "Gobble by Pixie",
     url: SITE_URL,
-    logo: `${SITE_URL}/Logos/Gobble Logo-TM-Black.png`,
+    logo: `${SITE_URL}/Logos/gobble-logo-tm-black.png`,
     description: "Handmade flavoured cream cheese and handcrafted grazing boards — 100% vegetarian, gluten-free, keto-friendly. Delhi NCR.",
     sameAs: ["https://www.instagram.com/gobblebypixie/"],
   })} />
@@ -112,7 +112,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
   <header class="site-header">
     <div class="container header-top">
       <a href="/" class="logo">
-        <img src="/Logos/Gobble Logo-TM-Black.png" alt="Gobble by Pixie" class="logo-img" />
+        <img src="/Logos/gobble-logo-tm-black.png" alt="Gobble by Pixie" class="logo-img" />
       </a>
 
       <div class="header-actions">
@@ -232,7 +232,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
   <footer class="site-footer">
     <div class="container footer-inner">
       <div class="footer-brand">
-        <a href="/" class="logo"><img src="/Logos/Gobble Logo-TM-Black.png" alt="Gobble by Pixie" class="logo-img" /></a>
+        <a href="/" class="logo"><img src="/Logos/gobble-logo-tm-black.png" alt="Gobble by Pixie" class="logo-img" /></a>
         <p class="footer-tag">{content.tagline}</p>
         <div class="footer-badges">
           <span class="badge badge-veg">100% Vegetarian</span>
@@ -293,7 +293,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
   >
     <span class="wa-fab-face">
       <span class="wa-fab-ping"></span>
-      <img src="/Green Jar.png" alt="" class="wa-fab-jar" />
+      <img src="/green-jar.png" alt="" class="wa-fab-jar" />
       <span class="wa-fab-chat-badge">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.13c-.24.68-1.4 1.3-1.93 1.38-.5.08-1.12.11-1.8-.11-.42-.14-.95-.32-1.64-.62-2.88-1.24-4.76-4.14-4.9-4.33-.14-.19-1.17-1.56-1.17-2.98 0-1.41.74-2.11 1-2.4.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.57.81 1.98.88 2.12.07.14.12.31.02.5-.09.19-.14.31-.28.48-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.21 1.37.28.14.44.12.6-.07.16-.19.69-.8.87-1.08.19-.28.37-.23.62-.14.26.09 1.63.77 1.91.91.28.14.47.21.54.33.07.12.07.68-.17 1.36z"/></svg>
       </span>
@@ -1064,7 +1064,7 @@ if (window.GobbleCart) {
             // route is /products/<slug>/ (verified: all 44 product URLs this
             // site advertises return 200).
             '<a class="search-hit" href="/products/' + escapeHtml(String(r.slug || r.id || '')) + '/">'
-            + (r.image ? '<img src="' + escapeHtml(String(r.image)) + '" alt="" loading="lazy" />' : '<img src="/Green Jar.png" alt="" />')
+            + (r.image ? '<img src="' + escapeHtml(String(r.image)) + '" alt="" loading="lazy" />' : '<img src="/green-jar.png" alt="" />')
             + '<span><span class="search-hit-name">' + escapeHtml(String(r.name ?? '')) + '</span><br/>'
             + '<span class="search-hit-meta">' + fmtPrice(r.price) + '</span></span></a>'
           ).join('');
