@@ -222,11 +222,22 @@ const earnRules = [
 
       var TIER_COLORS = { Nibbler: 'var(--tag-sage)', Foodie: 'var(--accent-gold-deep)', 'Gobbler VIP': 'var(--accent-berry-deep)' };
 
-      // Display tier: prefer what Console stored; a fresh customer has none
-      // yet, so derive it from points with the house thresholds. Either way
-      // the NAMES stay Gobble's — they are brand copy, not Console data.
-      function displayTier(points, storedTier) {
-        if (storedTier) return storedTier;
+      // Display tier is derived from points with the HOUSE thresholds, always.
+      //
+      // This used to be `if (storedTier) return storedTier` — prefer Console's
+      // tier, fall back to house rules. That was safe only while Console sent
+      // null, which it always did: nothing wrote customers.loyalty_tier. On
+      // 2026-10-10 Console started returning a DERIVED tier (Bronze/Silver/
+      // Gold/Platinum, computed from lifetime spend) so other storefronts
+      // stopped needing a hardcoded fallback. That silently turned this branch
+      // live and every Gobble customer began reading "Bronze" on a page whose
+      // legend is Nibbler / Foodie / Gobbler VIP — with no TIER_COLORS entry,
+      // so the badge lost its colour too.
+      //
+      // The original comment said the right thing and the code contradicted it:
+      // the NAMES are Gobble's brand copy, not Console data. So Console's tier
+      // is deliberately NOT a parameter here. Gobble owns its tier vocabulary.
+      function displayTier(points) {
         if (points >= 1000) return 'Gobbler VIP';
         if (points >= 300) return 'Foodie';
         return 'Nibbler';
@@ -244,7 +255,9 @@ const earnRules = [
 
       function fillRewards(loyalty) {
         var pts = loyalty.points || 0;
-        var tier = displayTier(pts, loyalty.tier);
+        // `loyalty.tier` (Console's Bronze/Silver/Gold/Platinum) is NOT passed
+        // in - see displayTier(). Gobble's tier names are brand copy.
+        var tier = displayTier(pts);
 
         document.getElementById('acct-points-badge').style.display = 'block';
         var tierEl = document.getElementById('tier-badge');
