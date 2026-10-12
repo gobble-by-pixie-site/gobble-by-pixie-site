@@ -190,6 +190,13 @@ const ogImage = SITE_URL + '/og-image.jpg';
           </div>
           <p class="cod-form-hint">Store credit applies alongside a coupon, never instead of it. Leave the amount blank for the full balance.</p>
           <p id="codCreditMsg" class="cod-error" style="display:none;"></p>
+          <!-- Order-level note: allergies, delivery instructions, a gift
+               message. Per-item notes ride on the cart line itself; this is for
+               anything about the order as a whole. Reaches Console as
+               orders.customer_note and prints on the invoice + packing slip. -->
+          <textarea id="codNote" class="cod-input" rows="2" maxlength="1000" style="resize:none;font-family:inherit;"
+            placeholder="Allergies or preparation notes, delivery instructions, gift message (optional)"
+            aria-label="Order note (optional)"></textarea>
           <div id="codOffers" style="display:none;" class="cod-offers">
             <p class="cod-offers-title">Available offers</p>
             <div id="codOffersList"></div>
@@ -984,8 +991,17 @@ if (window.GobbleCart) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: items.map((i: any) => ({ slug: i.id, qty: i.qty || 1 })),
+            // `note` rides along: the cart line's own instruction (allergies,
+            // "extra nut isolation", platter preferences). Dropping it here
+            // meant the customer saw their note in the drawer and the kitchen
+            // received nothing. /byop composes the same field.
+            items: items.map((i: any) => ({
+              slug: i.id,
+              qty: i.qty || 1,
+              ...(typeof i.note === 'string' && i.note.trim() ? { note: i.note.trim() } : {}),
+            })),
             customer,
+            customerNote: val('codNote') || undefined,
             couponCode,
             creditCode,
             creditAmount,

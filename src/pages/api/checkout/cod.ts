@@ -88,7 +88,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
   const bySlug = new Map(catalog.map((p) => [p.slug, p]));
 
-  const orderItems: Array<{ productId: string; qty: number }> = [];
+  const orderItems: Array<{ productId: string; qty: number; lineNotes?: string }> = [];
   for (const it of rawItems) {
     const slug = String(it?.slug ?? "");
     const qty = Math.floor(Number(it?.qty));
@@ -123,7 +123,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         { status: 400 },
       );
     }
-    orderItems.push({ productId: product.id, qty });
+    // The cart item's own note (allergies, "extra nut isolation", platter
+    // preferences) travels with the line. It used to be dropped HERE — the push
+    // rebuilt each item as {productId, qty} — so the drawer showed the customer
+    // their instruction and the kitchen never saw it. Console stores it as
+    // order_items.line_notes.
+    const lineNote = typeof it?.note === "string" ? it.note.trim() : "";
+    orderItems.push({ productId: product.id, qty, ...(lineNote ? { lineNotes: lineNote } : {}) });
   }
 
   // 2. Create the COD order. Console reprices everything server-side
@@ -138,6 +144,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         creditAmount,
         customerEmail: email,
         shippingAddress: { name, phone, address, pincode },
+        // Order-level note from the COD form — delivery instructions, a gift
+        // message, anything about the order as a whole.
+        customerNote:
+          typeof (body as Record<string, unknown> | undefined)?.customerNote === "string"
+            ? String((body as Record<string, unknown>).customerNote).trim() || undefined
+            : undefined,
       }),
     });
     if (!res.ok) {

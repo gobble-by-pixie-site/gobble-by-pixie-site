@@ -81,7 +81,28 @@ no deploy triggered.
   `path` so the Console can say "no editor for this page" instead of going
   blank.
 
-## 2026-10-12 — Store credit + live offers in the COD form
+## 2026-10-12 — Store credit + live offers + customer notes in the COD form
+
+- **Customer notes now reach Console.** The cart line's own `note` — used by
+  `/byop` for occasion, gift note and kitchen instructions — was dropped twice
+  on the way to checkout: once in the drawer's submit payload and again in
+  `api/checkout/cod.ts`, each rebuilding the item as `{slug, qty}` /
+  `{productId, qty}`. The customer saw their instruction in the drawer and the
+  kitchen received nothing, which for "extra nut isolation, strict keto crisp
+  preference" is a safety problem. `note` now travels as `lineNotes` and
+  Console stores it on the order line (migration 0095), printing it on the
+  invoice and packing slip.
+- **New order-level note** in the COD form (`#codNote`): allergies, delivery
+  instructions or a gift message for the order as a whole. Sent as
+  `customerNote`; Console stores it as `orders.customer_note` and echoes it back
+  in the order confirmation email so the shopper can see it landed.
+- **BYOP platters stay WhatsApp-only** (owner decision, 2026-10-12). `cod.ts`
+  still refuses `byop-`/`custom-` ids, because they have no product row to price
+  from. The note is therefore still relayed by hand on that path — recorded
+  here as a known gap, not an oversight.
+- **GST was fixed at the same time**: every product had a NULL `gst_rate`, and
+  because the GST 2.0 auto-classifier is clothing-only, all 37 resolved to 0%.
+  Now 5% across the catalogue (owner's stated rate for branded packaged cheese).
 
 - **Store credit** (drawer `#codForm`): code + amount inputs beside the coupon
   box, sending `creditCode` + `creditAmount` through `api/checkout/cod.ts` to
