@@ -41,6 +41,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const phone = String(customer.phone ?? "").trim();
   const address = String(customer.address ?? "").trim();
   const pincode = String(customer.pincode ?? "").trim();
+  const city = String(customer.city ?? "").trim();
+  const state = String(customer.state ?? "").trim();
   // Console itself does not validate email shape (non-empty is enough there),
   // so the proxy does: a garbage address would mint a garbage customer row
   // that can never receive its confirmation.
@@ -52,6 +54,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return new Response(JSON.stringify({ error: "Enter a valid phone number." }), { status: 400 });
   }
   if (!address) return new Response(JSON.stringify({ error: "Delivery address is required." }), { status: 400 });
+  // City and state gate on the pincode, which is the field that actually decides
+  // GST: Console computes `interState = !!homeState && !!shipToState &&
+  // homeState !== shipToState`, so an order with no state is always invoiced
+  // intra-state. Rejecting here beats quietly issuing a wrong tax invoice.
+  if (!pincode) return new Response(JSON.stringify({ error: "Pincode is required." }), { status: 400 });
+  if (!city) return new Response(JSON.stringify({ error: "City is required." }), { status: 400 });
+  if (!state) return new Response(JSON.stringify({ error: "State is required." }), { status: 400 });
 
   const BASE_URL = consoleUrl();
   const API_KEY = consoleKey();
@@ -143,7 +152,26 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         creditCode,
         creditAmount,
         customerEmail: email,
-        shippingAddress: { name, phone, address, pincode },
+        // Name and phone go BOTH here and at the top level. Inside the address
+        // object they are decoration Console ignores; as customerName/
+        // customerPhone they are what Console's guest find-or-create needs to
+        // stop leaving customers.name/.phone NULL — which is why every guest's
+        // Bill To block has been blank.
+        customerName: name,
+        customerPhone: phone,
+        // The keys Console's addressLines() actually reads. It looks for
+        // line1/line2/city/state/pincode/country and there is NO aliasing
+        // anywhere in the codebase, so the old shape —
+        //   { name, phone, address, pincode }
+        // — matched only on `pincode`. Every invoice and delivery label printed
+        // the pincode alone, with the street sitting in a field named
+        // `address` that nothing reads. The data was never lost; it was filed
+        // under a label nobody was looking for.
+        //
+        // `country` is the ISO code. calculateShipping does (country || "IN")
+        // and branches on !== "IN", so omitting it is safe — but "India" would
+        // route a domestic order to International Shipping.
+        shippingAddress: { line1: address, city, state, pincode, country: "IN" },
         // Order-level note from the COD form — delivery instructions, a gift
         // message, anything about the order as a whole.
         customerNote:
