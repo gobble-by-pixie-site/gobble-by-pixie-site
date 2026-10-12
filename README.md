@@ -80,3 +80,20 @@ no deploy triggered.
   (`src/lib/vision-paths.ts`). `lc-content-ready` now carries the current
   `path` so the Console can say "no editor for this page" instead of going
   blank.
+
+## 2026-10-12 — Store credit + live offers in the COD form
+
+- **Store credit** (drawer `#codForm`): code + amount inputs beside the coupon
+  box, sending `creditCode` + `creditAmount` through `api/checkout/cod.ts` to
+  Console's `orders/create-cod`, which validates it as credit and sums it
+  into the discount. Previewed live (debounced `/api/coupons/validate`,
+  display-only — submit re-sends raw fields for authoritative pricing); a
+  promo code in the credit box says "That is a promo code, not store credit."
+  at the box via the new proxy. The summary gained a store-credit row.
+- **Live offers** (`api/coupons/best.ts` → Console `GET /best`, rendered in
+  the COD form when opened). Renders nothing while the tenant has no live
+  promos (zero today) — correct for a store that doesn't discount.
+- **New proxies** (`api/coupons/validate.ts`, `api/coupons/best.ts`): thin,
+  key-stays-server-side, best-effort shapes the drawer tolerates. Drawer
+  email capture (`saveAbandonedCart` on `codEmail`) predates this and is
+  unchanged — verified still firing.

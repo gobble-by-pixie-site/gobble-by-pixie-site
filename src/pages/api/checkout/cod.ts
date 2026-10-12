@@ -25,6 +25,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const customer = body?.customer ?? {};
   const couponCode =
     typeof body?.couponCode === "string" && body.couponCode.trim() ? body.couponCode.trim() : undefined;
+  // Store credit, applied alongside the promo as its own line. Console owns
+  // the balance and validates it as credit; this proxy only forwards ids and
+  // a chosen amount — it never prices anything.
+  const creditCode =
+    typeof body?.creditCode === "string" && body.creditCode.trim() ? body.creditCode.trim().toUpperCase() : undefined;
+  const creditAmount = typeof body?.creditAmount === "number" ? body.creditAmount : undefined;
 
   if (!rawItems.length) {
     return new Response(JSON.stringify({ error: "Cart is empty." }), { status: 400 });
@@ -128,6 +134,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body: JSON.stringify({
         items: orderItems,
         couponCode,
+        creditCode,
+        creditAmount,
         customerEmail: email,
         shippingAddress: { name, phone, address, pincode },
       }),

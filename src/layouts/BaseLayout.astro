@@ -167,6 +167,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
           <div class="cart-summary-row"><span>Taxable Value</span><span id="cartTaxableValue">₹0</span></div>
           <div class="cart-summary-row"><span>CGST (2.5%)</span><span id="cartCgst">₹0</span></div>
           <div class="cart-summary-row"><span>SGST (2.5%)</span><span id="cartSgst">₹0</span></div>
+          <div class="cart-summary-row cart-summary-credit" id="cartCreditRow" style="display:none;"><span id="cartCreditLabel">Store credit</span><span id="cartCreditAmountLine">−₹0</span></div>
           <div class="cart-summary-row cart-summary-total"><span>Total (incl. GST)</span><span id="cartTotalAmount">₹0</span></div>
         </div>
         <p class="cart-unpriced-note" id="cartUnpricedNote" style="display:none;">Some items are priced on request — final total confirmed on WhatsApp.</p>
@@ -183,6 +184,16 @@ const ogImage = SITE_URL + '/og-image.jpg';
           <input id="codAddress" class="cod-input" type="text" placeholder="Delivery address" autocomplete="street-address" />
           <input id="codPincode" class="cod-input" type="text" inputmode="numeric" placeholder="Pincode" autocomplete="postal-code" />
           <input id="codCoupon" class="cod-input" type="text" placeholder="Coupon code (optional)" autocomplete="off" />
+          <div style="display:flex;gap:0.5rem;">
+            <input id="codCredit" class="cod-input" type="text" placeholder="Store credit code (optional)" autocomplete="off" style="flex:1;min-width:0;" />
+            <input id="codCreditAmount" class="cod-input" type="number" min="1" step="1" placeholder="₹ amount" aria-label="How much store credit to use" style="width:6.5rem;flex-shrink:0;" />
+          </div>
+          <p class="cod-form-hint">Store credit applies alongside a coupon, never instead of it. Leave the amount blank for the full balance.</p>
+          <p id="codCreditMsg" class="cod-error" style="display:none;"></p>
+          <div id="codOffers" style="display:none;" class="cod-offers">
+            <p class="cod-offers-title">Available offers</p>
+            <div id="codOffersList"></div>
+          </div>
           <p id="codError" class="cod-error" style="display:none;"></p>
           <button type="button" id="codSubmit" class="btn btn-primary cart-checkout-btn">Place COD Order</button>
         </div>
@@ -496,6 +507,14 @@ const ogImage = SITE_URL + '/og-image.jpg';
     }
     .cod-input:focus { outline: 2px solid var(--accent-gold-deep); outline-offset: 0; border-color: var(--accent-gold-deep); }
     .cod-error { color: var(--accent-berry-deep); font-size: 0.85rem; font-weight: 600; margin: 0.2rem 0 0.6rem; }
+    .cod-form-hint { font-size: 0.78rem; color: var(--text-espresso-soft); margin: 0 0 0.6rem; }
+    .cod-offers { margin: 0.2rem 0 0.6rem; padding: 0.6rem 0.75rem; background: var(--bg-parchment-alt); border-radius: var(--radius-sm); }
+    .cod-offers-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-espresso); margin: 0 0 0.4rem; }
+    .cod-offer-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.25rem 0; }
+    .cod-offer-code { font-weight: 700; font-size: 0.85rem; color: var(--text-espresso); }
+    .cod-offer-desc { font-size: 0.78rem; color: var(--text-espresso-soft); }
+    .cod-offer-apply { font-size: 0.78rem; font-weight: 700; color: var(--accent-gold-deep); background: none; border: none; cursor: pointer; padding: 0.2rem 0; }
+    .cart-summary-credit { color: var(--accent-gold-deep); font-weight: 700; }
     .cod-success { margin-top: 0.9rem; padding: 1rem; text-align: center; background: var(--bg-parchment-alt); border-radius: var(--radius-sm); }
     .cod-success-title { font-family: var(--font-display); font-size: 1.3rem; color: var(--text-espresso); margin: 0 0 0.4rem; }
     .cod-success-sub { font-size: 0.85rem; color: var(--text-espresso-soft); margin: 0.4rem 0 0; }
@@ -936,6 +955,8 @@ if (window.GobbleCart) {
       codForm.style.display = open ? 'none' : 'block';
       if (codError) codError.style.display = 'none';
       if (codSuccess) codSuccess.style.display = 'none';
+      // Offers depend on the live cart — refresh each time the form opens.
+      if (!open) refreshCodOffers();
     });
 
     codSubmit?.addEventListener('click', async () => {
@@ -951,6 +972,12 @@ if (window.GobbleCart) {
         pincode: val('codPincode'),
       };
       const couponCode = val('codCoupon') || undefined;
+      // Store credit rides alongside the coupon — Console owns the balance,
+      // validates it as credit, and sums it into the discount. Re-validated
+      // server-side at submit, so the preview above can never charge wrong.
+      const creditCode = val('codCredit').toUpperCase() || undefined;
+      const creditRaw = val('codCreditAmount');
+      const creditAmount = creditRaw === '' ? undefined : Number(creditRaw);
       if (codSubmit) { codSubmit.disabled = true; codSubmit.textContent = 'Placing order…'; }
       try {
         const res = await fetch('/api/checkout/cod', {
@@ -960,6 +987,8 @@ if (window.GobbleCart) {
             items: items.map((i: any) => ({ slug: i.id, qty: i.qty || 1 })),
             customer,
             couponCode,
+            creditCode,
+            creditAmount,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -984,6 +1013,140 @@ if (window.GobbleCart) {
       }
     });
 
+    // ── Store credit preview + live offers ──
+    // The credit box is validated live (debounced) so a promo code typed
+    // here says "That is a promo code, not store credit." at the box — not
+    // at order submit. The preview is display-only: submit re-sends the raw
+    // fields and Console re-validates authoritatively, so a stale preview
+    // can never charge a wrong total.
+    let creditCheckTimer: ReturnType<typeof setTimeout> | null = null;
+    let creditCheckSeq = 0;
+    function cartPreviewTotal(): number {
+      try {
+        const items = window.GobbleCart ? window.GobbleCart.get() : [];
+        return items.reduce((s: number, i: any) => s + (Number(i.price) || 0) * (i.qty || 1), 0);
+      } catch { return 0; }
+    }
+    function showCreditMsg(msg: string) {
+      const el = document.getElementById('codCreditMsg');
+      if (!el) return;
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+    function renderCreditPreview(code: string | null, amount: number) {
+      const row = document.getElementById('cartCreditRow');
+      const label = document.getElementById('cartCreditLabel');
+      const line = document.getElementById('cartCreditAmountLine');
+      if (!row || !label || !line) return;
+      if (code && amount > 0) {
+        label.textContent = 'Store credit (' + code + ')';
+        line.textContent = '−' + formatPrice(amount);
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    }
+    async function checkCredit() {
+      const codeEl = document.getElementById('codCredit') as HTMLInputElement | null;
+      const amtEl = document.getElementById('codCreditAmount') as HTMLInputElement | null;
+      const emailEl = document.getElementById('codEmail') as HTMLInputElement | null;
+      const code = (codeEl?.value || '').trim().toUpperCase();
+      showCreditMsg('');
+      renderCreditPreview(null, 0);
+      if (!code) return;
+      const rawAmount = (amtEl?.value || '').trim();
+      const requested = rawAmount === '' ? undefined : Number(rawAmount);
+      if (rawAmount !== '' && (!isFinite(requested as number) || (requested as number) <= 0)) {
+        showCreditMsg('Enter an amount, or leave blank for the full balance.');
+        return;
+      }
+      const seq = ++creditCheckSeq;
+      try {
+        const res = await fetch('/api/coupons/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code,
+            cartTotal: cartPreviewTotal(),
+            customerEmail: (emailEl?.value || '').trim() || undefined,
+          }),
+        });
+        if (seq !== creditCheckSeq) return;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.valid) {
+          showCreditMsg(data.error || 'Invalid store credit code.');
+          return;
+        }
+        if (data.kind !== 'credit') {
+          showCreditMsg('That is a promo code, not store credit.');
+          return;
+        }
+        const available = Number(data.creditAvailable || 0);
+        const spend = requested ?? available;
+        if (!(spend > 0)) {
+          showCreditMsg('This store credit has already been used.');
+          return;
+        }
+        renderCreditPreview(data.code || code, Math.min(spend, available, cartPreviewTotal()));
+      } catch {
+        // Preview only — submit re-validates. Stay silent, not wrong.
+      }
+    }
+    function queueCreditCheck() {
+      if (creditCheckTimer) clearTimeout(creditCheckTimer);
+      creditCheckTimer = setTimeout(checkCredit, 800);
+    }
+    ['codCredit', 'codCreditAmount', 'codEmail'].forEach((id) => {
+      document.getElementById(id)?.addEventListener('input', queueCreditCheck);
+    });
+
+    // Live offers (Console /api/coupons/best). Renders nothing when the
+    // tenant has no live promos — correct for a store that doesn't discount.
+    async function refreshCodOffers() {
+      const box = document.getElementById('codOffers');
+      const list = document.getElementById('codOffersList');
+      if (!box || !list) return;
+      const total = cartPreviewTotal();
+      if (!total) { box.style.display = 'none'; return; }
+      try {
+        const email = (document.getElementById('codEmail') as HTMLInputElement | null)?.value.trim() || '';
+        const params = new URLSearchParams({ cartTotal: String(total) });
+        if (email) params.set('customerEmail', email);
+        const res = await fetch('/api/coupons/best?' + params.toString());
+        const data = await res.json().catch(() => ({}));
+        const offers = Array.isArray(data.offers) ? data.offers.filter((o: any) => o && o.code).slice(0, 4) : [];
+        if (!offers.length) { box.style.display = 'none'; return; }
+        list.innerHTML = '';
+        offers.forEach((o: any) => {
+          const row = document.createElement('div');
+          row.className = 'cod-offer-row';
+          const desc = o.discountPercent ? o.discountPercent + '% off' : (o.discountAmount ? '₹' + o.discountAmount + ' off' : 'Offer');
+          const info = document.createElement('div');
+          const codeEl = document.createElement('span');
+          codeEl.className = 'cod-offer-code';
+          codeEl.textContent = o.code;
+          const descEl = document.createElement('div');
+          descEl.className = 'cod-offer-desc';
+          descEl.textContent = desc;
+          info.appendChild(codeEl);
+          info.appendChild(descEl);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cod-offer-apply';
+          btn.textContent = 'Apply';
+          btn.addEventListener('click', () => {
+            const input = document.getElementById('codCoupon') as HTMLInputElement | null;
+            if (input) input.value = o.code;
+          });
+          row.appendChild(info);
+          row.appendChild(btn);
+          list.appendChild(row);
+        });
+        box.style.display = 'block';
+      } catch {
+        box.style.display = 'none';
+      }
+    }
     // ── Abandoned-cart capture (Console recovery cron) ──
     // Same contract as Nanoliss/TCS: POST once we have an email, deduped by
     // cart signature, at most every 60s, best-effort. The COD form email is
