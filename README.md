@@ -81,7 +81,7 @@ no deploy triggered.
   `path` so the Console can say "no editor for this page" instead of going
   blank.
 
-## 2026-10-12 — Store credit + live offers + customer notes in the COD form
+## 2026-10-12 — COD checkout: address keys, PIN→state, store credit, live offers, customer notes
 
 - **Customer notes now reach Console.** The cart line's own `note` — used by
   `/byop` for occasion, gift note and kitchen instructions — was dropped twice
@@ -118,3 +118,24 @@ no deploy triggered.
   key-stays-server-side, best-effort shapes the drawer tolerates. Drawer
   email capture (`saveAbandonedCart` on `codEmail`) predates this and is
   unchanged — verified still firing.
+- **The address keys Console actually reads** (commit `b6d8bd8`). Every Gobble
+  invoice and delivery label had been printing the **pincode alone** — no
+  street, no city, no state. Console's `addressLines()` reads
+  `line1/line2/city/state/pincode/country` and there is NO aliasing anywhere,
+  so the old `{name, phone, address, pincode}` payload matched only on
+  `pincode`; the street arrived intact and sat under a label nothing reads.
+  `cod.ts` now sends `{line1, city, state, pincode, country:"IN"}` plus
+  `customerName` / `customerPhone` at the top level (guest find-or-create
+  persists email only, which is why every guest's Bill To block was blank).
+  pincode/city/state are required server-side: an empty state makes
+  `interState` permanently false, i.e. CGST+SGST where IGST was owed.
+- **PIN → state, editable on purpose** (`src/lib/pin-state.ts`, commit
+  `b6d8bd8`). The COD form gained city + a state select whose value is
+  DERIVED from the pincode (longest-prefix-first, so `403` Goa beats `40`
+  Maharashtra) and stays editable, because a handful of PINs sit near a
+  border and the invoice has to be right. The layout script cannot import,
+  so the table is embedded in `BaseLayout.astro` (`COD_STATES` /
+  `COD_PIN_PREFIX`) GENERATED from the module — and
+  `tests/smoke/checkout-address.test.mjs` parses the embedded block back out
+  and fails if the two drift, so editing `ZONES` without regenerating fails
+  the build instead of shipping quietly.
