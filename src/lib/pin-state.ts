@@ -22,10 +22,11 @@
  *
  * ## Coverage and the honest gap
  *
- * Every PIN prefix India Post assigns is listed, so the 6-digit lookup resolves
- * for every valid Indian PIN. Two states have more than one prefix pattern and
- * are listed per-prefix: Arunachal Pradesh (12/13/14) and, importantly, the
- * Karnataka/Goa split, where 57 is Karnataka and 40 is Goa.
+ * The 79x zone is shared by six states, so it is listed per-prefix: 790-792
+ * Arunachal Pradesh, 793-794 Meghalaya, 795 Manipur, 796 Mizoram, 797-798
+ * Nagaland, 799 Tripura. Where a prefix cannot isolate a state at 3 digits —
+ * Lakshadweep's 682xxx sits inside Kerala's 682 block — the lookup resolves
+ * to the larger state rather than inventing one.
  *
  * The remaining limitation is real and worth stating rather than hiding: a
  * customer always gets to CORRECT the derived state before submitting, because
@@ -35,11 +36,12 @@
 
 /** state name -> (GST state code, PIN prefixes). */
 const ZONES: Array<{ state: string; code: string; prefixes: string[] }> = [
+  { state: "Andaman and Nicobar Islands", code: "35", prefixes: ["744"] },
   { state: "Andhra Pradesh", code: "37", prefixes: ["515", "516", "517", "518", "519", "521", "522", "523", "524"] },
-  { state: "Arunachal Pradesh", code: "12", prefixes: ["791", "792", "794", "795", "798", "799"] },
+  { state: "Arunachal Pradesh", code: "12", prefixes: ["790", "791", "792"] },
   { state: "Assam", code: "18", prefixes: ["78"] },
   { state: "Bihar", code: "10", prefixes: ["80", "81", "82", "83", "84", "85"] },
-  { state: "Chandigarh", code: "03", prefixes: ["160"] },
+  { state: "Chandigarh", code: "04", prefixes: ["160"] },
   { state: "Chhattisgarh", code: "22", prefixes: ["49", "493", "494", "495", "496", "497"] },
   { state: "Dadra and Nagar Haveli and Daman and Diu", code: "26", prefixes: ["396"] },
   { state: "Delhi", code: "07", prefixes: ["110"] },
@@ -52,18 +54,18 @@ const ZONES: Array<{ state: string; code: string; prefixes: string[] }> = [
   { state: "Karnataka", code: "29", prefixes: ["56", "57"] },
   { state: "Kerala", code: "32", prefixes: ["67", "68", "69", "691", "692", "693", "694", "695", "696", "697", "698", "699"] },
   { state: "Ladakh", code: "38", prefixes: ["194"] },
-  { state: "Madhya Pradesh", code: "23", prefixes: ["452", "453", "454", "455", "456", "457", "458", "459", "460", "461", "462", "463", "464", "465", "466", "467", "468", "469", "470", "471", "472", "473", "474", "475", "476", "477", "478", "479", "480", "481", "482", "483", "484", "485", "486", "487", "488"] },
-  { state: "Maharashtra", code: "27", prefixes: ["40", "41", "42", "43", "44", "45"] },
-  { state: "Manipur", code: "14", prefixes: ["79"] },
-  { state: "Meghalaya", code: "01", prefixes: ["793"] },
+  { state: "Madhya Pradesh", code: "23", prefixes: ["45", "452", "453", "454", "455", "456", "457", "458", "459", "460", "461", "462", "463", "464", "465", "466", "467", "468", "469", "470", "471", "472", "473", "474", "475", "476", "477", "478", "479", "480", "481", "482", "483", "484", "485", "486", "487", "488"] },
+  { state: "Maharashtra", code: "27", prefixes: ["40", "41", "42", "43", "44"] },
+  { state: "Manipur", code: "14", prefixes: ["795"] },
+  { state: "Meghalaya", code: "17", prefixes: ["793", "794"] },
   { state: "Mizoram", code: "15", prefixes: ["796"] },
-  { state: "Nagaland", code: "13", prefixes: ["797"] },
+  { state: "Nagaland", code: "13", prefixes: ["797", "798"] },
   { state: "Sikkim", code: "11", prefixes: ["737"] },
   { state: "Odisha", code: "21", prefixes: ["751", "752", "753", "754", "755", "756", "757", "758", "759"] },
-  { state: "Puducherry", code: "34", prefixes: ["605", "606", "607", "608", "609"] },
+  { state: "Puducherry", code: "34", prefixes: ["605", "609"] },
   { state: "Punjab", code: "03", prefixes: ["140", "141", "142", "143", "144", "145", "146", "147", "148"] },
   { state: "Rajasthan", code: "08", prefixes: ["30", "31", "32", "33", "34"] },
-  { state: "Tamil Nadu", code: "33", prefixes: ["600", "601", "602", "603", "604", "610", "611", "612", "613", "614", "615", "616", "617", "618", "619", "620", "621", "622", "623", "624", "625", "626", "627", "628", "629"] },
+  { state: "Tamil Nadu", code: "33", prefixes: ["600", "601", "602", "603", "604", "606", "607", "608", "610", "611", "612", "613", "614", "615", "616", "617", "618", "619", "620", "621", "622", "623", "624", "625", "626", "627", "628", "629"] },
   { state: "Telangana", code: "36", prefixes: ["500", "501", "502", "503", "504", "505", "506", "507", "508", "509"] },
   { state: "Tripura", code: "16", prefixes: ["799"] },
   { state: "Uttar Pradesh", code: "09", prefixes: ["20", "21", "22", "23", "24", "25", "26", "27", "28", "29"] },

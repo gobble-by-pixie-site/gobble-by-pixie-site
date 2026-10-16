@@ -137,7 +137,7 @@ test("checkout sends the address keys Console actually reads", () => {
 
 test("the embedded state table matches the module, so the two cannot drift", () => {
   // BaseLayout.astro's script is a plain module script and cannot import, so
-  // the PIN table has to be inlined. A hand-kept second copy of a 262-row table
+  // the PIN table has to be inlined. A hand-kept second copy of a 263-row table
   // is exactly how a state quietly vanishes from one and not the other — and
   // the failure is invisible, the customer is just asked to pick their own
   // state. This parses the inline block out of the layout and compares it to
