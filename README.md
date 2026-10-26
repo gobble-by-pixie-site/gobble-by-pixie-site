@@ -139,3 +139,22 @@ no deploy triggered.
   `tests/smoke/checkout-address.test.mjs` parses the embedded block back out
   and fails if the two drift, so editing `ZONES` without regenerating fails
   the build instead of shipping quietly.
+
+## 2026-10-26 - Catalog fetch cached (Cloudflare `error 1102` hardening)
+
+Same failure class that intermittently took the TCS storefront down with
+`error code: 1102` (Cloudflare killing a Pages Function for exceeding a Worker
+resource limit): every page renders `BaseLayout` (which calls `fetchProducts()`
+for the nav) **and** its own body (which calls it again for the grid), so one
+request downloaded and re-mapped the whole Console catalog twice — and this
+module had no cache despite `fetchProductBySlug`'s comment saying it did.
+
+- `fetchFromConsoleProducts()` now keeps a 60 s module-scope cache of the
+  normalized catalog and returns a shallow copy, so callers can sort/filter
+  without corrupting it. Only non-empty successful Console responses are
+  cached; the Sheets/placeholder fallback path is unchanged.
+- The Console fetch gained `AbortSignal.timeout(10000)`, matching
+  `console-client.ts` — a hung Console can no longer hold the invocation open.
+- Verified: `npm run build` clean; the built homepage is **byte-identical** to
+  the live page (52,278 bytes, 369 lines, 0 differing lines); five rapid
+  renders produced **zero** additional catalog fetches after the first.

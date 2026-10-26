@@ -20,6 +20,18 @@ const FALLBACK_PRODUCTS = [
   })),
 ];
 
+// Short-lived cache of the normalized Console catalog. Every page renders
+// BaseLayout (which calls fetchProducts() for the nav) AND its own body
+// (which calls it again for the grid), so without this one request fetched
+// and re-mapped the whole catalog twice. That duplicated per-invocation work
+// is what Cloudflare kills Pages Functions for with `error 1102` (Worker
+// exceeded resource limits) — the same failure that took the TCS storefront
+// down intermittently on 2026-10-24/25. 60s keeps Console edits near-live.
+// Only successful, non-empty Console responses are cached; a failure still
+// falls through to the Sheets/placeholder fallback, unchanged.
+const CACHE_MS = 60_000;
+let productsCache = null; // { at: number, list: object[] }
+
 function convertImageUrl(url) {
   if (!url) return url;
   url = url.trim();
@@ -63,16 +75,26 @@ async function fetchFromConsoleProducts() {
   const base = consoleUrl();
   const key = consoleKey();
   if (!base || !key) return null;
+
+  if (productsCache && Date.now() - productsCache.at < CACHE_MS) {
+    // Copy so a caller sorting/filtering in place cannot corrupt the cache.
+    return productsCache.list.slice();
+  }
+
   try {
     const res = await fetch(`${base.replace(/\/$/, '')}/api/public/products`, {
       headers: { 'X-Storefront-Api-Key': key },
+      // A hung Console must never hold the SSR invocation until the platform
+      // kills it (error 1102).
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const list = (data.products ?? []).map(consoleToStore);
     if (!list.length) return null;
+    productsCache = { at: Date.now(), list };
     console.log(`[GBP] ✓ ${list.length} products from Linear Console`);
-    return list;
+    return list.slice();
   } catch (err) {
     console.error(`[GBP] ✗ Console fetch failed (${err.message}) — falling back to Sheets`);
     return null;
