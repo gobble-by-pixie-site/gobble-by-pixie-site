@@ -50,6 +50,12 @@ no deploy triggered.
 ## Deployment
 
 - **Normal:** git push to `main` (CF Pages auto-builds).
+- **Verify the build landed (no Pages token needed):** `gh api repos/gobble-by-pixie-site/gobble-by-pixie-site/commits/<sha>/check-runs`
+  returns a `Cloudflare Pages` check-run whose `conclusion` is the build result and whose `details_url` carries the deployment id.
+  Measured on commit `de2eac2` (2026-10-26 cache fix): `completed / success`, deployment `7334088b-d8d7-4d83-8954-61302d6db750`,
+  40 s after the push. This works because the push credential is the SSH key `~/.ssh/id_gobblebypixie` (host alias
+  `github-gobblebypixie`) and the Pages GitHub App reports the build back to GitHub. No Cloudflare API token on this
+  account has Pages read - the `cfut_r5gy...` token is Cache Purge/Cache Rules/DNS Edit only and 403s on the Pages API.
 - **Fallback (GitHub down):** `bash deploy.sh` - builds locally, assembles
   the Pages worker, deploys straight to project `gobble-by-pixie-site`.
   OAuth login is the only working auth for this project (API-token auth is
@@ -158,3 +164,9 @@ module had no cache despite `fetchProductBySlug`'s comment saying it did.
 - Verified: `npm run build` clean; the built homepage is **byte-identical** to
   the live page (52,278 bytes, 369 lines, 0 differing lines); five rapid
   renders produced **zero** additional catalog fetches after the first.
+- **Shipped and confirmed live:** commit `de2eac2` → Cloudflare Pages check-run
+  `completed / success` at 2026-10-26T08:59:31Z (deployment
+  `7334088b-d8d7-4d83-8954-61302d6db750`, via the Git integration). Post-deploy:
+  18/18 requests 200 across `/`, `/menu`, `/about`; edge cache serving `HIT`
+  at `Age: 122` on `/about`, i.e. the 300 s rule is in effect (the origin still
+  sends `s-maxage=60`).
