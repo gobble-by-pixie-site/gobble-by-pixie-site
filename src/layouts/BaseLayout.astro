@@ -514,13 +514,22 @@ const ogImage = SITE_URL + '/og-image.jpg';
       padding: var(--space-md); border-bottom: 1px solid var(--border-hairline);
     }
     .cart-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-espresso); line-height: 1; }
-    .cart-items { flex: 1; overflow-y: auto; padding: var(--space-sm) var(--space-md); }
+    /* min-height:0 lets the items area SHRINK when the COD form below grows —
+       without it a flex item never shrinks below its content, so opening the
+       form pushed the footer past the drawer's 100vh with no way to scroll
+       (owner report 2026-10-29: "scroll doesn't move down to type address"). */
+    .cart-items { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-sm) var(--space-md); }
     /* .cart-item* / .cart-empty / .qty-btn rules live in global.css, not here —
        these elements are injected via innerHTML at runtime (renderCart() in the
        script below), so they never get Astro's scoped data-astro-cid attribute
        and scoped styles here would silently never match them. */
 
-    .cart-footer { padding: var(--space-md); border-top: 1px solid var(--border-hairline); }
+    /* The footer carries the whole COD form, which is taller than the drawer.
+       overflow-y here gives the form its own scroll; min-height:0 lets this
+       flex item shrink so the scroll actually engages (owner report
+       2026-10-29: the drawer "got stuck" and the address fields were
+       unreachable). */
+    .cart-footer { padding: var(--space-md); border-top: 1px solid var(--border-hairline); overflow-y: auto; min-height: 0; }
     .cart-summary { margin-bottom: var(--space-sm); }
     .cart-summary-row {
       display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-espresso-soft);
@@ -1048,7 +1057,13 @@ if (window.GobbleCart) {
       if (codError) codError.style.display = 'none';
       if (codSuccess) codSuccess.style.display = 'none';
       // Offers depend on the live cart — refresh each time the form opens.
-      if (!open) refreshCodOffers();
+      if (!open) {
+        refreshCodOffers();
+        // The form lives in the footer's own scroll container (it is taller
+        // than the drawer). Bring its top field into view on open, or on a
+        // short screen the customer sees the summary and a dead scroll.
+        codForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
 
     codSubmit?.addEventListener('click', async () => {
