@@ -174,56 +174,65 @@ const ogImage = SITE_URL + '/og-image.jpg';
         <a href="#" id="cartCheckoutBtn" target="_blank" rel="noopener" class="btn btn-primary cart-checkout-btn">Checkout via WhatsApp 💬</a>
         {/* COD (2026-10-07): creates a real Console order via /api/checkout/cod
             (needs clients.cod_enabled — 501 otherwise). WhatsApp stays for
-            custom platters, unpriced items, and anyone who prefers chat. */}
-        <button type="button" id="cartCodBtn" class="btn btn-secondary cart-checkout-btn" style="margin-top:0.6rem;">Pay on Delivery 💵</button>
-        <div id="codForm" style="display:none;margin-top:0.9rem;">
-          <p class="cod-form-title">Delivery details</p>
-          <input id="codName" class="cod-input" type="text" placeholder="Full name" autocomplete="name" />
-          <input id="codPhone" class="cod-input" type="tel" placeholder="Phone (10 digits)" autocomplete="tel" />
-          <input id="codEmail" class="cod-input" type="email" placeholder="Email (order updates)" autocomplete="email" />
-          <input id="codAddress" class="cod-input" type="text" placeholder="Delivery address (flat, building, street)" autocomplete="street-address" />
-          <div style="display:flex;gap:0.5rem;">
-            <input id="codCity" class="cod-input" type="text" placeholder="City" autocomplete="address-level2" style="flex:1;min-width:0;" />
-            <input id="codPincode" class="cod-input" type="text" inputmode="numeric" maxlength="6" placeholder="Pincode" autocomplete="postal-code" style="width:7.5rem;flex-shrink:0;" />
-          </div>
-          {/* State is derived from the pincode and stays EDITABLE: a handful of
-              PIN codes sit near a state border, and the invoice has to be right,
-              so the customer gets the last word rather than a readonly label. */}
-          <select id="codState" class="cod-input" autocomplete="address-level1" aria-label="State">
-            <option value="">Select state</option>
-          </select>
-          <p id="codStateMsg" class="cod-form-hint" style="display:none;"></p>
-          <input id="codCoupon" class="cod-input" type="text" placeholder="Coupon code (optional)" autocomplete="off" />
-          <div style="display:flex;gap:0.5rem;">
-            <input id="codCredit" class="cod-input" type="text" placeholder="Store credit code (optional)" autocomplete="off" style="flex:1;min-width:0;" />
-            <input id="codCreditAmount" class="cod-input" type="number" min="1" step="1" placeholder="₹ amount" aria-label="How much store credit to use" style="width:6.5rem;flex-shrink:0;" />
-          </div>
-          <p class="cod-form-hint">Store credit applies alongside a coupon, never instead of it. Leave the amount blank for the full balance.</p>
-          <p id="codCreditMsg" class="cod-error" style="display:none;"></p>
-          <!-- Order-level note. For a cheese and char-grill store this is the field
-               that matters most: an allergy or a "no nut cross-contact" request
-               is a safety instruction, not a preference, and it has to reach the
-               kitchen. Per-item notes ride on the cart line itself (Console
-               stores them as order_items.line_notes); this is for anything about
-               the order as a whole. Reaches Console as orders.customer_note and
-               prints on the invoice, the packing slip AND the confirmation
-               email, so it is readable by whoever packs the box. -->
-          <textarea id="codNote" class="cod-input" rows="3" maxlength="1000" style="resize:none;font-family:inherit;"
-            placeholder="Allergies (nut, dairy, gluten), preparation instructions, delivery window, gift message (optional)"
-            aria-label="Order note (optional) — allergies, preparation, delivery, gift message"></textarea>
-          <p class="cod-form-hint">Tell us about allergies in this box — our kitchen prepares cheese and char-grill items, and nut cross-contact is a real risk. Per-item notes can be added to each line in the cart.</p>
-          <div id="codOffers" style="display:none;" class="cod-offers">
-            <p class="cod-offers-title">Available offers</p>
-            <div id="codOffersList"></div>
-          </div>
-          <p id="codError" class="cod-error" style="display:none;"></p>
-          <button type="button" id="codSubmit" class="btn btn-primary cart-checkout-btn">Place COD Order</button>
-        </div>
-        <div id="codSuccess" style="display:none;" class="cod-success">
-          <p class="cod-success-title">Order placed! 🎉</p>
-          <p>Order <strong id="codOrderNumber"></strong> · <strong id="codOrderTotal"></strong></p>
-          <p class="cod-success-sub">Pay in cash or UPI when your box arrives. A confirmation is on its way to your email.</p>
-        </div>
+            custom platters, unpriced items, and anyone who prefers chat.
+            Rendered only when the tenant's cod flag is ON in Console: the
+            flag is the owner's switch, and the drawer must not advertise a
+            payment path the server refuses. Gated on === true so a failed
+            store-config fetch degrades to WhatsApp-only, never to a dead
+            button. Every element below is null-guarded in the script. */}
+        {storeConfig?.codEnabled === true && (
+          <>
+            <button type="button" id="cartCodBtn" class="btn btn-secondary cart-checkout-btn" style="margin-top:0.6rem;">Pay on Delivery 💵</button>
+            <div id="codForm" style="display:none;margin-top:0.9rem;">
+              <p class="cod-form-title">Delivery details</p>
+              <input id="codName" class="cod-input" type="text" placeholder="Full name" autocomplete="name" />
+              <input id="codPhone" class="cod-input" type="tel" placeholder="Phone (10 digits)" autocomplete="tel" />
+              <input id="codEmail" class="cod-input" type="email" placeholder="Email (order updates)" autocomplete="email" />
+              <input id="codAddress" class="cod-input" type="text" placeholder="Delivery address (flat, building, street)" autocomplete="street-address" />
+              <div style="display:flex;gap:0.5rem;">
+                <input id="codCity" class="cod-input" type="text" placeholder="City" autocomplete="address-level2" style="flex:1;min-width:0;" />
+                <input id="codPincode" class="cod-input" type="text" inputmode="numeric" maxlength="6" placeholder="Pincode" autocomplete="postal-code" style="width:7.5rem;flex-shrink:0;" />
+              </div>
+              {/* State is derived from the pincode and stays EDITABLE: a handful of
+                  PIN codes sit near a state border, and the invoice has to be right,
+                  so the customer gets the last word rather than a readonly label. */}
+              <select id="codState" class="cod-input" autocomplete="address-level1" aria-label="State">
+                <option value="">Select state</option>
+              </select>
+              <p id="codStateMsg" class="cod-form-hint" style="display:none;"></p>
+              <input id="codCoupon" class="cod-input" type="text" placeholder="Coupon code (optional)" autocomplete="off" />
+              <div style="display:flex;gap:0.5rem;">
+                <input id="codCredit" class="cod-input" type="text" placeholder="Store credit code (optional)" autocomplete="off" style="flex:1;min-width:0;" />
+                <input id="codCreditAmount" class="cod-input" type="number" min="1" step="1" placeholder="₹ amount" aria-label="How much store credit to use" style="width:6.5rem;flex-shrink:0;" />
+              </div>
+              <p class="cod-form-hint">Store credit applies alongside a coupon, never instead of it. Leave the amount blank for the full balance.</p>
+              <p id="codCreditMsg" class="cod-error" style="display:none;"></p>
+              {/* Order-level note. For a cheese and char-grill store this is the field
+                   that matters most: an allergy or a "no nut cross-contact" request
+                   is a safety instruction, not a preference, and it has to reach the
+                   kitchen. Per-item notes ride on the cart line itself (Console
+                   stores them as order_items.line_notes); this is for anything about
+                   the order as a whole. Reaches Console as orders.customer_note and
+                   prints on the invoice, the packing slip AND the confirmation
+                   email, so it is readable by whoever packs the box. */}
+              <textarea id="codNote" class="cod-input" rows="3" maxlength="1000" style="resize:none;font-family:inherit;"
+                placeholder="Allergies (nut, dairy, gluten), preparation instructions, delivery window, gift message (optional)"
+                aria-label="Order note (optional) — allergies, preparation, delivery, gift message"></textarea>
+              <p class="cod-form-hint">Tell us about allergies in this box — our kitchen prepares cheese and char-grill items, and nut cross-contact is a real risk. Per-item notes can be added to each line in the cart.</p>
+              <div id="codOffers" style="display:none;" class="cod-offers">
+                <p class="cod-offers-title">Available offers</p>
+                <div id="codOffersList"></div>
+              </div>
+              <p id="codError" class="cod-error" style="display:none;"></p>
+              <button type="button" id="codSubmit" class="btn btn-primary cart-checkout-btn">Place COD Order</button>
+            </div>
+            <div id="codSuccess" style="display:none;" class="cod-success">
+              <p class="cod-success-title">Order placed! 🎉</p>
+              <p>Order <strong id="codOrderNumber"></strong> · <strong id="codOrderTotal"></strong></p>
+              <p class="cod-success-sub">Pay in cash or UPI when your box arrives. A confirmation is on its way to your email.</p>
+            </div>
+          </>
+        )}
       
       <script type="application/json" id="crossSellData" set:html={JSON.stringify(crossSells)}></script></div>
     </div>
@@ -351,7 +360,11 @@ const ogImage = SITE_URL + '/og-image.jpg';
     .banner-divider { opacity: 0.6; }
 
     .site-header {
-      background: rgba(253, 251, 242, 0.92);
+      /* 0.92 let big display headings ghost through as grey text while they
+         scrolled underneath — read as a rendering bug, not a frost effect
+         (owner report 2026-10-29). 0.98 keeps a whisper of translucency for
+         the blur to act on; the ghosting is gone. */
+      background: rgba(253, 251, 242, 0.98);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-hairline);

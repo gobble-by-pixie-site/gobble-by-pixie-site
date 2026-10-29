@@ -92,14 +92,28 @@ const WA = 'https://wa.link/sngzs9';
       backdrop-filter: blur(12px);
       padding: var(--space-md) 0;
       border-bottom: 1px solid var(--border-hairline);
+      /* The scroll lives HERE, on the full-width bar — nine long category
+         names overflow even wide desktops, and previously the links' own
+         min-width:max-content pushed the whole PAGE wider (a horizontal
+         scrollbar on the document itself). Hiding the scrollbar keeps the
+         editorial look; touch-drag and shift+wheel still scroll it. */
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
     }
+    .category-subnav::-webkit-scrollbar { display: none; }
     .subnav-links {
       display: flex;
       gap: 2rem;
       justify-content: center;
-      min-width: max-content;
-      overflow-x: auto;
-      padding-bottom: 0.2rem;
+      /* width:max-content + min-width:100%: centred when the links fit,
+         scrollable (on the wrapper above) when they don't. The old
+         min-width:max-content alone made the links box wider than the
+         viewport, which the wrapper then leaked into the page width. */
+      width: max-content;
+      min-width: 100%;
+      box-sizing: border-box;
+      padding: 0 var(--space-lg) 0.2rem;
     }
     .subnav-link {
       font-family: var(--font-display);

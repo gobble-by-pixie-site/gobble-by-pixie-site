@@ -49,6 +49,9 @@ export function fetchStoreConfig() {
     gtmContainerId: string | null;
     metaPixelId: string | null;
     logoUrl: string | null;
+    /** Gate for the drawer's "Pay on Delivery" path. Console refuses
+     *  create-cod when this is false; the button must hide with it. */
+    codEnabled: boolean;
   }>("/api/public/store-config");
 }
 
