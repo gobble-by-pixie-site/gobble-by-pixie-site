@@ -17,8 +17,11 @@ const FALLBACK_CONTENT = {
   hero_sub: 'Small-batch cream cheeses and handcrafted grazing boards — 100% vegetarian, gluten-free, keto-friendly. Zero preservatives, always fresh.',
   hero_trust: 'Loved by 1,700+ fellow food lovers on Instagram',
   about_intro: 'Gobble by Pixie began with a simple belief: cheese should be honest — real ingredients, small batches, zero artificial preservatives. Every jar and every grazing board is handcrafted, never mass-produced on an industrial line.',
-  fulfillment_platters: 'Cheese Platters: Next-Day Dispatch',
-  fulfillment_jars: 'Cream Cheese Jars: Order by Thu Midnight, Shipped Sat',
+  // fulfillment_platters / fulfillment_jars deliberately NOT defaulted here:
+  // the site-top banner is her announcements (owner 2026-11-05, same contract
+  // as Mane/Nanoliss — empty on Console = nothing renders). The seeded values
+  // live in Console's home row, so the banner stays Console-driven even when
+  // this fetch falls back.
   grazing_table_price: 'Starting at ₹25,000',
   fssai_number: '23323002000839',
   gstin: '07CHAPS2957P2ZL',
@@ -75,6 +78,9 @@ export async function fetchSiteContent() {
         'byop_eyebrow', 'byop_title', 'byop_sub',
         'best_eyebrow', 'best_title',
         'tagline', 'fulfillment_platters', 'fulfillment_jars',
+        // Announcement sparkle ("" | "on") — Console owns the decision, the
+        // storefront owns the look. Same shape as Mane/Nanoliss bannerSpark.
+        'bannerSpark',
         'grazing_table_price', 'fssai_number', 'gstin',
       ];
       if (home) {

@@ -5,6 +5,9 @@ import { fetchSiteContent } from '../lib/fetchSiteContent.js';
 import { fetchProducts, getCategories, slugify } from '../lib/fetchProducts.js';
 
 const content = await fetchSiteContent();
+// Announcement banner — only what Console actually has (empty = hidden).
+const bannerLines = [content.fulfillment_platters, content.fulfillment_jars].filter(Boolean);
+const bannerSparkOn = content.bannerSpark === 'on';
 
 // Menu dropdown categories are fetched live here (not hardcoded) so that adding
 // a category row to the Products sheet makes it show up in the header nav on
@@ -103,11 +106,28 @@ const ogImage = SITE_URL + '/og-image.jpg';
   )}
 </head>
 <body>
-  <div class="fulfillment-banner">
-    <span>🧀 {content.fulfillment_platters}</span>
-    <span class="banner-divider">•</span>
-    <span>✨ {content.fulfillment_jars}</span>
-  </div>
+  {/* Site-top announcement banner — Console-driven (owner 2026-11-05, same
+      contract as Mane/Nanoliss): the hardcoded 🧀/✨ glyphs are gone, empty
+      on Console renders nothing, and `bannerSpark === "on"` adds the spark
+      star + whole-text shimmer in the house gold. */}
+  {bannerLines.length > 0 && (
+    <div class="fulfillment-banner" role="region" aria-label="Announcement">
+      {bannerSparkOn && (
+        <svg class="banner-spark" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+          <path d="M12 2l1.85 8.15L22 12l-8.15 1.85L12 22l-1.85-8.15L2 12l8.15-1.85Z" fill="currentColor" />
+        </svg>
+      )}
+      {content.fulfillment_platters && (
+        <span class={bannerSparkOn ? 'banner-shimmer' : undefined}>{content.fulfillment_platters}</span>
+      )}
+      {content.fulfillment_platters && content.fulfillment_jars && (
+        <span class="banner-divider">•</span>
+      )}
+      {content.fulfillment_jars && (
+        <span class={bannerSparkOn ? 'banner-shimmer' : undefined}>{content.fulfillment_jars}</span>
+      )}
+    </div>
+  )}
 
   <header class="site-header">
     <div class="container header-top">
@@ -358,6 +378,52 @@ const ogImage = SITE_URL + '/og-image.jpg';
       flex-wrap: wrap;
     }
     .banner-divider { opacity: 0.6; }
+
+    /* Announcement spark + whole-text shimmer (bannerSpark === "on"), ported
+       from Mane's global.css treatment into the house gold. Static under
+       prefers-reduced-motion. */
+    .banner-shimmer {
+      background: linear-gradient(
+        100deg,
+        currentColor 0%,
+        currentColor 42%,
+        var(--accent-gold) 50%,
+        currentColor 58%,
+        currentColor 100%
+      );
+      background-size: 220% 100%;
+      background-position: 130% 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      animation: bannerShimmer 4.2s ease-in-out infinite;
+    }
+    @keyframes bannerShimmer {
+      0% { background-position: 130% 0; }
+      55% { background-position: -130% 0; }
+      100% { background-position: -130% 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .banner-shimmer {
+        animation: none;
+        background: none;
+        -webkit-text-fill-color: currentColor;
+        color: currentColor;
+      }
+    }
+    .banner-spark {
+      color: var(--accent-gold);
+      flex: none;
+      animation: bannerSpark 3.6s ease-in-out infinite;
+    }
+    @keyframes bannerSpark {
+      0%, 100% { opacity: 0.55; transform: scale(0.88) rotate(0deg); }
+      50% { opacity: 1; transform: scale(1.06) rotate(10deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .banner-spark { animation: none; opacity: 0.9; }
+    }
 
     .site-header {
       /* 0.92 let big display headings ghost through as grey text while they

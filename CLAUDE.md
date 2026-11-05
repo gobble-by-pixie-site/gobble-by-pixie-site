@@ -39,8 +39,59 @@ See `README.md` for local dev setup and full file map.
   encrypted secret (matches the console fallback) for instant purge.
 - **Edge cache (2026-09-01):** middleware sets `s-maxage=60,
   stale-while-revalidate=30`. The old "Cache HTML 1hr" Cache Rule was deleted
-  from this zone - do NOT re-create it (it made console edits take 1h to
-  show). Console edits now appear within ~1 minute.
+  from this zone 2026-09-01 (it made console edits take 1h to show).
+  **A new 60s edge Cache Rule was created 2026-10-24 — see the section
+  below**; the "do NOT re-create" warning applied to the 1h-TTL rule, not to
+  edge caching with instant purge.
+
+## 2026-10-24 — Edge caching live (60s, instant purge unchanged)
+
+The middleware's `s-maxage=60` header alone never cached anything — Cloudflare
+Pages Functions SSR responses stay `cf-cache-status: DYNAMIC` unless a zone
+Cache Rule opts them in. The owner added Zone → Cache Rules to the Gobble
+Cache-Purge API token (`cfut_r5gy...`, see Vaultwarden) and a Cache Rule was
+created via API on the zone's `http_request_cache_settings` ruleset
+(`728e37ec598c44e0b98fead991d26bfb`, rule `32f74aebd2824c79a19400db238d2bab`):
+`set_cache_settings`, `cache: true`, `edge_ttl`/`browser_ttl` both
+`respect_origin`, expression excluding exactly the nine prefixes
+`isCacheablePath()` in `src/middleware.ts` excludes (`/cart`, `/checkout`,
+`/account`, `/login`, `/signup`, `/search`, `/admin`, `/api`, `/preview`).
+
+Verified live 2026-10-24: `/`, `/shop`, `/about`, `/menu` MISS→HIT; `/cart`,
+`/login`, `/api/public/products` stay DYNAMIC; `purge_cache` of the homepage
+flipped HIT→MISS→HIT, so Console edits still appear instantly. This is NOT the
+old "Cache HTML 1hr" rule (deleted 2026-09-01 because its long Edge TTL delayed
+edits) — TTL is `respect_origin`, so it follows the middleware's 60s
+`s-maxage` and the purge webhook remains the primary invalidation.
+
+Two standing rules: **a new dynamic path must be added to BOTH
+`isCacheablePath()` in `src/middleware.ts` AND the Cache Rule expression**
+(keep them in sync), and **keep the middleware body-buffering** — streamed
+bodies are never cached. Rollback = delete the rule (instantly reverts to
+DYNAMIC; no code change). All four storefronts now carry this rule (Sohini's
+is `override_origin` 60s because her site is static with no s-maxage header).
+
+## 2026-11-05 — Announcement banner: Console-only, empty = hidden
+
+The site-top banner joined the estate-wide contract (owner: it is HER
+announcements, same as Mane/Nanoliss):
+
+- The hardcoded 🧀/✨ emoji glyphs are GONE — the banner renders
+  `fulfillment_platters` / `fulfillment_jars` as plain text (divider only
+  when both lines exist), and `filter(Boolean)` means empty on Console
+  renders nothing at all.
+- The two banner keys were removed from `FALLBACK_CONTENT` in
+  `fetchSiteContent.js` — never-configured or Console-down no longer forces
+  copy; the seeded values live in Console's home row, not in this repo.
+- `bannerSpark` ("" | "on", Console → Home tab → "Announcement sparkle" —
+  the field was already on the food-vertical editor) flows through
+  `SNAKE_HOME_KEYS`; when "on", a gold spark star + whole-text shimmer
+  (Mane's `.banner-shimmer` treatment ported into `--accent-gold`, static
+  under reduced-motion) accompany line 1. It is absent from Gobble's home
+  row until she first saves the Home tab — before that, plain text only.
+- Live text still comes from Console's home row (the 2026-08 seeds:
+  "Cheese Platters: Next-Day Dispatch" / "Cream Cheese Jars: Order by Thu
+  Midnight, Shipped Sat") — verified rendering after deploy.
 
 ## 2026-09-05 - Instant purge live
 
