@@ -357,25 +357,80 @@ const earnRules = [
         return o.items.length > 1 ? first + ' (+' + (o.items.length - 1) + ' more)' : first;
       }
 
+      function escHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      // Collapsed-by-default order accordion (owner 2026-11-05, estate-wide:
+      // "orders in expanded state / details not proper" — the summary is the
+      // receipt header; the body carries items, the price ladder, delivery
+      // address, shipped/delivered dates and the invoice link). Console
+      // enriches items with `image` and orders with `shippingAddress`,
+      // `shippedAt`, `deliveredAt`; older rows simply omit them.
       function renderOrderList(orders) {
         var el = document.getElementById('orders-list');
         if (!orders.length) {
           el.innerHTML = '<div class="card" style="text-align:center;padding:3rem 1rem;"><p style="font-family:var(--font-display);font-size:1.4rem;color:var(--text-espresso);">No order history found yet.</p><p style="color:var(--text-muted);font-size:0.9rem;">Your past handcrafted platter orders will appear here.</p><a href="/menu" class="btn btn-primary" style="margin-top:1rem;display:inline-flex;">Browse Menu</a></div>';
           return;
         }
+        var chevron = '<svg class="order-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
         el.innerHTML = orders.map(function (o) {
           var reorderHref = WA_LINK + '?text=' + encodeURIComponent(reorderText(o));
           var statusBadge = o.status && o.status !== 'Confirmed'
-            ? '<span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--accent-berry-deep);background:rgba(161,95,96,0.12);padding:0.2rem 0.55rem;border-radius:2px;margin-left:0.5rem;">' + o.status + '</span>'
+            ? '<span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--accent-berry-deep);background:rgba(161,95,96,0.12);padding:0.2rem 0.55rem;border-radius:2px;margin-left:0.5rem;">' + escHtml(o.status) + '</span>'
             : '';
-          return '<div class="card" style="padding:1.2rem;margin-bottom:0.8rem;">'
-            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">'
+          var items = Array.isArray(o.items) ? o.items : [];
+          var itemsSum = items.reduce(function (s, i) { return s + (Number(i.unitPrice) || 0) * (Number(i.qty) || 0); }, 0);
+          var itemRows = items.map(function (i) {
+            var thumb = i.image
+              ? '<img src="' + escHtml(i.image) + '" alt="" width="56" height="70" loading="lazy" style="height:70px;width:56px;flex:none;object-fit:cover;background:var(--bg-parchment-alt);" />'
+              : '<span style="height:70px;width:56px;flex:none;display:inline-block;background:var(--bg-parchment-alt);"></span>';
+            return '<div style="display:flex;align-items:center;gap:0.9rem;padding:0.6rem 0;">'
+              + thumb
+              + '<div style="flex:1;min-width:0;">'
+              + '<p style="margin:0;font-weight:600;font-size:0.92rem;color:var(--text-espresso);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(i.productName) + '</p>'
+              + '<p style="margin:0;font-size:0.8rem;color:var(--text-muted);">' + fmtINR(i.unitPrice) + ' &middot; &times; ' + escHtml(i.qty) + '</p>'
+              + '</div>'
+              + '<p style="margin:0;font-size:0.9rem;color:var(--text-espresso-soft);">' + fmtINR((Number(i.unitPrice) || 0) * (Number(i.qty) || 0)) + '</p>'
+              + '</div>';
+          }).join('');
+          var ladder = ''
+            + (items.length ? '<div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-muted);"><span>Items</span><span>' + fmtINR(itemsSum) + '</span></div>' : '')
+            + ((Number(o.discount) || 0) > 0 ? '<div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--accent-berry-deep);"><span>Coupon' + (o.couponCode ? ': ' + escHtml(o.couponCode) : '') + '</span><span>&minus;' + fmtINR(o.discount) + '</span></div>' : '')
+            + ((Number(o.shippingFee) || 0) > 0 ? '<div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-muted);"><span>Shipping</span><span>' + fmtINR(o.shippingFee) + '</span></div>' : '');
+          var addr = o.shippingAddress
+            ? '<div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border-hairline);">'
+              + '<p style="margin:0 0 0.25rem;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Delivery address</p>'
+              + '<p style="margin:0;font-size:0.85rem;color:var(--text-espresso-soft);">' + escHtml([o.shippingAddress.line1, o.shippingAddress.city, o.shippingAddress.state, o.shippingAddress.pincode].filter(Boolean).join(', ')) + '</p>'
+              + '</div>'
+            : '';
+          var timeline = ''
+            + (o.shippedAt ? '<p style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--text-muted);">Shipped ' + fmtDate(o.shippedAt) + '</p>' : '')
+            + (o.deliveredAt ? '<p style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--text-muted);">Delivered ' + fmtDate(o.deliveredAt) + '</p>' : '');
+          var invoice = o.shareToken
+            ? '<a href="/api/orders/' + encodeURIComponent(o.shareToken) + '/invoice" target="_blank" rel="noopener" class="btn btn-outline" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">Download invoice</a>'
+            : '';
+          return '<details class="card order-card" style="margin-bottom:0.8rem;">'
+            + '<summary style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:1.2rem;cursor:pointer;list-style:none;">'
             + '<div><p style="font-weight:600;margin:0;">' + fmtDate(o.date) + statusBadge + '</p>'
-            + '<p style="font-size:0.85rem;color:var(--text-muted);margin:0;">' + orderTitle(o) + '</p></div>'
+            + '<p style="font-size:0.85rem;color:var(--text-muted);margin:0;">' + escHtml(o.orderNumber || '') + '</p></div>'
             + '<div style="display:flex;align-items:center;gap:0.8rem;">'
             + '<p style="font-family:var(--font-display);font-weight:700;font-size:1.2rem;margin:0;color:var(--accent-gold-deep);">' + fmtINR(o.total) + '</p>'
-            + '<a href="' + reorderHref + '" target="_blank" rel="noopener" class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">🔁 Reorder</a>'
-            + '</div></div></div>';
+            + chevron
+            + '</div></summary>'
+            + '<div style="padding:0 1.2rem 1.2rem;border-top:1px solid var(--border-hairline);">'
+            + '<div style="padding-top:0.6rem;">' + itemRows + '</div>'
+            + '<div style="margin-top:0.5rem;padding-top:0.8rem;border-top:1px solid var(--border-hairline);display:flex;flex-direction:column;gap:0.3rem;">' + ladder
+            + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:0.4rem;padding-top:0.6rem;border-top:1px solid var(--border-hairline);"><span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Order total</span><span style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;color:var(--accent-gold-deep);">' + fmtINR(o.total) + '</span></div>'
+            + '</div>'
+            + addr + timeline
+            + '<div style="margin-top:1rem;display:flex;gap:0.8rem;flex-wrap:wrap;">'
+            + '<a href="' + reorderHref + '" target="_blank" rel="noopener" class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">Reorder</a>'
+            + invoice
+            + '</div>'
+            + '</div></details>';
         }).join('');
       }
 

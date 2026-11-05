@@ -402,9 +402,13 @@ const ogImage = SITE_URL + '/og-image.jpg';
       animation: bannerShimmer 4.2s ease-in-out infinite;
     }
     @keyframes bannerShimmer {
+      /* Continuous sweep with a breath (owner 2026-11-05: the old 55%→100%
+         hold read as the sparkle "pausing"). */
       0% { background-position: 130% 0; }
-      55% { background-position: -130% 0; }
-      100% { background-position: -130% 0; }
+      42% { background-position: -130% 0; }
+      50% { background-position: -130% 0; }
+      92% { background-position: 130% 0; }
+      100% { background-position: 130% 0; }
     }
     @media (prefers-reduced-motion: reduce) {
       .banner-shimmer {
