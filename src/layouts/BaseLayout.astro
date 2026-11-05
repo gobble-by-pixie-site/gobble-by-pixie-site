@@ -380,23 +380,25 @@ const ogImage = SITE_URL + '/og-image.jpg';
     .banner-divider { opacity: 0.6; }
 
     /* Announcement spark + whole-text shimmer (bannerSpark === "on"), ported
-       from Mane's global.css treatment into the house gold. Static under
-       prefers-reduced-motion. */
+       from Mane's global.css treatment into the house gold. Base stops are the
+       banner's own white — currentColor inside a gradient resolves against the
+       element's own color, and paired with the transparent text-fill that made
+       the base text invisible on Mane/Nanoliss (owner report 2026-11-05).
+       Static under prefers-reduced-motion. */
     .banner-shimmer {
       background: linear-gradient(
         100deg,
-        currentColor 0%,
-        currentColor 42%,
+        #ffffff 0%,
+        #ffffff 42%,
         var(--accent-gold) 50%,
-        currentColor 58%,
-        currentColor 100%
+        #ffffff 58%,
+        #ffffff 100%
       );
       background-size: 220% 100%;
       background-position: 130% 0;
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      color: transparent;
       animation: bannerShimmer 4.2s ease-in-out infinite;
     }
     @keyframes bannerShimmer {
