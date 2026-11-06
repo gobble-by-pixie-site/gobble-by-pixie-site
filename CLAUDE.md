@@ -168,3 +168,38 @@ announcements, same as Mane/Nanoliss):
 - **Announcement banner is live estate-default** (see 2026-11-05 section):
   bannerSpark seeded "on" (`patch-gobble-banner-spark.mjs`), glyphs gone,
   orders page verified.
+
+## 2026-11-06 (late) - Search render fix, COD verified off, cancelled order removed
+
+- **Search results render again** (`fff57a1`, deployment `6190ce2e` success,
+  live-verified): the results were innerHTML-injected but their rules
+  (`.search-hit*`, `.search-empty`) sat in BaseLayout's SCOPED block — runtime
+  nodes carry no `data-astro-cid`, so every rule missed and the panel painted
+  an unstyled inline smear with a 0×0 image (§A12 third face). Rules moved to
+  `global.css` (tokens are :root-global); scoped block keeps only the
+  statically-rendered overlay chrome + a pointer comment. Verified in the
+  built CSS (unscoped selectors) and on the live page (getComputedStyle:
+  flex / 44px img / weight 600).
+- **COD is OFF and cannot silently come back on the order path.** Owner's
+  context: the store wasn't ready; a customer called directly and was handled
+  on WhatsApp; Pixie turned COD off. End-to-end verified the same day:
+  `clients.cod_enabled = f`; `createCodOrder` re-checks the flag inside
+  `withTenant` and throws `CodNotAvailableError` → HTTP 501 fail-closed
+  (lib/orders.ts); live probe through this site's own
+  `/api/checkout/cod` proxy returned **501 "Cash on delivery is not
+  available right now."** with no order created; the drawer's "Pay on
+  Delivery" button renders only on `codEnabled === true` (failed config
+  fetch degrades to WhatsApp-only). The WhatsApp CTA is now the only
+  checkout path, as intended.
+- **Cancelled order `ORD-MW2G1P4E-6135` removed from the DB** (owner ask;
+  the customer was handled directly). Safe path: child-row audit first
+  (order_items 3 = CASCADE, inventory_movements 6 with NO FK, notification_log
+  12 = SET NULL, returns/loyalty/concierge 0), stock legs proven net-zero
+  (sale −1×3 on creation, refund +1×3 on Console cancel; products back at
+  10), BEGIN…ROLLBACK probe (6|1), then committed delete + `audit_log`
+  row (`ORDER_DELETED_MANUAL`, full details jsonb), read-back 0/0/0 + audit
+  1. Console has NO order-delete feature (by design — cancel is the flow);
+  one-off DB surgery must repeat this exact protocol if ever needed again.
+- Console label fix same day (`16e1d01`, worker ok): FOOD vertical's banner
+  fields relabelled "Fulfillment — platters/jars" → "Announcement line 1/2"
+  (estate-standard labels; keys unchanged).
