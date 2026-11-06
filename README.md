@@ -7,7 +7,7 @@ Astro storefront for Gobble by Pixie Cream Cheese ([@gobblebypixie](https://www.
 ## Stack (2026-08-24 — SSR migration + Console content backfill)
 
 - **Astro 7, `output: 'server'`** on `@astrojs/cloudflare` v14 — same stack as nanoliss.com. Deployed to Cloudflare Pages project **`gobble-by-pixie-site`** (client's own account), git-connected: every push to `main` auto-builds and goes live.
-- **`.node-version` pins Node 22.12** — Astro 7 requires it; without the pin the Pages build fails on older defaults and the previous deployment stays live silently.
+- **`.node-version` pins Node 22.23.4** — matches the Pages dashboard env (gobble's dashboard env was already 22.23.4; the repo pin now agrees). Without a sufficient Node, the Pages build fails and the previous deployment stays live silently. Astro chain is at 7.4.7 / @astrojs/cloudflare 14.4.6 (2026-11-06, deployment `e201234d`).
 - **Console is the source of truth**: menu/products/collections/site copy/analytics IDs all come from Linear Console's `/api/public/*` at request time with a 60s in-memory cache. Console edits are live in ≤60s — no rebuilds.
 - **Env rule (critical)**: never read `import.meta.env.*` for server config — it's build-time-only under the Cloudflare adapter and once served a placeholder catalog to production (2026-08-24 incident). Everything goes through `src/lib/env.ts` (`getEnv()`, populated by `src/middleware.ts` capturing worker runtime env) which accepts both `CONSOLE_API_URL` and `CONSOLE_API_BASE_URL`. Same pattern as nanoliss.com.
 - **Stock**: Console exposes `stockQty`, never a boolean. `in_stock = stockQty > 0` is derived in `fetchProducts.js`.

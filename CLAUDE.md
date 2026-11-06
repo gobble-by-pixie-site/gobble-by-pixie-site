@@ -150,18 +150,21 @@ announcements, same as Mane/Nanoliss):
   current `path` so the Console can say "no editor for this page" instead of
   going blank.
 
-## 2026-11-06 — Account accordion, dep state, what still blocks astro 7.4.6
+## 2026-11-06 - Account accordion, dep state, astro security re-land
 
 - **Account order history is a collapsed-by-default `<details>` accordion**
   (estate contract): summary header + items/price-ladder/address/timeline/
   invoice in the body; `escHtml()` on every Console string. The
   `.order-card` chevron CSS lives in global.css (runtime innerHTML — §A12).
-- **Deps current**: the astro chain HOLDS at 7.2.4 (the green tree) until the
-  dashboard `NODE_VERSION` on this Pages project is lifted to ≥22.23.4 —
-  nanoliss proves the lift works (it builds astro 7.4.x). Then re-land astro
-  7.4.6 + @astrojs/cloudflare 14.4.5 (carrying the critical security pass
-  that `e95a35d` had to revert). wrangler here is TRANSITIVE (no manifest
-  entry) — no bump until the chain moves.
+- **Deps current**: RESOLVED 2026-11-06 (`8ab2e4c`, deployment `e201234d`
+  success). Gobble's Pages `NODE_VERSION` was already 22.23.4 (API-verified
+  2026-11-06, no-op) — the repo pin/lock were what lagged. astro 7.4.7 +
+  @astrojs/cloudflare 14.4.6 (patch line over the 7.4.6/14.4.5 security
+  pass) re-landed; repo `.node-version`/`engines` bumped to 22.23.4; lock
+  gate verified (npm ci --dry-run clean, 26/26 @esbuild variants, audit 0
+  after fast-uri 3.1.6→3.1.9 in the dev-only ajv chain). 13/13 smoke green,
+  build Complete. wrangler here is TRANSITIVE (no manifest entry) - no bump
+  until the chain moves.
 - **Announcement banner is live estate-default** (see 2026-11-05 section):
   bannerSpark seeded "on" (`patch-gobble-banner-spark.mjs`), glyphs gone,
   orders page verified.
