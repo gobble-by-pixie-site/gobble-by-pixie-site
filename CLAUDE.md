@@ -225,3 +225,26 @@ announcements, same as Mane/Nanoliss):
 - Verified live: published HTML carries the hook for the line that has copy
   (Pixie's line sits in `fulfillment_jars`); `/?livedraft=1` renders BOTH
   hooks including the empty platters one.
+
+## 2026-11-07 — Serviceability gate (estate default): gobble is the live refusal, zero storefront code
+
+Console's serviceability gate landed estate-wide (linear-console `0dd5715` +
+`2c11e04` + `ee52d7e`): `priceOrder` refuses destinations outside the
+tenant's configured area BEFORE any money math (`NotServiceableError` → 400
+with a shopper-verbatim reason). Gobble needed **no storefront change** —
+its only checkout is the WhatsApp path, so there is no estimate call or
+address form to surface the gate in; any future order path inherits the
+enforcement from Console automatically.
+
+**Gobble is the one tenant WITH an active gate config** (owner-approved
+seed, 2026-11-07): Delhi-NCR only + no international, per the documented
+intent for perishables. Prefixes 11/121/122/123/124/201 (Delhi, Faridabad,
+Gurgaon, Sonepat, Rohtak, Ghaziabad/Noida), note "Gobble delivers around
+Delhi-NCR only — fresh food doesn't travel well." written into every
+refusal. Seed: `linear-console/scripts/seed-gobble-serviceability-2026-11-07.mjs`
+(dry-run default), applied via the ssh→pg-mirror route, read-back verified.
+Live probes (gobble's key): IN/110001 → serviceable, home rate ₹249;
+IN/560001 → refused with the note; US → "We don't ship internationally
+right now." Pixie can widen/narrow the area any time in Console → Settings
+→ Business → Serviceability (the form writes the same shape the seed did).
+Contract: STOREFRONT-STANDARDS §A15.
