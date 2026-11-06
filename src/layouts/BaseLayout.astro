@@ -757,18 +757,10 @@ const ogImage = SITE_URL + '/og-image.jpg';
     }
     .search-row button { border: none; background: none; font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 0 0.9rem; color: var(--text-espresso-soft); }
     .search-results { max-height: 52vh; overflow-y: auto; padding: 0.4rem 0; }
-    .search-hit {
-      display: flex; align-items: center; gap: 0.75rem; width: 100%; text-align: left;
-      background: none; border: none; cursor: pointer; padding: 0.55rem 1rem;
-      /* Now an <a> (results were <button data-href> with no click handler, so
-         every result did nothing). Kill the UA link styling. */
-      color: inherit; text-decoration: none;
-    }
-    .search-hit:hover { background: var(--bg-parchment-alt); }
-    .search-hit img { width: 44px; height: 44px; object-fit: cover; background: var(--bg-parchment-alt); }
-    .search-hit-name { font-weight: 600; font-size: 0.9rem; color: var(--text-espresso); }
-    .search-hit-meta { font-size: 0.76rem; color: var(--text-espresso-soft); opacity: 0.75; }
-    .search-empty { padding: 1.2rem; text-align: center; font-size: 0.88rem; color: var(--text-muted); }
+    /* The .search-hit / .search-empty rules live in global.css, NOT here:
+       their elements are innerHTML-injected at runtime, so they never carry
+       this component's data-astro-cid attribute and scoped rules cannot
+       match them (2026-11-06 — that was the "search renders broken" bug). */
     .footer-col strong { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-gold-deep); }
     .footer-col a { font-size: 0.9rem; color: var(--text-espresso-soft); transition: color 0.2s ease; }
     .footer-col a:hover { color: var(--accent-berry); }

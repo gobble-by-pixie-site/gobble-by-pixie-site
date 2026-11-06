@@ -121,6 +121,25 @@ p { margin: 0 0 var(--space-sm); }
 
 a { color: inherit; text-decoration: none; }
 
+/* Search overlay RESULTS (2026-11-06) — these elements are injected at runtime
+   via innerHTML into #searchResults, so they never carry the layout's
+   data-astro-cid attribute and scoped rules in BaseLayout.astro cannot match
+   them (§A12: runtime innerHTML CSS lives in global.css). Symptom was the
+   owner's "search does not render properly": results rendered as an unstyled
+   inline smear with an unsized image. The overlay chrome (.search-overlay/
+   .panel/.row/.results) is statically rendered and stays scoped in the layout.
+   Tokens here are global (:root above), so these rules are safe anywhere. */
+.search-hit {
+  display: flex; align-items: center; gap: 0.75rem; width: 100%; text-align: left;
+  background: none; border: none; cursor: pointer; padding: 0.55rem 1rem;
+  color: inherit; text-decoration: none;
+}
+.search-hit:hover { background: var(--bg-parchment-alt); }
+.search-hit img { width: 44px; height: 44px; object-fit: cover; background: var(--bg-parchment-alt); }
+.search-hit-name { font-weight: 600; font-size: 0.9rem; color: var(--text-espresso); }
+.search-hit-meta { font-size: 0.76rem; color: var(--text-espresso-soft); opacity: 0.75; }
+.search-empty { padding: 1.2rem; text-align: center; font-size: 0.88rem; color: var(--text-muted); }
+
 /* Text Gradient Helpers (Simplified to solid colors) */
 .text-gradient {
   color: var(--rose-deep);
