@@ -203,3 +203,25 @@ announcements, same as Mane/Nanoliss):
 - Console label fix same day (`16e1d01`, worker ok): FOOD vertical's banner
   fields relabelled "Fulfillment — platters/jars" → "Announcement line 1/2"
   (estate-standard labels; keys unchanged).
+
+## 2026-11-06 (night) - banner hooks: click-to-editable in the Console vision panel
+
+- **The banner is now data-lc-hooked** (`ed7bc14`, deployment `164f2f99`
+  success, live-verified): both spans carry
+  `data-lc="home:fulfillment_platters/jars"` + `data-lc-empty`, and under
+  `?livedraft=1` the strip + BOTH hooks render even when a line is empty
+  (published visitors byte-identical) — an unfilled announcement is
+  clickable in the vision panel instead of only editable via the Home tab
+  form. The listener gained the `.lc-live [data-lc]:empty::before`
+  placeholder rule (CSS-generated content — never part of the element text,
+  so it can never stream back as the value) with
+  `-webkit-text-fill-color:currentColor`, because the banner-shimmer's
+  inherited transparent fill would otherwise render the placeholder
+  invisible when the spark is on (same one-line fix applied to all six
+  listeners estate-wide, mane included).
+- Console needed zero changes: `vision-apply-edit.ts` maps any
+  `home:<field>` hook generically to the HomeCopyEditor's `home_<field>`
+  input, which all four verticals carry since the estate-default change.
+- Verified live: published HTML carries the hook for the line that has copy
+  (Pixie's line sits in `fulfillment_jars`); `/?livedraft=1` renders BOTH
+  hooks including the empty platters one.
