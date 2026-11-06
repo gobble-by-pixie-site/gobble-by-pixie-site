@@ -5,7 +5,12 @@ import { fetchSiteContent } from '../lib/fetchSiteContent.js';
 import { fetchProducts, getCategories, slugify } from '../lib/fetchProducts.js';
 
 const content = await fetchSiteContent();
-// Announcement banner — only what Console actually has (empty = hidden).
+// Announcement banner — only what Console actually has (empty = hidden for
+// published visitors). Under the Console vision panel (?livedraft=1) the strip
+// and BOTH hooks render even when the copy is empty, so a line nobody has
+// filled in yet is still click-to-editable (mane's pattern); published pages
+// are byte-identically unaffected.
+const isLivedraft = Astro.url.searchParams.get('livedraft') === '1';
 const bannerLines = [content.fulfillment_platters, content.fulfillment_jars].filter(Boolean);
 const bannerSparkOn = content.bannerSpark === 'on';
 
@@ -110,21 +115,21 @@ const ogImage = SITE_URL + '/og-image.jpg';
       contract as Mane/Nanoliss): the hardcoded 🧀/✨ glyphs are gone, empty
       on Console renders nothing, and `bannerSpark === "on"` adds the spark
       star + whole-text shimmer in the house gold. */}
-  {bannerLines.length > 0 && (
+  {(bannerLines.length > 0 || isLivedraft) && (
     <div class="fulfillment-banner" role="region" aria-label="Announcement">
       {bannerSparkOn && (
         <svg class="banner-spark" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
           <path d="M12 2l1.85 8.15L22 12l-8.15 1.85L12 22l-1.85-8.15L2 12l8.15-1.85Z" fill="currentColor" />
         </svg>
       )}
-      {content.fulfillment_platters && (
-        <span class={bannerSparkOn ? 'banner-shimmer' : undefined}>{content.fulfillment_platters}</span>
+      {(content.fulfillment_platters || isLivedraft) && (
+        <span data-lc="home:fulfillment_platters" data-lc-empty="Announcement line 1" class={bannerSparkOn ? 'banner-shimmer' : undefined}>{content.fulfillment_platters}</span>
       )}
       {content.fulfillment_platters && content.fulfillment_jars && (
         <span class="banner-divider">•</span>
       )}
-      {content.fulfillment_jars && (
-        <span class={bannerSparkOn ? 'banner-shimmer' : undefined}>{content.fulfillment_jars}</span>
+      {(content.fulfillment_jars || isLivedraft) && (
+        <span data-lc="home:fulfillment_jars" data-lc-empty="Announcement line 2" class={bannerSparkOn ? 'banner-shimmer' : undefined}>{content.fulfillment_jars}</span>
       )}
     </div>
   )}
@@ -1494,7 +1499,13 @@ if (window.GobbleCart) {
       style.textContent =
         '.lc-live [data-lc]{cursor:text;outline:1px dashed transparent;transition:outline-color .15s}' +
         '.lc-live [data-lc]:hover{outline-color:rgba(37,99,235,.55)}' +
-        '.lc-live [data-lc]:focus{outline:2px solid rgba(37,99,235,.85);outline-offset:2px}';
+        '.lc-live [data-lc]:focus{outline:2px solid rgba(37,99,235,.85);outline-offset:2px}' +
+        // Empty-hook placeholder (mane's pattern): CSS-generated content, so
+        // it is never part of the element's text and can never stream back as
+        // the field value. -webkit-text-fill-color:currentColor neutralizes
+        // the banner-shimmer's inherited transparent fill, which would
+        // otherwise render the placeholder invisible when the spark is on.
+        '.lc-live [data-lc]:empty::before{content:attr(data-lc-empty);opacity:.5;font-style:italic;-webkit-text-fill-color:currentColor}';
       document.head.appendChild(style);
 
       document.querySelectorAll('[data-lc]').forEach(function (el) {
