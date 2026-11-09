@@ -15,9 +15,6 @@ if (!category) {
   return new Response(null, { status: 404 });
 }
 const products = allProducts.filter((p) => p.category === category);
-const { whatsappHref: WA } = await getStoreConfig();
-  // Unused placeholder removed — category page already has globals
-  // const WA = 'https://wa.link/sngzs9';
 ---
 <BaseLayout title={`${category} — Gobble by Pixie`}>
   <section class="menu-hero">
