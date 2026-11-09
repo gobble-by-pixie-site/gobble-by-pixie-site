@@ -19,9 +19,11 @@ const bannerSparkOn = content.bannerSpark === 'on';
 // the next rebuild, same as it already does in menu.astro's own sub-nav —
 // same pattern theclosetstory.com/tcs-store uses for its Categories dropdown.
 import { fetchFromConsoleCollections, fetchStoreConfig } from '../lib/console-client';
+import { resolveStoreConfig } from '../lib/store-config.js';
 
 const navProducts = await fetchProducts();
 const storeConfig = await fetchStoreConfig();
+const { whatsappHref, whatsappDisplay } = resolveStoreConfig(storeConfig);
 
 // Cart cross-sells — Console collection 'cross-sells' (per-tenant, owner-editable).
 let crossSells = [];
@@ -88,6 +90,9 @@ const ogImage = SITE_URL + '/og-image.jpg';
   <!-- Per-page head extras (Product JSON-LD, noindex, etc.) -->
   <slot name="head" />
 
+  <script is:inline define:vars={{ gobbleWaHref: whatsappHref }}>
+    window.GOBBLE_WHATSAPP_HREF = gobbleWaHref ?? null;
+  </script>
   <script is:inline src="/cart.js"></script>
 
   <!-- Analytics — IDs come from Console → Business (store-config API);
@@ -319,7 +324,9 @@ const ogImage = SITE_URL + '/og-image.jpg';
           <strong>Help & Order</strong>
           <a href="/faq">Fulfillment Schedule</a>
           <a href="/account">My Account & Points</a>
-          <a href="https://wa.link/sngzs9" target="_blank" rel="noopener">WhatsApp Direct Order</a>
+          {whatsappHref && (
+          <a href={whatsappHref} target="_blank" rel="noopener">WhatsApp Direct Order</a>
+          )}
           <a href="https://www.instagram.com/gobblebypixie/" target="_blank" rel="noopener">Instagram (@gobblebypixie)</a>
         </div>
       </div>
@@ -351,8 +358,9 @@ const ogImage = SITE_URL + '/og-image.jpg';
   </footer>
 
   <!-- Floating WhatsApp contact button — real product jar, bounces gently, with a WhatsApp badge so it clearly reads as "contact us" -->
+  {whatsappHref && (
   <a
-    href="https://wa.link/sngzs9"
+    href={whatsappHref}
     target="_blank"
     rel="noopener"
     class="wa-fab"
@@ -366,6 +374,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
       </span>
     </span>
   </a>
+  )}
 
   <style>
     .fulfillment-banner {
@@ -994,7 +1003,8 @@ const ogImage = SITE_URL + '/og-image.jpg';
         cartTotalAmount.textContent = '₹' + gst.total.toLocaleString('en-IN');
       }
 
-      if (cartCheckoutBtn) cartCheckoutBtn.href = window.GobbleCart.checkoutWhatsAppUrl();
+      const _waUrl = window.GobbleCart.checkoutWhatsAppUrl();
+      if (cartCheckoutBtn) { if (_waUrl) { cartCheckoutBtn.href = _waUrl; cartCheckoutBtn.removeAttribute('aria-disabled'); } else { cartCheckoutBtn.removeAttribute('href'); cartCheckoutBtn.setAttribute('aria-disabled', 'true'); } }
 
       cartItemsEl.querySelectorAll('.qty-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -1043,7 +1053,8 @@ const ogImage = SITE_URL + '/og-image.jpg';
 
 if (window.GobbleCart) {
       window.GobbleCart.subscribe(renderCart);
-      if (cartCheckoutBtn) cartCheckoutBtn.href = window.GobbleCart.checkoutWhatsAppUrl();
+      const _waUrl2 = window.GobbleCart.checkoutWhatsAppUrl();
+      if (cartCheckoutBtn) { if (_waUrl2) { cartCheckoutBtn.href = _waUrl2; cartCheckoutBtn.removeAttribute('aria-disabled'); } else { cartCheckoutBtn.removeAttribute('href'); cartCheckoutBtn.setAttribute('aria-disabled', 'true'); } }
     }
 
     // ── COD checkout (Console order via /api/checkout/cod) ──

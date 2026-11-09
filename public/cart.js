@@ -1,13 +1,17 @@
 /**
  * GobbleCart — shared cart engine, loaded on every page via BaseLayout.
- * localStorage-backed so it persists across navigation. No payment backend
- * yet, so checkout builds one combined WhatsApp message instead of a real
- * payment flow — swap that step out once Razorpay is wired up.
+ * localStorage-backed so it persists across navigation. Checkout builds one
+ * combined WhatsApp message to the Business number injected by BaseLayout
+ * (window.GOBBLE_WHATSAPP_HREF) — Business-only, no fallback (owner
+ * 2026-11-09): unset means no checkout URL and the button stays disabled.
  */
 (function () {
   var KEY = 'gbp_cart';
-  var WA_LINK = 'https://wa.link/sngzs9';
   var listeners = [];
+
+  function waBase() {
+    try { return window.GOBBLE_WHATSAPP_HREF || null; } catch (e) { return null; }
+  }
 
   function read() {
     try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; }
@@ -85,8 +89,10 @@
   }
 
   function checkoutWhatsAppUrl() {
+    var base = waBase();
+    if (!base) return null;
     var items = read();
-    if (!items.length) return WA_LINK;
+    if (!items.length) return base;
     var lines = ['Hi! I\'d like to place an order:', ''];
     items.forEach(function (i) {
       var priceStr = typeof i.price === 'number' ? (' — ₹' + (i.price * i.qty).toLocaleString('en-IN')) : ' — price on request';
@@ -102,7 +108,7 @@
         'Total (incl. GST): ₹' + gst.total.toLocaleString('en-IN')
       );
     }
-    return WA_LINK + '?text=' + encodeURIComponent(lines.join('\n'));
+    return base + '?text=' + encodeURIComponent(lines.join('\n'));
   }
 
   function subscribe(fn) { listeners.push(fn); fn(read()); }

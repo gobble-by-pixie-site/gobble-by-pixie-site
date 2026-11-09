@@ -248,3 +248,38 @@ IN/560001 → refused with the note; US → "We don't ship internationally
 right now." Pixie can widen/narrow the area any time in Console → Settings
 → Business → Serviceability (the form writes the same shape the seed did).
 Contract: STOREFRONT-STANDARDS §A15.
+
+## Zone security hardening (added 2026-11-07, estate audit — full record: vault §"2026-11-07 — Cloudflare security audit")
+
+gobblebypixie.com zone: SSL full→strict, min TLS 1.0→1.2, Always-HTTPS on, HSTS
+enabled (max-age 31536000, includeSubDomains) — verified live. **DNSSEC is
+ACTIVE** — the DS was added at Squarespace on 2026-11-07 (key tag 2371, algo
+13, SHA-256); never delete it. DMARC was created the same day:
+`v=DMARC1; p=quarantine; rua=mailto:support@linearventures.in` (record id
+`9a5208f2e3aafa42e5a90e051776eb24`, plus the
+`gobblebypixie.com._report._dmarc.linearventures.in` authorization TXT that
+makes Google actually deliver the reports). Quarantine is safe here because
+Pixie sends from Google Workspace with `google._domainkey` DKIM — if she ever
+reports missing legitimate mail, check the rua XML aggregates FIRST before
+loosening the policy. Auth rate-limit rule id
+`670fdae0ad6d41b3b357d19dca483472` (/api/auth/* 10 req/10s/IP, block 10s —
+free-plan shape; /api/auth/session excluded). admin.gobblebypixie.com's Caddy
+vhost imports the box's (sec-headers) snippet. Storefront headers/CSP
+unchanged — vision panel verified unaffected.
+
+## 2026-11-07 — doc-currency correction: gobble's own cache rule is override_origin too
+
+The sections above describe gobble's rule as created with `respect_origin`
+(the 2026-10-24 shape) — superseded 2026-10-26 by the estate-wide error-1102
+hardening, measured and recorded in the vault: rule `32f74aeb…` re-PUT
+(v3→v4) to `edge_ttl: {mode: "override_origin", default: 300}` +
+`serve_stale: {disable_stale_while_updating: false}`. Behavioural proof in the
+vault record: `/about` held `cf-cache-status: HIT` at `Age: 122` — past the
+origin's 60s. Origin still sends `s-maxage=60`; purge-on-publish still applies;
+rollback = the backed-up ruleset JSON
+(`…\Temp\opencode\cache-rules-backup\gobblebypixie.com.json`). Also current:
+order-notes markers parse ONLY via Console `src/lib/order-notes.ts`
+(2026-11-05); STOREFRONT-STANDARDS §A16 sanctions this repo's middleware-set
+CSP — no competing `public/_headers` CSP; the zone joined the 2026-11-07
+security baseline (DNSSEC Active via the Squarespace DS, DMARC `p=quarantine`
+— see its own section below).

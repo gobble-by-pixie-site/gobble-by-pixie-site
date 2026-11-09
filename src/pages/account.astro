@@ -370,7 +370,8 @@ const earnRules = [
           .finally(function () { window.location.href = '/login'; });
       });
 
-      var WA_LINK = 'https://wa.link/sngzs9';
+      var base = (typeof window !== "undefined" && window.GOBBLE_WHATSAPP_HREF) || null;
+      function waOpen(text) { if (!base) return; window.open(base + '?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
 
       function reorderText(o) {
         return 'Hi! I\'d like to reorder: ' + (orderTitle(o) || 'my previous order')
@@ -408,7 +409,7 @@ const earnRules = [
         }
         var chevron = '<svg class="order-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
         el.innerHTML = orders.map(function (o) {
-          var reorderHref = WA_LINK + '?text=' + encodeURIComponent(reorderText(o));
+          var reorderHref = base ? base + '?text=' + encodeURIComponent(reorderText(o)) : null;
           var statusBadge = o.status && o.status !== 'Confirmed'
             ? '<span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--accent-berry-deep);background:rgba(161,95,96,0.12);padding:0.2rem 0.55rem;border-radius:2px;margin-left:0.5rem;">' + escHtml(o.status) + '</span>'
             : '';
@@ -458,7 +459,7 @@ const earnRules = [
             + '</div>'
             + addr + timeline
             + '<div style="margin-top:1rem;display:flex;gap:0.8rem;flex-wrap:wrap;">'
-            + '<a href="' + reorderHref + '" target="_blank" rel="noopener" class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">Reorder</a>'
+            + (reorderHref ? '<a href="' + reorderHref + '" target="_blank" rel="noopener" class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">Reorder</a>' : '')
             + invoice
             + '</div>'
             + '</div></details>';

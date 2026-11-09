@@ -5,9 +5,11 @@
 // page and stream live edits via postMessage.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { fetchProductBySlug, formatPrice } from '../../lib/fetchProducts.js';
+import { getStoreConfig } from '../../lib/store-config.js';
 
 const { slug } = Astro.params;
 const product = slug ? await fetchProductBySlug(slug) : null;
+const { whatsappHref } = await getStoreConfig();
 
 if (!product) {
   return new Response(null, { status: 404 });
@@ -86,9 +88,11 @@ const SITE = 'https://gobblebypixie.com';
             {product.in_stock ? 'In Stock' : 'Sold Out'}
           </p>
 
-          <a href="https://wa.link/sngzs9" class="btn btn-primary" target="_blank" rel="noopener">
+          {whatsappHref && (
+          <a href={whatsappHref} class="btn btn-primary" target="_blank" rel="noopener">
             Order on WhatsApp
           </a>
+          )}
         </div>
       </div>
     </div>

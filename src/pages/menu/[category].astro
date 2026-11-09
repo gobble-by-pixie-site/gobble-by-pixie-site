@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import ProductQuickViewModal from '../../components/ProductQuickViewModal.astro';
 import { fetchProducts, getCategories, slugify } from '../../lib/fetchProducts.js';
+import { getStoreConfig } from '../../lib/store-config.js';
 
 // SSR: the menu is live Console data — no getStaticPaths, no rebuilds.
 // Unknown categories render the empty state instead of 404ing.
@@ -14,7 +15,9 @@ if (!category) {
   return new Response(null, { status: 404 });
 }
 const products = allProducts.filter((p) => p.category === category);
-const WA = 'https://wa.link/sngzs9';
+const { whatsappHref: WA } = await getStoreConfig();
+  // Unused placeholder removed — category page already has globals
+  // const WA = 'https://wa.link/sngzs9';
 ---
 <BaseLayout title={`${category} — Gobble by Pixie`}>
   <section class="menu-hero">
@@ -175,9 +178,10 @@ const WA = 'https://wa.link/sngzs9';
     }
   </style>
 
-  <script is:inline>
+  <script is:inline define:vars={{ waBase: WA }}>
     function sendViaWhatsApp(text) {
-      window.open('https://wa.link/sngzs9?text=' + encodeURIComponent(text), '_blank', 'noopener');
+      if (!waBase) return;
+      window.open(waBase + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
     }
     document.getElementById('suggestForm')?.addEventListener('submit', (e) => {
       e.preventDefault();

@@ -4,7 +4,7 @@
 // Handles both real "Add to Cart" (priced items) and "Enquire on WhatsApp"
 // (unpriced/"price on request" items) — unpriced items never enter the cart,
 // since the cart's GST breakdown assumes every line has a real price.
-const WA = 'https://wa.link/sngzs9';
+// WhatsApp is Business-only via window.GOBBLE_WHATSAPP_HREF (no fallback).
 ---
 <div class="modal-backdrop" id="productModalBackdrop" style="display:none;">
   <div class="modal-card card">
@@ -102,9 +102,11 @@ const WA = 'https://wa.link/sngzs9';
         if (!hasPrice) {
           // Price-on-request items never enter the cart — the cart's GST
           // breakdown assumes every line has a real price. Send a direct
-          // WhatsApp enquiry instead.
+          // WhatsApp enquiry instead. No Business number = this button is disabled.
+          const base = (window as any).GOBBLE_WHATSAPP_HREF as string | null;
+          if (!base) return;
           const text = `Hi! I'd like to enquire about ${name} — could you share pricing and availability?`;
-          window.open(WA + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+          window.open(base + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
           backdrop.style.display = 'none';
           return;
         }

@@ -67,7 +67,8 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
   // let that page's own script own the click. Cards on pages without one
   // (e.g. homepage best-sellers) add straight to cart instead, so the
   // button always does something rather than silently no-op.
-  const WA_LINK = 'https://wa.link/sngzs9';
+  var base = (typeof window !== "undefined" && window.GOBBLE_WHATSAPP_HREF) || null;
+  function waOpen(text) { if (!base) return; window.open(base + '?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
 
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.js-quick-view-btn');
@@ -80,8 +81,9 @@ const dispatchLabel = product.fulfillment === 'weekly-batch' ? 'Batch: Ships Sat
     if (!card.dataset.price) {
       // Price-on-request items never enter the cart — send a direct
       // WhatsApp enquiry instead, same as the Quick View modal does.
+      if (!base) return;
       const text = `Hi! I'd like to enquire about ${card.dataset.name} — could you share pricing and availability?`;
-      window.open(WA_LINK + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+      waOpen(text);
       return;
     }
 

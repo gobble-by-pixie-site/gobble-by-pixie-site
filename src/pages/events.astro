@@ -1,9 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { fetchEvents } from '../lib/fetchEvents.js';
+import { getStoreConfig } from '../lib/store-config.js';
 
 const events = await fetchEvents();
-const WA = 'https://wa.link/sngzs9';
+const { whatsappHref: WA } = await getStoreConfig();
 
 function formatEventDate(dateStr) {
   const d = new Date(dateStr);
@@ -27,7 +28,9 @@ function formatEventDate(dateStr) {
           <span class="events-empty-emoji">🧀</span>
           <h3>No events posted yet</h3>
           <p>Check back soon, or ask us on WhatsApp about booking a grazing table for your own event.</p>
+          {WA && (
           <a href={`${WA}?text=${encodeURIComponent("Hi! I'd like to ask about booking a Grazing Table for an event.")}`} target="_blank" rel="noopener" class="btn btn-primary">Enquire on WhatsApp</a>
+          )}
         </div>
       ) : (
         <div class="events-grid">
@@ -59,7 +62,9 @@ function formatEventDate(dateStr) {
       <p class="eyebrow">Planning Something?</p>
       <h2>Book a Grazing Table for Your Event</h2>
       <p class="section-sub">Weddings, corporate parties, milestone celebrations — every table is custom-built around your guest count, theme, and budget.</p>
+      {WA && (
       <a href={`${WA}?text=${encodeURIComponent("Hi! I'd like to enquire about a Grazing Table for a party. Could you share more details?")}`} target="_blank" rel="noopener" class="btn btn-primary">Enquire on WhatsApp</a>
+      )}
     </div>
   </section>
 
