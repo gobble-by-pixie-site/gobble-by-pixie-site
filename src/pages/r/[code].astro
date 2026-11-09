@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { SESSION_COOKIE } from "../../lib/auth-session";
+
+export const prerender = false;
+
+// Invite landing (/r/CODE) — nanoliss lifecycle in Gobble's parchment/berry
+// language. Logged-in → /account?refPending= (the account page redeems);
+// guests → the code parks in localStorage before the signup that follows.
+
+const { code } = Astro.params;
+if (!code) return Astro.redirect("/");
+
+const token = Astro.cookies.get(SESSION_COOKIE)?.value;
+if (token) {
+  return Astro.redirect(`/account?refPending=${encodeURIComponent(code.trim().toUpperCase())}`);
+}
+const inviteCode = code.trim().toUpperCase();
+---
+
+<BaseLayout title="You're Invited — Gobble by Pixie">
+  <main style="padding:7rem 1.5rem 4rem;max-width:34rem;margin:0 auto;text-align:center;">
+    <div class="card" style="padding:2.5rem 1.5rem;">
+      <p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent-berry-deep);margin:0 0 1rem;">Private invitation</p>
+      <p style="font-family:var(--font-display);font-size:1.75rem;color:var(--text-espresso);margin:0 0 0.75rem;">You've been invited.</p>
+      <p style="font-size:0.95rem;color:var(--text-muted);margin:0 0 1.75rem;">A friend has invited you to Gobble by Pixie. Create an account and you'll both receive rewards on your next order.</p>
+      <div style="border:1px solid var(--border-hairline);background:var(--bg-parchment-alt);padding:1.25rem;margin-bottom:1.75rem;">
+        <p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin:0 0 0.25rem;">Your invitation code</p>
+        <p data-invite-code style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;letter-spacing:0.1em;color:var(--accent-gold-deep);margin:0;">{inviteCode}</p>
+      </div>
+      <a href="/login" data-invite-cta class="btn btn-primary" style="display:inline-flex;">Create your account</a>
+    </div>
+  </main>
+  <script>
+    document.querySelectorAll("[data-invite-cta]").forEach((a) => {
+      a.addEventListener("click", () => {
+        const code = document.querySelector("[data-invite-code]")?.textContent?.trim();
+        if (code) { try { localStorage.setItem("gbp:referralCode", code); } catch (e) {} }
+      });
+    });
+  </script>
+</BaseLayout>

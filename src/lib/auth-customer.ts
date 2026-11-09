@@ -111,3 +111,45 @@ export function getLoyalty(sessionToken: string) {
     { method: "GET", sessionToken },
   );
 }
+
+// ── Nanoliss-parity account surfaces (2026-11-10) ───────────────────────────
+
+export function getReferral(sessionToken: string) {
+  return callConsole<{ referralCode: string | null; shareUrl: string | null; rewardsEarned: number; referredCount: number }>(
+    "/api/public/customers/me/referral",
+    { method: "GET", sessionToken },
+  );
+}
+
+export function redeemReferral(sessionToken: string, code: string) {
+  return callConsole<{ success: boolean; redemptionId?: string; referredCouponCode?: string; message?: string }>(
+    "/api/public/referral/redeem",
+    { method: "POST", body: { code }, sessionToken },
+  );
+}
+
+export function redeemLoyalty(sessionToken: string, payload: Record<string, number>) {
+  return callConsole<{
+    code: string;
+    amount: number;
+    pointsSpent: number;
+    remainingPoints: number;
+    expiresAt?: string;
+  }>("/api/public/loyalty/redeem", { method: "POST", body: payload, sessionToken });
+}
+
+export function forgotPassword(email: string, resetUrlBase: string) {
+  return callConsole<{ success: boolean }>("/api/public/customers/forgot-password", {
+    method: "POST",
+    body: { email, resetUrlBase },
+  });
+}
+
+export function stockAlert(email: string, productId: string) {
+  // Back-in-stock intake (guest-allowed): Console dedupes per email+product
+  // and the cron emails when the product restocks.
+  return callConsole<{ ok: boolean }>("/api/public/feedback", {
+    method: "POST",
+    body: { type: "back-in-stock", message: email, context: { productId } },
+  });
+}

@@ -62,7 +62,9 @@ const earnRules = [
           <div class="profile-grid">
             <div><label class="field-label">Full Name</label><input id="p-name" type="text" class="text-field" /></div>
             <div><label class="field-label">Email</label><input id="p-email" type="email" class="text-field" readonly /></div>
-            <div><label class="field-label">Phone</label><input id="p-phone" type="tel" class="text-field" /></div>
+            <div><label class="field-label">Phone</label><span style="display:flex;gap:0.5rem;"><select id="p-dial" class="text-field" style="width:7.5rem;flex:none;" aria-label="Phone country"><option value="91" selected>🇮🇳 India +91</option><option value="971">🇦🇪 UAE +971</option><option value="966">🇸🇦 Saudi +966</option><option value="974">🇶🇦 Qatar +974</option><option value="968">🇴🇲 Oman +968</option><option value="44">🇬🇧 UK +44</option><option value="65">🇸🇬 Singapore +65</option><option value="61">🇦🇺 Australia +61</option><option value="64">🇳🇿 NZ +64</option><option value="49">🇩🇪 Germany +49</option><option value="33">🇫🇷 France +33</option><option value="31">🇳🇱 Netherlands +31</option><option value="60">🇲🇾 Malaysia +60</option><option value="94">🇱🇰 Sri Lanka +94</option><option value="977">🇳🇵 Nepal +977</option><option value="66">🇹🇭 Thailand +66</option><option value="1">🇺🇸/🇨🇦 USA/CA +1</option></select><input id="p-phone" type="tel" class="text-field" style="flex:1;min-width:0;" /></span></div>
+          <div><label class="field-label">Birthday <span style="font-weight:400;color:var(--text-muted)">(optional — we send a little something)</span></label><input id="p-birthday" type="date" class="text-field" /></div>
+          <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--text-espresso-soft)"><input id="p-consent" type="checkbox" /> Email me offers and new arrivals (unsubscribe any time)</label>
             {/* No delivery-address field: Console's customer row has no address
                 column (addresses live on a separate sub-resource the WhatsApp
                 checkout does not read), so a field here would accept edits that
@@ -73,7 +75,14 @@ const earnRules = [
               <p id="profile-saved-msg" class="saved-msg" style="display:none;">✓ Profile saved successfully</p>
             </div>
             <div class="signout-row">
-              <button id="signout-btn" class="signout-link">Sign out of this device</button>
+              <div id="password-section" data-has-password="">
+            <p class="field-label">Password</p>
+            <p id="password-desc" style="margin:0.25rem 0 0.6rem;font-size:0.85rem;color:var(--text-muted);">Want a new password? Send a reset link to your email to change it.</p>
+            <button id="pwd-btn" class="btn btn-outline" type="button">Email me a reset link</button>
+            <p id="pwd-msg" style="display:none;margin:0.5rem 0 0;font-size:0.82rem;"></p>
+          </div>
+
+          <button id="signout-btn" class="signout-link">Sign out of this device</button>
             </div>
           </div>
         </div>
@@ -131,6 +140,38 @@ const earnRules = [
                 </div>
               </div>
             ))}
+          </div>
+
+          <!-- Redeem — points → store credit (Console mints the coupon; the
+              shopper applies it in the checkout credit box at the cart). -->
+          <div id="redeem-slot" style="margin-top:1.2rem;border:1px solid var(--border-hairline);background:var(--bg-parchment-alt);padding:1.2rem;">
+            <p style="margin:0 0 0.6rem;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Redeem points for store credit</p>
+            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:stretch;">
+              <input id="redeem-amount" type="number" min="1" step="1" placeholder="₹ of credit" class="text-field" style="width:8rem;" />
+              <button id="redeem-btn" class="btn btn-outline" type="button">Redeem</button>
+              <button id="redeem-all" type="button" style="background:none;border:none;cursor:pointer;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Redeem all</button>
+            </div>
+            <div id="redeem-result" style="display:none;margin-top:0.8rem;font-size:0.85rem;color:var(--text-espresso-soft);"></div>
+            <p id="redeem-error" style="display:none;margin:0.5rem 0 0;font-size:0.8rem;color:var(--accent-berry-deep);"></p>
+          </div>
+
+          <!-- Recent activity — the points ledger (last 10). -->
+          <div id="loyalty-transactions" style="display:none;margin-top:1.2rem;">
+            <p style="margin:0 0 0.4rem;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Recent activity</p>
+            <div id="loyalty-tx-list"></div>
+          </div>
+
+          <!-- Referral — nanoliss lifecycle. -->
+          <div id="referral-card" style="display:none;margin-top:1.2rem;border:1px solid var(--border-hairline);padding:1.2rem;">
+            <p style="margin:0 0 0.6rem;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Refer a friend</p>
+            <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
+              <code data-ref-code style="font-family:var(--font-display);font-weight:700;font-size:1.2rem;color:var(--accent-gold-deep);"></code>
+              <button id="ref-copy-code" type="button" class="btn btn-outline" style="padding:0.35rem 0.8rem;font-size:0.78rem;">Copy code</button>
+              <button id="ref-copy-link" type="button" class="btn btn-outline" style="padding:0.35rem 0.8rem;font-size:0.78rem;">Copy invite link</button>
+              <a id="ref-wa" href="#" target="_blank" rel="noopener" class="btn btn-outline" style="padding:0.35rem 0.8rem;font-size:0.78rem;">Share on WhatsApp</a>
+            </div>
+            <p id="ref-meta" style="margin:0.6rem 0 0;font-size:0.82rem;color:var(--text-muted);"></p>
+            <p id="ref-status" style="display:none;margin:0.5rem 0 0;font-size:0.85rem;color:var(--text-espresso);"></p>
           </div>
         </div>
       </div>
@@ -290,6 +331,20 @@ const earnRules = [
           prog.innerHTML = '<p style="color:var(--accent-berry);font-weight:600">You are at the top tier. Thank you for gobbling with us!</p>';
         }
 
+        // Recent activity — the ledger (last 10), nanoliss parity.
+        var txWrap = document.getElementById('loyalty-transactions');
+        var txList = document.getElementById('loyalty-tx-list');
+        if (txWrap && txList && Array.isArray(loyalty.transactions) && loyalty.transactions.length) {
+          txList.innerHTML = loyalty.transactions.slice(0, 10).map(function (t) {
+            var pp = Number(t.points) || 0;
+            var when = t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+            return '<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--border-hairline);">' +
+              '<span style="font-size:0.82rem;color:var(--text-muted);">' + String(t.type || 'activity').replace(/[<>"']/g, '') + (when ? ' · ' + when : '') + '</span>' +
+              '<span style="font-size:0.82rem;color:' + (pp >= 0 ? 'var(--accent-gold-deep)' : 'var(--accent-berry-deep)') + ';">' + (pp >= 0 ? '+' : '−') + Math.abs(pp) + '</span></div>';
+          }).join('');
+          txWrap.style.display = 'block';
+        }
+
         // Dynamic legend from Console tier names (tenant freedom).
         var list = document.querySelector('.tier-list');
         if (list && tiers.length) {
@@ -351,17 +406,102 @@ const earnRules = [
         var phone = document.getElementById('p-phone')?.value.trim();
         var msg = document.getElementById('profile-saved-msg');
 
+        var dial = document.getElementById('p-dial')?.value || '91';
+        if (phone) { var dg = phone.replace(/\D/g, '').replace(/^0+/, ''); if (dg) phone = '+' + dial + dg; }
         fetch('/api/account/profile', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name, phone: phone }),
+          body: JSON.stringify({ name: name, phone: phone, birthday: document.getElementById('p-birthday')?.value || undefined, marketingConsent: document.getElementById('p-consent')?.checked === true }),
         })
           .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
           .then(function (out) {
-            if (!out.ok) return;
-            msg.style.display = 'inline'; setTimeout(function () { msg.style.display = 'none'; }, 2500);
+            msg.textContent = out.ok ? 'Saved ✓ — your details are up to date.' : (out.d.error || 'Could not save — please try again.');
+            msg.style.display = 'inline';
+            if (out.ok) setTimeout(function () { msg.style.display = 'none'; }, 4000);
           })
-          .catch(function () {});
+          .catch(function () { msg.textContent = 'Could not reach the store — check your connection.'; msg.style.display = 'inline'; });
+      });
+
+      // ── Redeem points → store credit ──
+      async function redeem(all) {
+        var amountEl = document.getElementById('redeem-amount');
+        var result = document.getElementById('redeem-result');
+        var error = document.getElementById('redeem-error');
+        result.style.display = 'none'; error.style.display = 'none';
+        try {
+          var res = await fetch('/api/account/loyalty/redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(all ? {} : { amount: amountEl ? amountEl.value : '' }),
+          });
+          var data = await res.json().catch(function(){ return {}; });
+          if (!res.ok) throw new Error(data.error || 'Could not redeem right now.');
+          if (amountEl) amountEl.value = '';
+          result.innerHTML = 'Store credit <strong style="color:var(--text-espresso)">₹' + Number(data.amount).toLocaleString('en-IN') + '</strong> is ready — your code: <code style="background:var(--bg-parchment-alt);padding:0.15rem 0.5rem;">' + String(data.code || '').replace(/[<>"']/g, '') + '</code> · ' + Number(data.remainingPoints || 0).toLocaleString('en-IN') + ' points left. Paste it in the credit box at checkout.';
+          result.style.display = 'block';
+          var pe = document.getElementById('points-display'); if (pe) pe.textContent = Number(data.remainingPoints || 0).toLocaleString('en-IN');
+          var re = document.getElementById('r-points'); if (re) re.textContent = Number(data.remainingPoints || 0).toLocaleString('en-IN');
+        } catch (err) {
+          error.textContent = err instanceof Error ? err.message : 'Could not redeem right now.';
+          error.style.display = 'block';
+        }
+      }
+      document.getElementById('redeem-btn')?.addEventListener('click', function(){ redeem(false); });
+      document.getElementById('redeem-all')?.addEventListener('click', function(){ redeem(true); });
+
+      // ── Referral: stats + share + redemption loop (nanoliss lifecycle) ──
+      fetch('/api/account/referral').then(function(r){ return r.ok ? r.json() : null; }).then(function(j) {
+        if (!j || !j.referralCode) return;
+        var card = document.getElementById('referral-card');
+        if (card) card.style.display = 'block';
+        var codeEl = document.querySelector('[data-ref-code]'); if (codeEl) codeEl.textContent = j.referralCode;
+        var link = j.shareUrl || (location.origin + '/r/' + j.referralCode);
+        var meta = document.getElementById('ref-meta');
+        if (meta) meta.textContent = (j.referredCount || 0) + ' friends joined · ₹' + Number(j.rewardsEarned || 0).toLocaleString('en-IN') + ' earned';
+        var wa = document.getElementById('ref-wa');
+        if (wa) wa.href = 'https://wa.me/?text=' + encodeURIComponent('You’re invited to Gobble by Pixie — create your account with my code ' + j.referralCode + ': ' + link);
+        document.getElementById('ref-copy-code')?.addEventListener('click', function(){ if (navigator.clipboard) navigator.clipboard.writeText(j.referralCode).catch(function(){}); });
+        document.getElementById('ref-copy-link')?.addEventListener('click', function(){ if (navigator.clipboard) navigator.clipboard.writeText(link).catch(function(){}); });
+      }).catch(function(){});
+      try {
+        var refPending = new URLSearchParams(window.location.search).get('refPending');
+        if (refPending && refPending.trim()) localStorage.setItem('gbp:referralCode', refPending.trim().toUpperCase());
+        var pendingCode = localStorage.getItem('gbp:referralCode');
+        if (pendingCode) {
+          fetch('/api/account/referral-redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: pendingCode }),
+          }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); }).then(function(out) {
+            if (out.ok && (out.d.success || out.d.redemptionId)) {
+              localStorage.removeItem('gbp:referralCode');
+              var st = document.getElementById('ref-status');
+              if (st) { st.textContent = 'Invitation applied — your reward lands with your next order.'; st.style.display = 'block'; }
+            }
+          }).catch(function(){});
+        }
+      } catch (e) {}
+
+      // ── Password: email reset link (hasPassword-aware copy) ──
+      var pwdWrap = document.getElementById('password-section');
+      if (pwdWrap) {
+        var pd = document.getElementById('password-desc');
+        if (pd) pd.textContent = pwdWrap.dataset.hasPassword === 'true'
+          ? 'Want a new password? Send a reset link to your email to change it.'
+          : 'Add a password so you can also log in with your email.';
+      }
+      document.getElementById('pwd-btn')?.addEventListener('click', function() {
+        var msg = document.getElementById('pwd-msg');
+        var email = document.getElementById('p-email')?.value.trim();
+        if (!email) { if (msg) { msg.textContent = 'No email on file.'; msg.style.display = 'block'; } return; }
+        fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); }).then(function(out) {
+          var msg = document.getElementById('pwd-msg');
+          if (msg) { msg.textContent = out.ok ? 'Reset link sent to ' + email + ' — check your inbox.' : (out.d.error || 'Could not send.'); msg.style.display = 'block'; }
+        }).catch(function(){});
       });
 
       document.getElementById('signout-btn')?.addEventListener('click', function () {
@@ -438,7 +578,9 @@ const earnRules = [
               + '<p style="margin:0;font-size:0.85rem;color:var(--text-espresso-soft);">' + escHtml([o.shippingAddress.line1, o.shippingAddress.city, o.shippingAddress.state, o.shippingAddress.pincode].filter(Boolean).join(', ')) + '</p>'
               + '</div>'
             : '';
-          var timeline = ''
+          var payLabel = o.paymentMethod === 'cod' ? 'Cash on Delivery' : (o.paymentMethod === 'manual' ? 'Direct Payment' : 'Prepaid');
+      var timeline = ''
+            + (o.paymentMethod ? '<p style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--text-muted);">' + payLabel + '</p>' : '')
             + (o.shippedAt ? '<p style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--text-muted);">Shipped ' + fmtDate(o.shippedAt) + '</p>' : '')
             + (o.deliveredAt ? '<p style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--text-muted);">Delivered ' + fmtDate(o.deliveredAt) + '</p>' : '');
           // Delivery partner block (Console DELIVERY.md §8.6): the named
