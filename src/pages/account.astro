@@ -441,6 +441,23 @@ const earnRules = [
           var timeline = ''
             + (o.shippedAt ? '<p style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--text-muted);">Shipped ' + fmtDate(o.shippedAt) + '</p>' : '')
             + (o.deliveredAt ? '<p style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--text-muted);">Delivered ' + fmtDate(o.deliveredAt) + '</p>' : '');
+          // Delivery partner block (Console DELIVERY.md §8.6): the named
+          // courier + AWB + live tracking lead, so a customer with a late
+          // parcel calls the COURIER, not the store. Fields flow straight
+          // from Console's customers/orders; absent until booked or
+          // manually dispatched — untracked orders render exactly as before.
+          var tracking = (o.courier || o.trackingNumber)
+            ? '<div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border-hairline);">'
+              + '<p style="margin:0 0 0.25rem;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Delivery</p>'
+              + '<p style="margin:0;font-size:0.85rem;color:var(--text-espresso-soft);">'
+              + (o.courier ? 'Delivered by <strong style="font-weight:600;color:var(--text-espresso);">' + escHtml(o.courier) + '</strong>' : '')
+              + (o.courier && o.trackingNumber ? ' &middot; ' : '')
+              + (o.trackingNumber ? 'AWB ' + escHtml(o.trackingNumber) : '')
+              + (o.trackUrl ? ' <a href="' + escHtml(o.trackUrl) + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent-berry-deep);text-decoration:underline;text-underline-offset:3px;">Track live</a>' : '')
+              + '</p>'
+              + '<p style="margin:0.25rem 0 0;font-size:0.78rem;color:var(--text-muted);">Delivery delay? The courier can see exactly where the parcel is — they&rsquo;re fastest. For anything about the order, message us.</p>'
+            + '</div>'
+            : '';
           var invoice = o.shareToken
             ? '<a href="/api/orders/' + encodeURIComponent(o.shareToken) + '/invoice" target="_blank" rel="noopener" class="btn btn-outline" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">Download invoice</a>'
             : '';
@@ -457,7 +474,7 @@ const earnRules = [
             + '<div style="margin-top:0.5rem;padding-top:0.8rem;border-top:1px solid var(--border-hairline);display:flex;flex-direction:column;gap:0.3rem;">' + ladder
             + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:0.4rem;padding-top:0.6rem;border-top:1px solid var(--border-hairline);"><span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Order total</span><span style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;color:var(--accent-gold-deep);">' + fmtINR(o.total) + '</span></div>'
             + '</div>'
-            + addr + timeline
+            + addr + timeline + tracking
             + '<div style="margin-top:1rem;display:flex;gap:0.8rem;flex-wrap:wrap;">'
             + (reorderHref ? '<a href="' + reorderHref + '" target="_blank" rel="noopener" class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">Reorder</a>' : '')
             + invoice
