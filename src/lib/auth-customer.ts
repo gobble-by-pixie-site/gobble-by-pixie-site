@@ -98,7 +98,15 @@ export function getOrders(sessionToken: string) {
 }
 
 export function getLoyalty(sessionToken: string) {
-  return callConsole<{ points: number; tier: string | null; history: unknown[] }>(
+  return callConsole<{
+    points: number;
+    tier: string | null;
+    totalSpent?: number;
+    transactions?: unknown[];
+    earnRate?: number;
+    minOrder?: number;
+    tiers?: Array<{ name: string; fromInr: number; isCurrent: boolean }>;
+  }>(
     "/api/public/customers/me/loyalty",
     { method: "GET", sessionToken },
   );

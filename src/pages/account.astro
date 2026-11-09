@@ -2,9 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const tiers = [
-  { name: 'Nibbler', range: '0 – 299 pts', color: 'var(--tag-sage)', perks: 'Free account • Early access to seasonal artisanal flavours' },
-  { name: 'Foodie', range: '300 – 999 pts', color: 'var(--accent-gold-deep)', perks: 'Everything in Nibbler • 5% off every order automatically' },
-  { name: 'Gobbler VIP', range: '1000+ pts', color: 'var(--accent-berry)', perks: 'Everything in Foodie • 10% off • First access to new handcrafted drops & #BYOP specials' },
+  { name: 'Nibbler', range: 'From your first order', color: 'var(--tag-sage)', perks: 'Free account • Early access to seasonal artisanal flavours' },
+  { name: 'Foodie', range: 'Lifetime-spend tier', color: 'var(--accent-gold-deep)', perks: 'Everything in Nibbler • Lifetime-spend tier rises as you spend' },
+  { name: 'Gobbler VIP', range: 'Lifetime-spend tier', color: 'var(--accent-berry)', perks: 'Everything in Foodie • First access to new handcrafted drops & #BYOP specials' },
 ];
 
 const earnRules = [
@@ -255,9 +255,11 @@ const earnRules = [
 
       function fillRewards(loyalty) {
         var pts = loyalty.points || 0;
-        // `loyalty.tier` (Console's Bronze/Silver/Gold/Platinum) is NOT passed
-        // in - see displayTier(). Gobble's tier names are brand copy.
-        var tier = displayTier(pts);
+        // Prefer Console's tier (tenant-named in Settings → Rewards, e.g.
+        // Nibbler/Foodie/Gobbler VIP when the owner renames them there).
+        // displayTier(points) only covers pre-rename data where Console has
+        // no name yet.
+        var tier = loyalty.tier || displayTier(pts);
 
         document.getElementById('acct-points-badge').style.display = 'block';
         var tierEl = document.getElementById('tier-badge');
@@ -272,17 +274,46 @@ const earnRules = [
         document.getElementById('r-spent').textContent = fmtINR(loyalty.totalSpent || 0);
 
         var prog = document.getElementById('tier-progress');
-        var nextTier, needed;
-        if (pts < 300) { nextTier = 'Foodie'; needed = 300; }
-        else if (pts < 1000) { nextTier = 'Gobbler VIP'; needed = 1000; }
-        else { nextTier = null; }
+        var spent = Number(loyalty.totalSpent || 0);
+        var tiers = Array.isArray(loyalty.tiers) ? loyalty.tiers : [];
+        var currentIdx = tiers.findIndex(function(t) { return t.isCurrent; });
+        if (currentIdx < 0) currentIdx = 0;
+        var next = tiers[currentIdx + 1] || null;
 
-        if (nextTier) {
-          var pct = Math.min(100, Math.round((pts / needed) * 100));
-          prog.innerHTML = '<p style="margin-bottom:0.6rem;font-size:0.9rem;color:var(--text-espresso-soft)">' + (needed - pts) + ' more points to reach <strong style="color:var(--text-espresso)">' + nextTier + '</strong></p>'
+        if (next) {
+          var from = Number(tiers[currentIdx].fromInr || 0);
+          var to = Number(next.fromInr || from);
+          var pct = Math.min(100, Math.round(((spent - from) / Math.max(1, to - from)) * 100));
+          prog.innerHTML = '<p style="margin-bottom:0.6rem;font-size:0.9rem;color:var(--text-espresso-soft)">₹' + Math.max(0, to - spent).toLocaleString('en-IN') + ' more lifetime spend to reach <strong style="color:var(--text-espresso)">' + String(next.name).replace(/[<>"']/g, '') + '</strong></p>'
             + '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>';
         } else {
-          prog.innerHTML = '<p style="color:var(--accent-berry);font-weight:600">You\'ve reached Gobbler VIP. Thank you for being a loyal gobbler!</p>';
+          prog.innerHTML = '<p style="color:var(--accent-berry);font-weight:600">You are at the top tier. Thank you for gobbling with us!</p>';
+        }
+
+        // Dynamic legend from Console tier names (tenant freedom).
+        var list = document.querySelector('.tier-list');
+        if (list && tiers.length) {
+          var brandColors = ['var(--tag-sage)', 'var(--accent-gold-deep)', 'var(--accent-berry)', 'var(--text-espresso)'];
+          list.innerHTML = tiers.map(function(t, i) {
+            var nm = String(t.name || '').replace(/[<>"']/g, '');
+            var fromInr = Number(t.fromInr || 0);
+            var c = brandColors[i % brandColors.length];
+            var range = fromInr > 0 ? ('₹' + fromInr.toLocaleString('en-IN') + '+ lifetime spend') : 'From your first order';
+            return '<div class="card tier-card"><span class="tier-chip" style="background:' + c + '22; color:' + c + '; border: 1px solid ' + c + '44;">' + nm + (t.isCurrent ? ' ✓' : '') + '</span><div><p class="tier-range">' + range + '</p><p class="tier-perks">' + (t.isCurrent ? 'Your current tier' : 'Lifetime-spend tier · points accrue on every order') + '</p></div></div>';
+          }).join('');
+        }
+
+        // Earn rules dynamic copy.
+        var earnList = document.querySelector('.earn-list');
+        if (earnList && typeof loyalty.earnRate === 'number') {
+          var earnEls = earnList.querySelectorAll('.earn-row');
+          var second = earnEls[1];
+          if (second) {
+            var ptsEl2 = second.querySelector('.earn-pts');
+            var noteEl2 = second.querySelector('.earn-note');
+            if (ptsEl2) ptsEl2.textContent = loyalty.earnRate + ' pts per ₹100';
+            if (noteEl2) noteEl2.textContent = 'Over ₹' + (loyalty.minOrder || 300) + ', automatic on payment';
+          }
         }
       }
 
