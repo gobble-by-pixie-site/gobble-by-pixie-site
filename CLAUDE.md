@@ -283,3 +283,17 @@ order-notes markers parse ONLY via Console `src/lib/order-notes.ts`
 CSP — no competing `public/_headers` CSP; the zone joined the 2026-11-07
 security baseline (DNSSEC Active via the Squarespace DS, DMARC `p=quarantine`
 — see its own section below).
+
+## 2026-11-10 — delivery partner block on /account orders (Console DELIVERY.md §8.6, `3d37993` on main)
+
+The order accordion gained the Delivered-by block: **Delivered by {courier} ·
+AWB · Track live** (berry link, only when Console returned a trackUrl) plus
+the WISMO redirect line — a late-parcel customer calls the COURIER, not the
+store; Reorder/invoice/concierge untouched. Fields flow straight from
+Console's `/api/public/customers/orders` (no mapping layer in this repo);
+they appear when Console books a courier (Shipmozo, Console branch
+`delivery/phase1`) or staff type tracking into the Dispatch panel, and are
+absent otherwise — untracked orders render byte-identically. Gobble
+parchment/berry inline-style tokens. **Verification: live, not inferred** —
+`astro build` clean, production `/account` HTML contains "Delivered by"
+(inline script), prod 200 post-push.
