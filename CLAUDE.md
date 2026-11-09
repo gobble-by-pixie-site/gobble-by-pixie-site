@@ -297,3 +297,31 @@ absent otherwise — untracked orders render byte-identically. Gobble
 parchment/berry inline-style tokens. **Verification: live, not inferred** —
 `astro build` clean, production `/account` HTML contains "Delivered by"
 (inline script), prod 200 post-push.
+
+## 2026-11-10 — nanoliss parity pass (owner: "all tenants should have everything")
+
+`75aefb1` — the full account parity batch, Gobble parchment/berry language:
+- **Rewards tab** (was points/tier/progress only): redeem slot (points →
+  store credit; Console mints the coupon, the shopper pastes it in the
+  checkout credit box), Recent activity ledger (last 10), referral card
+  (code, Copy code, Copy invite link, Share on WhatsApp, counts).
+- **Referral lifecycle**: `/r/[CODE]` invite page (logged-in →
+  `?refPending=`; guest parks `gbp:referralCode` before signup/login) +
+  `/api/account/referral-redeem` + the account redeem loop (retries
+  pending codes). Console validates/issues; referrer's reward lands with
+  their first completed order.
+- **Profile**: phone country selector (17 dials, E.164 assembly — Console
+  derives customer country), birthday (feeds the birthday-coupon cron),
+  marketing consent, save feedback both ways.
+- **Password**: email reset link section (`/api/auth/forgot-password` —
+  new proxy; the storefront never takes a current password).
+- **PDP**: notify-me on sold-out (guest email → `/api/stock-alert` →
+  Console feedback intake, deduped per email+product).
+- **Orders**: payment-method row.
+
+New lib helpers in auth-customer.ts (getReferral/redeemReferral/
+redeemLoyalty/forgotPassword/stockAlert) — callConsole stays private,
+proxies import the helpers like getLoyalty. 13/13 smoke tests. Quiz
+deliberately not wired (owner call). NOTE: signup mints referral codes
+Console-side since 2026-11-10 (welcome email commit) — shared route, no
+per-tenant work.
