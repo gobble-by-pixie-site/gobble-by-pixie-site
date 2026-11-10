@@ -310,8 +310,10 @@ parchment/berry inline-style tokens. **Verification: live, not inferred** —
   `/api/account/referral-redeem` + the account redeem loop (retries
   pending codes). Console validates/issues; referrer's reward lands with
   their first completed order.
-- **Profile**: phone country selector (17 dials, E.164 assembly — Console
-  derives customer country), birthday (feeds the birthday-coupon cron),
+- **Profile**: phone country selector (the FULL calling-code plan - 206
+  calling codes covering all 245 ISO countries, generated into
+  `src/lib/phone-countries.js`; E.164 assembly - Console derives customer
+  country), birthday (feeds the birthday-coupon cron),
   marketing consent, save feedback both ways.
 - **Password**: email reset link section (`/api/auth/forgot-password` —
   new proxy; the storefront never takes a current password).

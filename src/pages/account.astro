@@ -63,7 +63,7 @@ const earnRules = [
           <div class="profile-grid">
             <div><label class="field-label">Full Name</label><input id="p-name" type="text" class="text-field" /></div>
             <div><label class="field-label">Email</label><input id="p-email" type="email" class="text-field" readonly /></div>
-            <div><label class="field-label">Phone</label><span style="display:flex;gap:0.5rem;"><select id="p-dial" class="text-field" style="width:9.5rem;flex:none;" aria-label="Phone country">{PHONE_COUNTRIES.map((c) => (<option value={c.dial} selected={c.dial === '91'}>{c.flag} {c.shortName} +{c.dial}</option>))}</select><input id="p-phone" type="tel" class="text-field" style="flex:1;min-width:0;" /></span></div>
+            <div><label class="field-label">Phone</label><span style="display:flex;gap:0.5rem;flex-wrap:wrap;"><select id="p-dial" class="text-field" style="width:9.5rem;flex:none;" aria-label="Phone country">{PHONE_COUNTRIES.map((c) => (<option value={c.dial} selected={c.dial === '91'}>{c.flag} {c.shortName} +{c.dial}</option>))}</select><input id="p-phone" type="tel" class="text-field" style="flex:1;min-width:0;" /></span></div>
           <div><label class="field-label">Birthday <span style="font-weight:400;color:var(--text-muted)">(optional — we send a little something)</span></label><input id="p-birthday" type="date" class="text-field" /></div>
           <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--text-espresso-soft)"><input id="p-consent" type="checkbox" /> Email me offers and new arrivals (unsubscribe any time)</label>
             <div class="profile-actions">
