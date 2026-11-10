@@ -1,14 +1,17 @@
 /**
  * fetchSiteContent.js
- * Fetches editable site copy from the SiteContent tab of the backend Sheet
- * (published as CSV) at build time — same pattern as fetchProducts.js.
+ * Fetches editable site copy from Linear Console (Settings → Content) at
+ * REQUEST time — SSR: every page that calls this reads Console per request,
+ * so Console edits go live without a rebuild (the 2026-08 cutover).
  *
- * SHEET COLUMNS: key | value | where_it_appears
- * Any key left blank in the Sheet falls back to the hardcoded default below,
- * so a partially-filled Sheet never breaks the site.
+ * PRIMARY: Console site-content home+about merged over FALLBACK_CONTENT.
+ * LEGACY: a Google Sheet CSV overlay (GOOGLE_SITE_CONTENT_CSV_URL) — a
+ * retired path kept working, not the pipeline.
  *
- * Publish: File → Share → Publish to web → CSV → paste URL into
- * GOOGLE_SITE_CONTENT_CSV_URL env var.
+ * FALLBACK_CONTENT holds only evergreen copy (tagline, hero, compliance).
+ * Console-driven surfaces (the banner lines, the newsletter keys) are
+ * deliberately NOT defaulted: empty on Console renders NOTHING — no
+ * hardcoded fallback (owner rule).
  */
 
 const FALLBACK_CONTENT = {
@@ -78,9 +81,14 @@ export async function fetchSiteContent() {
         'byop_eyebrow', 'byop_title', 'byop_sub',
         'best_eyebrow', 'best_title',
         'tagline', 'fulfillment_platters', 'fulfillment_jars',
-        // Announcement sparkle ("" | "on") — Console owns the decision, the
-        // storefront owns the look. Same shape as Mane/Nanoliss bannerSpark.
+        // Announcement sparkle ("" | "on" | "pulse" | "drift" | "marquee" |
+        // "type") — Console owns the animation choice, the storefront owns
+        // the look. Same shape as Mane/Nanoliss bannerSpark.
         'bannerSpark',
+        // The estate newsletter keys (2026-11-10): the footer "First Bites"
+        // box reads THESE — empty on Console = the box renders nothing, no
+        // fallback copy.
+        'newsletterTitle', 'newsletterSub',
         'grazing_table_price', 'fssai_number', 'gstin',
       ];
       if (home) {

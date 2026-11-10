@@ -457,3 +457,25 @@ this repo now carries the SAME build guard as the Tailwind v4 sites:
 If Tailwind is ever adopted here, the CSS entry must carry
 `@custom-variant hover (&:hover);` - the same one-line override the
 nanoliss and TCS repos use.
+
+## 2026-11-10 (evening) — the footer box goes Console-driven + the animation selector
+
+- **"First Bites" reads the estate keys:** the footer newsletter box now
+  renders `home.newsletterTitle`/`home.newsletterSub` (the same pair every
+  storefront takes) with `data-lc` hooks, and renders ONLY when the Console
+  has copy — or under `?livedraft=1`, with `data-lc-empty` placeholders. The
+  hardcoded "First Bites" / "New flavours…" copy is GONE; those words were
+  seeded into the Console as DATA first (linear-console's
+  `scripts/patch-newsletter-seeds.mjs`), so nothing changed visually — they
+  are just editable now, and clearing them removes the box (the feature).
+  `fetchSiteContent`'s allowlist grew the two keys — a key missing there
+  would make the box read empty forever with no error anywhere (the new
+  smoke test pins it). The submit handler is unchanged.
+- **`bannerSpark` is the estate ANIMATION selector:** `""` off | `"on"`
+  shimmer (the legacy value, = the original sweep — no data migration) |
+  `"pulse"` | `"drift"` | `"marquee"` | `"type"`. The accent star shows
+  whenever ANY animation is on; the four new motions live in the scoped
+  style (safe here: Gobble is SSR, every rendered element carries Astro's
+  scope attribute — same reason the original `.banner-shimmer` lives there)
+  and everything goes static under reduced-motion. Guard:
+  `tests/smoke/newsletter-banner.test.mjs` (5 tests, mutation-checked).

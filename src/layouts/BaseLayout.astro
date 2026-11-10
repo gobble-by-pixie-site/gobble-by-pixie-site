@@ -12,7 +12,18 @@ const content = await fetchSiteContent();
 // are byte-identically unaffected.
 const isLivedraft = Astro.url.searchParams.get('livedraft') === '1';
 const bannerLines = [content.fulfillment_platters, content.fulfillment_jars].filter(Boolean);
-const bannerSparkOn = content.bannerSpark === 'on';
+// Animation selector (Console → Home tab → "Announcement animation",
+// 2026-11-10): "" off | "on" shimmer (the LEGACY value, = the original
+// sweep) | "pulse" | "drift" | "marquee" | "type". The accent star shows
+// whenever ANY animation is on; the text class maps the value. Each
+// animation's look lives in the scoped style below, in the house gold.
+const bannerSparkOn = (content.bannerSpark ?? '') !== '';
+const bannerAnimClass = content.bannerSpark === 'on' ? 'banner-shimmer'
+  : content.bannerSpark === 'pulse' ? 'banner-pulse'
+  : content.bannerSpark === 'drift' ? 'banner-drift'
+  : content.bannerSpark === 'marquee' ? 'banner-marquee'
+  : content.bannerSpark === 'type' ? 'banner-type'
+  : undefined;
 
 // Menu dropdown categories are fetched live here (not hardcoded) so that adding
 // a category row to the Products sheet makes it show up in the header nav on
@@ -128,13 +139,13 @@ const ogImage = SITE_URL + '/og-image.jpg';
         </svg>
       )}
       {(content.fulfillment_platters || isLivedraft) && (
-        <span data-lc="home:fulfillment_platters" data-lc-empty="Announcement line 1" class={bannerSparkOn ? 'banner-shimmer' : undefined}>{content.fulfillment_platters}</span>
+        <span data-lc="home:fulfillment_platters" data-lc-empty="Announcement line 1" class={bannerAnimClass}>{content.fulfillment_platters}</span>
       )}
       {content.fulfillment_platters && content.fulfillment_jars && (
         <span class="banner-divider">•</span>
       )}
       {(content.fulfillment_jars || isLivedraft) && (
-        <span data-lc="home:fulfillment_jars" data-lc-empty="Announcement line 2" class={bannerSparkOn ? 'banner-shimmer' : undefined}>{content.fulfillment_jars}</span>
+        <span data-lc="home:fulfillment_jars" data-lc-empty="Announcement line 2" class={bannerAnimClass}>{content.fulfillment_jars}</span>
       )}
     </div>
   )}
@@ -338,10 +349,17 @@ const ogImage = SITE_URL + '/og-image.jpg';
       </div>
 
       <!-- First-bites list — upserts into Console's subscribers table
-           (Settings → Newsletter), same endpoint as nanoliss.com -->
+           (Settings → Newsletter), same endpoint as nanoliss.com. The copy
+           is the ESTATE newsletter keys (home.newsletterTitle/Sub — the same
+           pair every storefront takes): renders ONLY when the Console has
+           copy; empty Console = no box, NO fallback (2026-11-10). The words
+           that were hardcoded here were seeded into the Console as data
+           before this shipped. data-lc hooks make the copy click-to-editable
+           in the Console's vision panel. -->
+      {(content.newsletterTitle || content.newsletterSub || isLivedraft) && (
       <div class="footer-col footer-newsletter">
-        <strong>First Bites</strong>
-        <p class="footer-news-note">New flavours, seasonal platters, zero spam.</p>
+        <strong data-lc="home:newsletterTitle" data-lc-empty="Newsletter heading">{content.newsletterTitle}</strong>
+        <p class="footer-news-note" data-lc="home:newsletterSub" data-lc-empty="Newsletter note">{content.newsletterSub}</p>
         <form id="newsletterForm" novalidate>
           <div class="news-row">
             <input type="email" id="newsletterEmail" placeholder="Email address" autocomplete="email" required />
@@ -352,6 +370,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
           <p class="news-msg" id="newsletterMsg"></p>
         </form>
       </div>
+      )}
     </div>
 
     <div class="container">
@@ -436,6 +455,69 @@ const ogImage = SITE_URL + '/og-image.jpg';
         background: none;
         -webkit-text-fill-color: currentColor;
         color: currentColor;
+      }
+    }
+    /* ─── Announcement animations (selector values, 2026-11-10) ───
+       "on" keeps the ORIGINAL shimmer above; these are the newer motions.
+       Console chooses the pattern; colours/timing stay the house gold.
+       Everything collapses to static text under prefers-reduced-motion. */
+    .banner-pulse {
+      animation: bannerPulse 3.2s ease-in-out infinite;
+    }
+    @keyframes bannerPulse {
+      0%, 100% { opacity: 0.72; text-shadow: none; }
+      50% { opacity: 1; text-shadow: 0 0 12px rgba(212, 175, 55, 0.55); }
+    }
+    .banner-drift {
+      display: inline-block;
+      animation: bannerDrift 5.5s ease-in-out infinite;
+    }
+    @keyframes bannerDrift {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .banner-marquee {
+      display: inline-block;
+      white-space: nowrap;
+      animation: bannerMarquee 11s linear infinite;
+    }
+    /* The strip clips the crawl; the animated span itself stays inline. */
+    .fulfillment-banner:has(.banner-marquee) { overflow: hidden; }
+    @keyframes bannerMarquee {
+      0% { transform: translateX(100vw); }
+      100% { transform: translateX(-100%); }
+    }
+    .banner-type {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      vertical-align: bottom;
+      max-width: 0;
+      border-right: 1px solid var(--accent-gold);
+      padding-right: 2px;
+      /* steps() over max-width: the classic typewriter reveal — discrete
+         jumps that read as letters appearing on proportional text. The
+         caret keeps blinking after the reveal (it reads as "live"). */
+      animation: bannerType 3.2s steps(32, end) forwards,
+        bannerCaret 0.9s step-end infinite;
+    }
+    @keyframes bannerType {
+      from { max-width: 0; }
+      to { max-width: 100%; }
+    }
+    @keyframes bannerCaret {
+      0%, 100% { border-color: var(--accent-gold); }
+      50% { border-color: transparent; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .banner-pulse, .banner-drift, .banner-marquee, .banner-type {
+        animation: none;
+      }
+      .banner-type {
+        max-width: none;
+        border-right: none;
+        padding-right: 0;
       }
     }
     .banner-spark {
