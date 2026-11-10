@@ -390,6 +390,43 @@ it"):
 The old free-text behaviour still works: a shopper who types a full number
 still gets exactly that number. 5 smoke tests.
 
+## 2026-11-10 (later) - "Notify me": the ask could not be made, and it never reached Console
+
+Owner: *"Notify me has email only, and it ships asks to console, should we
+let people type their numbers also? give them an option?"*
+
+**TWO DEFECTS, both measured:**
+
+**1. THE ASK NEVER REACHED CONSOLE.** The helper posted
+`{ type: "back-in-stock" }` while Console's `/api/public/feedback` route only
+ever read `body.kind` — so every ask was refused with a **400** and dropped.
+**Measured on the live table:** the ONLY `back-in-stock` rows in the database
+were **nanoliss's** — the one storefront that sent `kind`. TCS, Gobble and
+Mane had produced **zero** rows, ever.
+
+Console now also accepts `type` as a **legacy alias** (so a storefront
+deployed later cannot silently lose the feature again), and all four
+storefronts send the canonical `kind`.
+
+**2. THE ASK COULD NOT BE MADE AT ALL.** Gobble's product page showed
+**"Sold Out"** and nothing else — there was **no notify form**, and the
+`/api/stock-alert` route was orphaned code nothing called. The form now
+exists on the out-of-stock state: an email **or** a phone (or both).
+
+- the **email** is the universal channel (every tenant has SMTP);
+- the **phone** is served over **WhatsApp**, and only where the tenant has a
+  WhatsApp connection and the approved `backInStock` template — otherwise
+  that channel is skipped and the email still goes.
+
+The phone must be **E.164** (`+919876543210`) — the same rule the customer
+country system uses, because a bare number carries no country code and the
+store would have to **guess** one. The form assembles it from the country
+select (`PHONE_COUNTRIES`) + the national number, and the forgiving rule
+applies: **a value that already starts with `+` IS the number.**
+
+6 new smoke tests (`tests/smoke/stock-alert.test.mjs`), mutation-checked
+(reverting the helper to `type:` turns the suite red).
+
 ## 2026-11-10 (later) - HOVER: this site is NOT affected, and now it cannot become affected
 
 Owner report (on nanoliss.com): "Hover not working - used to work before."

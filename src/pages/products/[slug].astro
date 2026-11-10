@@ -6,6 +6,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { fetchProductBySlug, formatPrice } from '../../lib/fetchProducts.js';
 import { getStoreConfig } from '../../lib/store-config.js';
+import { PHONE_COUNTRIES } from '../../lib/phone-countries.js';
 
 const { slug } = Astro.params;
 const product = slug ? await fetchProductBySlug(slug) : null;
@@ -88,6 +89,29 @@ const SITE = 'https://gobblebypixie.com';
             {product.in_stock ? 'In Stock' : 'Sold Out'}
           </p>
 
+          {/* Out of stock: let the shopper ask to be told when it returns.
+              An email OR a phone (owner ask 2026-11-10) - the email is the
+              universal channel, the phone is served over WhatsApp where the
+              store can send one. Console dedupes per contact + product. */}
+          {!product.in_stock && (
+            <div class="notify-form" data-product-id={product.id}>
+              <p class="notify-label">Tell me when it's back</p>
+              <div class="notify-row">
+                <input id="nf-email" type="email" class="text-field" placeholder="Email (optional)" aria-label="Email for restock alert" />
+                <span class="notify-phone">
+                  <select id="nf-dial" class="text-field" aria-label="Phone country">
+                    {PHONE_COUNTRIES.map((c) => (
+                      <option value={c.dial} selected={c.dial === '91'}>{c.flag} {c.shortName} +{c.dial}</option>
+                    ))}
+                  </select>
+                  <input id="nf-phone" type="tel" inputmode="tel" class="text-field" placeholder="Phone (optional)" aria-label="Phone number for restock alert" />
+                </span>
+              </div>
+              <button id="nf-submit" class="btn btn-primary">Notify me</button>
+              <p id="nf-msg" class="notify-msg" style="display:none;"></p>
+            </div>
+          )}
+
           {whatsappHref && (
           <a href={whatsappHref} class="btn btn-primary" target="_blank" rel="noopener">
             Order on WhatsApp
@@ -121,6 +145,14 @@ const SITE = 'https://gobblebypixie.com';
     .out-of-stock { color: #dc2626; }
     .btn { display: inline-block; text-align: center; padding: 0.85rem 2rem; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.95rem; margin-top: 0.5rem; }
     .btn-primary { background: #25d366; color: #fff; }
+    .notify-form { display: flex; flex-direction: column; gap: 0.5rem; }
+    .notify-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--gold); }
+    .notify-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .notify-row > input[type="email"] { flex: 1 1 12rem; min-width: 0; }
+    .notify-phone { display: flex; gap: 0.5rem; flex: 1 1 14rem; min-width: 0; }
+    .notify-phone select { flex: 0 0 auto; width: 9.5rem; min-width: 0; }
+    .notify-phone input { flex: 1; min-width: 0; }
+    .notify-msg { font-size: 0.85rem; }
   </style>
 
   <script>
@@ -146,6 +178,62 @@ const SITE = 'https://gobblebypixie.com';
         });
       });
       parent.postMessage({ type: "lc-preview-ready", slug: slug }, "*");
+    })();
+  </script>
+
+  {/* The restock ask (owner ask 2026-11-10): an email OR a phone. The
+      phone is assembled from the country select + the national number, and
+      a value that ALREADY starts with "+" is a full E.164 number - use it
+      as it is, or the country code gets doubled. Same rule as the Console's
+      own customer forms and the account page. */}
+  <script>
+    (function () {
+      var form = document.querySelector(".notify-form");
+      if (!form) return;
+      var msg = document.getElementById("nf-msg");
+      var btn = document.getElementById("nf-submit");
+      var productId = form.getAttribute("data-product-id");
+      form.addEventListener("click", async function (e) {
+        var t = e.target;
+        if (!t || t.id !== "nf-submit") return;
+        var email = (document.getElementById("nf-email")?.value || "").trim();
+        var rawPhone = (document.getElementById("nf-phone")?.value || "").trim();
+        var phone = "";
+        if (rawPhone.charAt(0) === "+") {
+          phone = rawPhone.replace(/\s+/g, "");
+        } else {
+          var dial = (document.getElementById("nf-dial")?.value || "91").replace(/^\+/, "");
+          var dg = rawPhone.replace(/\D/g, "").replace(/^0+/, "");
+          phone = dg ? "+" + dial + dg : "";
+        }
+        if (!email && !phone) {
+          if (msg) { msg.textContent = "Add an email or a phone number so we can reach you."; msg.style.display = "block"; msg.style.color = "var(--text-clay, #a33)"; }
+          return;
+        }
+        if (btn) { btn.disabled = true; btn.textContent = "Saving..."; }
+        try {
+          var res = await fetch("/api/stock-alert", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, phone: phone, productId: productId }),
+          });
+          var data = await res.json().catch(function () { return {}; });
+          if (!res.ok) throw new Error(data.error || "Could not save your request.");
+          if (msg) {
+            msg.textContent = phone
+              ? "You're on the list - we'll email and message you the moment it's back."
+              : "You're on the list - we'll email you the moment it's back.";
+            msg.style.display = "block";
+            msg.style.color = "var(--gold)";
+          }
+          var ei = document.getElementById("nf-email"); if (ei) ei.value = "";
+          var pi = document.getElementById("nf-phone"); if (pi) pi.value = "";
+        } catch (err) {
+          if (msg) { msg.textContent = err instanceof Error ? err.message : "Could not save your request."; msg.style.display = "block"; msg.style.color = "var(--text-clay, #a33)"; }
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = "Notify me"; }
+        }
+      });
     })();
   </script>
 </BaseLayout>

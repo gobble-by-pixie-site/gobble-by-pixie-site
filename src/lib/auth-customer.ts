@@ -145,11 +145,20 @@ export function forgotPassword(email: string, resetUrlBase: string) {
   });
 }
 
-export function stockAlert(email: string, productId: string) {
-  // Back-in-stock intake (guest-allowed): Console dedupes per email+product
-  // and the cron emails when the product restocks.
+export function stockAlert(email: string, phone: string, productId: string) {
+  // Back-in-stock intake (guest-allowed): Console dedupes per CONTACT +
+  // product and the cron notifies when the product restocks — by email, and
+  // by WhatsApp where the store can send one.
+  //
+  // `kind` is the key Console reads. This used to send `type:`, which
+  // Console never read, so every ask was refused with a 400 and never
+  // reached the database.
   return callConsole<{ ok: boolean }>("/api/public/feedback", {
     method: "POST",
-    body: { type: "back-in-stock", message: email, context: { productId } },
+    body: {
+      kind: "back-in-stock",
+      message: email,
+      context: phone ? { productId, phone } : { productId },
+    },
   });
 }

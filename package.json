@@ -10,7 +10,7 @@
     "build": "astro build && node scripts/assert-hover-css.mjs dist",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "node --test tests/smoke/site.test.mjs tests/smoke/checkout-address.test.mjs tests/smoke/phone-countries.test.mjs tests/smoke/hover.test.mjs"
+    "test": "node --test tests/smoke/site.test.mjs tests/smoke/checkout-address.test.mjs tests/smoke/phone-countries.test.mjs tests/smoke/hover.test.mjs tests/smoke/stock-alert.test.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.5",
