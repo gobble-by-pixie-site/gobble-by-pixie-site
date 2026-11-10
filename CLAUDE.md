@@ -389,3 +389,34 @@ it"):
 
 The old free-text behaviour still works: a shopper who types a full number
 still gets exactly that number. 5 smoke tests.
+
+## 2026-11-10 (later) - HOVER: this site is NOT affected, and now it cannot become affected
+
+Owner report (on nanoliss.com): "Hover not working - used to work before."
+
+**MEASURED in real Chrome over CDP on the owner's own machine:**
+`matchMedia("(hover: hover)").matches` -> **false**,
+`matchMedia("(pointer: fine)").matches` -> **false**,
+`navigator.maxTouchPoints` -> 10. Chrome reports a **touch-primary pointer**
+there, and Tailwind v4 compiles every `hover:` / `group-hover:` utility
+inside `@media (hover: hover)` - so on a Tailwind site EVERY hover effect
+dies on that machine.
+
+**This site writes plain CSS**, so its `:hover` rules are unconditional and
+hover works here - which is exactly why it never showed the symptom. That
+was a property of the CSS this repo happens to have, not a guarantee, so
+this repo now carries the SAME build guard as the two Tailwind v4 sites:
+
+- `scripts/assert-hover-css.mjs` walks the built CSS and fails if any file
+  contains `@media (hover: hover)`; wired into `npm run build`
+  (`astro build && node scripts/assert-hover-css.mjs dist`), so a regression
+  **cannot ship**.
+- It refuses to pass vacuously: no CSS at all, or zero hover rules in the
+  output, is a failure.
+- Verified by mutation: adding a media-guarded hover rule turns the build
+  red (exit 1).
+- `tests/smoke/hover.test.mjs` is the fast source-level half (2 tests).
+
+If Tailwind is ever adopted here, the CSS entry must carry
+`@custom-variant hover (&:hover);` - the same one-line override the
+nanoliss and TCS repos use.
