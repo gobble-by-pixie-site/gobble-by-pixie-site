@@ -19,7 +19,10 @@ echo "[2/3] Assembling Pages worker (mirrors the CF Pages build command)..."
 cp -r dist/server/chunks dist/client/chunks
 cp dist/server/entry.mjs dist/client/_worker.js
 cp dist/server/virtual_astro_middleware.mjs dist/client/
-rm -f dist/client/wrangler.json dist/server/wrangler.json .wrangler/deploy/config.json
+# DO NOT delete dist/server/wrangler.json — measured 2026-11-06 (mane's
+# README records the same): on this adapter version wrangler HARD-FAILS when
+# the config is missing from the server output. The copy above already put
+# the worker where the deploy step reads it.
 
 echo "[3/3] Deploying to CF Pages project: gobble-by-pixie-site"
 npx wrangler pages deploy dist/client --project-name gobble-by-pixie-site --branch main
