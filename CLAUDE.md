@@ -362,3 +362,30 @@ the whole number stays in the input and the dial keeps its default rather
 than guessing one: 98 would read as Iran, 90 as Türkiye). The dial codes
 come from the SELECT'S OWN OPTIONS, so there is no second copy of the plan
 to fall out of step.
+
+## 2026-11-10 (later) - the SIGNUP form carries the same system, and a pasted number is never doubled
+
+The account profile was fixed first; the SIGNUP form was still a free-text
+phone field with the placeholder "+91 98765 43210". Two measured
+consequences:
+
+- **The shopper had to KNOW to type the country code.** A bare foreign local
+  number ("0501234568" in the UAE) is stored by Console's normaliser as an
+  INDIAN number - the exact class of mislabel this whole system exists to
+  remove, and the reason the country list exists at all.
+- **A pasted full number was DOUBLED on save.** The account's phone field
+  holds the NATIONAL number (the dial is in the select), so pasting
+  "+91 98765 43210" into it produced "+91" + "919876543210".
+
+Both are fixed by ONE rule, and it is the Console's own ("a value that
+already starts with + IS the number; otherwise the picker + the digits make
+it"):
+
+- **The signup form now has the same country select** as the account page
+  (the generated mirror, `src/lib/phone-countries.js`), and assembles
+  `"+" + dial + digits`.
+- **Both the signup and the account save** use a value that starts with "+"
+  as it is, and assemble the rest from the select.
+
+The old free-text behaviour still works: a shopper who types a full number
+still gets exactly that number. 5 smoke tests.

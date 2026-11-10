@@ -477,11 +477,21 @@ const earnRules = [
 
       document.getElementById('save-profile-btn')?.addEventListener('click', function () {
         var name = document.getElementById('p-name')?.value.trim();
-        var phone = document.getElementById('p-phone')?.value.trim();
         var msg = document.getElementById('profile-saved-msg');
-
-        var dial = document.getElementById('p-dial')?.value || '91';
-        if (phone) { var dg = phone.replace(/\D/g, '').replace(/^0+/, ''); if (dg) phone = '+' + dial + dg; }
+        // The phone is assembled from the country select + the national
+        // number. A value that ALREADY starts with "+" is a full E.164
+        // number the shopper pasted - use it as it is, or the country code
+        // gets doubled ("+91" + "919876543210"). Same rule as the Console's
+        // own customer forms, and the same rule as the signup form.
+        var rawPhone = (document.getElementById('p-phone')?.value || '').trim();
+        var phone;
+        if (rawPhone.charAt(0) === '+') {
+          phone = rawPhone.replace(/\s+/g, '');
+        } else {
+          var dial = (document.getElementById('p-dial')?.value || '91').replace(/^\+/, '');
+          var dg = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
+          phone = dg ? '+' + dial + dg : '';
+        }
         fetch('/api/account/profile', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

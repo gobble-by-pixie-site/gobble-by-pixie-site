@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { PHONE_COUNTRIES } from '../lib/phone-countries.js';
 ---
 <BaseLayout title="Create Account — Gobble by Pixie" description="Join Gobble by Pixie Rewards.">
 
@@ -25,7 +26,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
           <div class="form-group">
             <label class="field-label" for="su-phone">Phone Number (For Delivery Updates)</label>
-            <input id="su-phone" type="tel" class="text-field" placeholder="+91 98765 43210" autocomplete="tel" />
+            <!-- Country code + national number, the estate's phone system: the
+                 select holds the calling code, the input holds the national
+                 number, and the save assembles +<dial><national>. Console
+                 derives the customer's country from that prefix, so a shopper
+                 outside India picks their own country instead of the form
+                 guessing one. The list is the generated mirror of the
+                 Console's table (src/lib/phone-countries.js). -->
+            <span style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <select id="su-phone-country" class="text-field" style="width:9.5rem;flex:none;" aria-label="Phone country">
+                {PHONE_COUNTRIES.map((c) => (<option value={c.dial} selected={c.dial === '91'}>{c.flag} {c.shortName} +{c.dial}</option>))}
+              </select>
+              <input id="su-phone" type="tel" class="text-field" style="flex:1;min-width:0;" placeholder="9876543210" autocomplete="tel" />
+            </span>
           </div>
 
           <div class="form-group">
@@ -78,7 +91,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     async function doSignup() {
       var name = document.getElementById('su-name')?.value.trim();
       var email = document.getElementById('su-email')?.value.trim();
-      var phone = document.getElementById('su-phone')?.value.trim();
+      // The phone is assembled from the country select + the national number.
+      // A value that ALREADY starts with "+" is a full E.164 number the
+      // shopper typed - use it as it is, or the country code gets doubled
+      // ("+91" + "919876543210"). Otherwise the select + the digits make it.
+      var rawPhone = (document.getElementById('su-phone')?.value || '').trim();
+      var phone;
+      if (rawPhone.charAt(0) === '+') {
+        phone = rawPhone.replace(/\s+/g, '');
+      } else {
+        var dial = (document.getElementById('su-phone-country')?.value || '91').replace(/^\+/, '');
+        var digits = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
+        phone = digits ? '+' + dial + digits : '';
+      }
       var pass = document.getElementById('su-pass')?.value;
       var errEl = document.getElementById('su-error');
       var btn = document.getElementById('su-btn');

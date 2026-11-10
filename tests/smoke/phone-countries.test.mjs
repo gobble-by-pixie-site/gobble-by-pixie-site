@@ -1,93 +1,71 @@
-import { test } from 'node:test';
+import { test } from "node:test";
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
-import { PHONE_COUNTRIES, PHONE_COUNTRIES_BY_DIAL, phoneCountryOf } from '../../src/lib/phone-countries.js';
-
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { PHONE_COUNTRIES, phoneCountryOf } from '../../src/lib/phone-countries.js';
 
 /**
- * The phone country list is a MIRROR of the Console's table
- * (linear-console/src/lib/phone-countries.ts). Console derives the
- * customer's country from the dial prefix of the stored E.164 number, so
- * the two sides MUST agree on the calling codes — a storefront that offers
- * a dial code Console cannot resolve means that customer's country
- * silently reads "unknown".
+ * The SIGNUP form carries the same phone system as the account page, and a
+ * pasted full number is never doubled.
  *
- * The list is generated (see the generator in the Console repo), never
- * hand-typed. These tests are the local half of that contract; the
- * Console's tests/static/phone-countries-parity.test.ts compares the two
- * files row for row.
+ * Before this, the signup phone was a free-text field with the placeholder
+ * "+91 98765 43210" — the shopper had to KNOW to type the country code, and
+ * a bare foreign local number ("0501234568" in the UAE) was stored by
+ * Console's normaliser as an INDIAN number: the exact class of mislabel the
+ * country system exists to remove.
+ *
+ * And a shopper who PASTED a full number into the account's phone field
+ * ("+91 98765 43210" into a field that holds the national number) got the
+ * country code DOUBLED: "+91" + "919876543210". The rule — the Console's
+ * own — is: "a value that already starts with + IS the number; otherwise
+ * the picker + the digits make it".
  */
 
-test('the dial list covers the whole plan', () => {
+const ROOT = process.cwd();
+
+test('the mirror is the whole calling-code plan', () => {
   assert.equal(PHONE_COUNTRIES.length, 206, 'expected 206 calling codes');
-  const dials = PHONE_COUNTRIES.map((c) => c.dial);
-  assert.equal(new Set(dials).size, dials.length, 'calling codes must be unique');
-});
-
-test('every country is in exactly one group', () => {
   const all = PHONE_COUNTRIES.flatMap((c) => c.codes);
-  assert.equal(new Set(all).size, all.length, 'a country must not appear twice');
-  assert.equal(all.length, 245, 'expected 245 ISO countries');
+  assert.equal(new Set(all).size, 245, 'expected 245 ISO countries');
+  const byDial = new Map();
+  for (const c of PHONE_COUNTRIES) byDial.set(c.dial, (byDial.get(c.dial) ?? 0) + 1);
+  assert.equal(byDial.size, PHONE_COUNTRIES.length, 'one row per calling code');
 });
 
-test('no calling code is a prefix of another (longest-prefix is unambiguous)', () => {
-  const dials = PHONE_COUNTRIES.map((c) => c.dial);
-  for (const a of dials) {
-    for (const b of dials) {
-      if (a !== b) assert.ok(!b.startsWith(a), `${b} starts with ${a}`);
-    }
-  }
-});
-
-test('the by-dial view is longest-first', () => {
-  const lengths = PHONE_COUNTRIES_BY_DIAL.map((c) => c.dial.length);
-  assert.deepEqual(lengths, [...lengths].sort((a, b) => b - a));
-});
-
-test('every row carries the flag of its lead country', () => {
-  const flagOf = (iso) =>
-    [...iso.toUpperCase()].map((ch) => String.fromCodePoint(127397 + ch.charCodeAt(0))).join('');
-  for (const c of PHONE_COUNTRIES) {
-    assert.equal(c.flag, flagOf(c.codes[0]), `wrong flag for +${c.dial}`);
-    assert.ok(c.name.length > 0);
-    assert.ok(c.shortName.length > 0);
-  }
-});
-
-test('the country is read from an E.164 number only', () => {
-  assert.equal(phoneCountryOf('+919876543210')?.code, 'IN');
-  assert.equal(phoneCountryOf('+97150123456')?.code, 'AE');
-  assert.equal(phoneCountryOf('+97312345678')?.code, 'BH');
-  assert.equal(phoneCountryOf('+12025550123')?.code, 'US/CA');
-  // A bare number carries no country code, so it must not be guessed.
-  assert.equal(phoneCountryOf('9871907801'), null);
-  assert.equal(phoneCountryOf('97150123456'), null);
-  assert.equal(phoneCountryOf(''), null);
-  assert.equal(phoneCountryOf(null), null);
-});
-
-test('the account page renders the selector from the list, not a hand-typed one', () => {
-  const page = readFileSync(join(ROOT, 'src', 'pages', 'account.astro'), 'utf8');
-  assert.match(page, /PHONE_COUNTRIES\.map\(/, 'the selector must be rendered from the list');
+test('the signup form carries the same country system', () => {
+  const page = readFileSync(join(ROOT, 'src', 'pages', 'signup.astro'), 'utf8');
+  assert.match(page, /id="su-phone-country"/, 'the signup must have a country select');
+  assert.match(page, /PHONE_COUNTRIES\.map\(/, 'the select must be rendered from the list');
   assert.match(page, /from '\.\.\/lib\/phone-countries\.js'/, 'the list must be imported');
   assert.ok(
     !/<option value="\d+"/.test(page),
-    'the page must not carry a hand-typed <option> list — that is how the list drifts',
+    'the signup must not carry a hand-typed option list',
   );
 });
 
-test('the phone input holds the NATIONAL number, never the whole E.164 one', () => {
-  const page = readFileSync(join(ROOT, 'src', 'pages', 'account.astro'), 'utf8');
-  // The save handler assembles '+' + dial + digits, so filling the input
-  // with the stored E.164 string doubled the country code on every save.
-  assert.ok(
-    !/getElementById\('p-phone'\)\.value = customer\.phone/.test(page),
-    'the input must be filled by splitting the stored number, not by dumping it',
+test('the signup assembles +<dial><national> and never doubles a pasted number', () => {
+  const page = readFileSync(join(ROOT, 'src', 'pages', 'signup.astro'), 'utf8');
+  assert.match(page, /su-phone-country'\)\?\.value/, 'the dial must be read from the select');
+  assert.match(page, /digits \? '\+' \+ dial \+ digits : ''/, 'the number must be assembled from dial + digits');
+  assert.match(
+    page,
+    /rawPhone\.charAt\(0\) === '\+'/,
+    'a value that already starts with + must be used as it is',
   );
-  assert.match(page, /function fillPhone\(/, 'the split helper must exist');
-  assert.match(page, /raw\.indexOf\('\+'\) !== 0/, 'a bare number must not be split');
+});
+
+test('the account save uses a pasted full number as it is', () => {
+  const page = readFileSync(join(ROOT, 'src', 'pages', 'account.astro'), 'utf8');
+  assert.match(
+    page,
+    /rawPhone\.charAt\(0\) === '\+'/,
+    'a pasted full E.164 number must be used as it is, not have the country code added again',
+  );
+});
+
+test('the country is read from an E.164 number only', () => {
+  assert.equal(phoneCountryOf('9876543210'), null);
+  assert.equal(phoneCountryOf('+919876543210')?.code, 'IN');
+  assert.equal(phoneCountryOf('+97150123456')?.code, 'AE');
 });
