@@ -34,7 +34,7 @@ import { resolveStoreConfig } from '../lib/store-config.js';
 
 const navProducts = await fetchProducts();
 const storeConfig = await fetchStoreConfig();
-const { whatsappHref, whatsappDisplay } = resolveStoreConfig(storeConfig);
+const { whatsappHref, whatsappDisplay, freeShippingThreshold } = resolveStoreConfig(storeConfig);
 
 // Cart cross-sells — Console collection 'cross-sells' (per-tenant, owner-editable).
 let crossSells = [];
@@ -198,7 +198,7 @@ const ogImage = SITE_URL + '/og-image.jpg';
   </header>
 
   <!-- Cart Drawer -->
-  <div class="cart-drawer" id="cartDrawer">
+  <div class="cart-drawer" id="cartDrawer" data-ship-threshold={freeShippingThreshold ?? undefined}>
     <div class="cart-drawer-inner">
       <div class="cart-drawer-header">
         <h3>Your Order</h3>
@@ -210,6 +210,10 @@ const ogImage = SITE_URL + '/og-image.jpg';
         <div id="cartCrossSellsRow" class="cart-cross-sells-row"></div>
       </div>
       <div class="cart-footer">
+        {/* Free-shipping nudge — the estate pattern (nanoliss bar, mane
+            message). cart.js fills it from data-ship-threshold + the live
+            total; unset threshold = never rendered, no guessed number. */}
+        <p class="cart-ship-nudge" id="cartShipNudge" style="display:none;"></p>
         <div class="cart-summary" id="cartSummary" style="display:none;">
           <div class="cart-summary-row"><span>Taxable Value</span><span id="cartTaxableValue">₹0</span></div>
           <div class="cart-summary-row"><span>CGST (2.5%)</span><span id="cartCgst">₹0</span></div>
@@ -718,6 +722,9 @@ const ogImage = SITE_URL + '/og-image.jpg';
       transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow: -10px 0 30px rgba(0,0,0,0.15);
     }
     .cart-drawer.open { transform: translateX(0); }
+    /* Free-shipping nudge (estate pattern, 2026-11-10) — filled by the
+       render path from data-ship-threshold + the live total. */
+    .cart-ship-nudge { margin: 0 0 0.65rem; font-size: 0.8rem; color: var(--accent-berry); }
     .cart-drawer-inner { display: flex; flex-direction: column; height: 100%; }
     .cart-drawer-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -1125,6 +1132,21 @@ const ogImage = SITE_URL + '/og-image.jpg';
         cartCgst.textContent = '₹' + gst.cgst.toLocaleString('en-IN');
         cartSgst.textContent = '₹' + gst.sgst.toLocaleString('en-IN');
         cartTotalAmount.textContent = '₹' + gst.total.toLocaleString('en-IN');
+        // Free-shipping nudge — threshold baked on #cartDrawer (Console
+        // store-config). Unset = hidden, never a guessed number.
+        const shipThreshold = Number(document.getElementById('cartDrawer')?.dataset.shipThreshold || 0);
+        const shipNudge = document.getElementById('cartShipNudge');
+        if (shipNudge) {
+          if (shipThreshold > 0 && gst.total >= shipThreshold) {
+            shipNudge.textContent = '✓ Your order ships free.';
+            shipNudge.style.display = 'block';
+          } else if (shipThreshold > 0) {
+            shipNudge.textContent = '₹' + (shipThreshold - gst.total).toLocaleString('en-IN') + ' away from free shipping.';
+            shipNudge.style.display = 'block';
+          } else {
+            shipNudge.style.display = 'none';
+          }
+        }
       }
 
       const _waUrl = window.GobbleCart.checkoutWhatsAppUrl();

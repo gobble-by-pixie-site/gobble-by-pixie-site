@@ -479,3 +479,15 @@ nanoliss and TCS repos use.
   scope attribute — same reason the original `.banner-shimmer` lives there)
   and everything goes static under reduced-motion. Guard:
   `tests/smoke/newsletter-banner.test.mjs` (5 tests, mutation-checked).
+
+## 2026-11-10 (late) — the cart drawer carries the free-shipping nudge
+
+- **Free-shipping nudge** (the estate pattern — nanoliss progress bar, mane
+  message): the drawer reads `freeShippingThreshold` from Console store-config
+  (baked onto #cartDrawer as `data-ship-threshold` — gobble's cart logic is
+  the STATIC public/cart.js, which cannot fetch server data, so the SSR
+  markup carries the number) and shows "₹X away from free shipping." or
+  "✓ Your order ships free." above the summary, on the live GST-inclusive
+  total. Unset threshold in Console = no nudge, never a guessed number.
+- Guard: `tests/smoke/cart-nudge.test.mjs` (registered in npm test,
+  mutation-checked).

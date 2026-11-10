@@ -21,6 +21,16 @@ export function resolveStoreConfig(cfg) {
     whatsappDigits: digits,
     whatsappHref: digits ? `https://wa.me/${digits}` : null,
     whatsappDisplay: digits ? formatWhatsappDisplay(digits) : null,
+    /**
+     * Free-shipping threshold (Console Settings → Business), null when
+     * unset. Drives the cart drawer's "₹X away from free shipping" nudge
+     * (added 2026-11-10, the estate pattern — nanoliss progress bar, mane
+     * message).
+     */
+    freeShippingThreshold:
+      typeof cfg?.freeShippingThreshold === 'number' && cfg.freeShippingThreshold > 0
+        ? cfg.freeShippingThreshold
+        : null,
   };
 }
 
