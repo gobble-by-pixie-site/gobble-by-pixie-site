@@ -323,5 +323,40 @@ New lib helpers in auth-customer.ts (getReferral/redeemReferral/
 redeemLoyalty/forgotPassword/stockAlert) — callConsole stays private,
 proxies import the helpers like getLoyalty. 13/13 smoke tests. Quiz
 deliberately not wired (owner call). NOTE: signup mints referral codes
-Console-side since 2026-11-10 (welcome email commit) — shared route, no
+Console-side since 2026-11-10 (welcome email commit) - shared route, no
 per-tenant work.
+
+## 2026-11-10 - The phone country list is the FULL calling-code plan (+ a doubled-country-code bug)
+
+The profile's country selector was a hand-typed list of **17** dial codes.
+Console derives a customer's COUNTRY from the calling code of their stored
+E.164 phone, so a shopper outside those 17 markets had no country to pick
+and their country read "unknown".
+
+- **`src/lib/phone-countries.js` is the mirror** of the Console's table
+  (linear-console/src/lib/phone-countries.ts): **206 rows, one per CALLING
+  CODE, covering all 245 ISO countries**. A calling code is not a country
+  (+1 covers 25 countries, +7 two), so each row carries the primary
+  country's flag + name and every ISO code in the group.
+- **GENERATED, never hand-typed.** Regenerate with
+  `node scripts/gen-phone-countries.cjs --mirror <repo>/src/lib/phone-countries.js`
+  from the linear-console repo. The Console's
+  `tests/static/phone-countries-parity.test.ts` compares the two files row
+  for row; this repo's `tests/smoke/phone-countries.test.mjs` is the local
+  half.
+- **The page renders the options from the list** (`PHONE_COUNTRIES.map` in
+  `src/pages/account.astro`) and the label is `flag + country + dial`
+  ("🇮🇳 India +91"). The select widened 7.5rem -> 9.5rem for the longer
+  labels.
+
+**THE BUG THIS FOUND: every profile save DOUBLED the country code.** The
+input was filled with the whole stored E.164 string (`p-phone`.value =
+`customer.phone` -> "+919876543210") while the save handler assembles
+`'+' + dial + digits` - so saving a profile to change a NAME rewrote the
+phone to "+91919876543210". `fillPhone()` now splits the stored number
+into the dial select and the national number in the input (longest-prefix,
+and only for an explicit "+" - a bare number carries no country code, so
+the whole number stays in the input and the dial keeps its default rather
+than guessing one: 98 would read as Iran, 90 as Türkiye). The dial codes
+come from the SELECT'S OWN OPTIONS, so there is no second copy of the plan
+to fall out of step.
