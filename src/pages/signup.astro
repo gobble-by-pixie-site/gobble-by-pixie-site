@@ -35,7 +35,7 @@ import { PHONE_COUNTRIES } from '../lib/phone-countries.js';
                  Console's table (src/lib/phone-countries.js). -->
             <span style="display:flex;gap:0.5rem;flex-wrap:wrap;">
               <select id="su-phone-country" class="text-field" style="width:9.5rem;flex:none;" aria-label="Phone country">
-                {PHONE_COUNTRIES.map((c) => (<option value={c.dial} selected={c.dial === '91'}>{c.flag} {c.shortName} +{c.dial}</option>))}
+                {PHONE_COUNTRIES.map((c) => (<option value={c.dial} selected={c.dial === '91'}>{c.flag} {c.name} +{c.dial}</option>))}
               </select>
               <input id="su-phone" type="tel" class="text-field" style="flex:1;min-width:0;" placeholder="9876543210" autocomplete="tel" />
             </span>

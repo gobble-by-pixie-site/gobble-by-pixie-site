@@ -101,7 +101,7 @@ const SITE = 'https://gobblebypixie.com';
                 <span class="notify-phone">
                   <select id="nf-dial" class="text-field" aria-label="Phone country">
                     {PHONE_COUNTRIES.map((c) => (
-                      <option value={c.dial} selected={c.dial === '91'}>{c.flag} {c.shortName} +{c.dial}</option>
+                      <option value={c.dial} selected={c.dial === '91'}>{c.flag} {c.name} +{c.dial}</option>
                     ))}
                   </select>
                   <input id="nf-phone" type="tel" inputmode="tel" class="text-field" placeholder="Phone (optional)" aria-label="Phone number for restock alert" />
