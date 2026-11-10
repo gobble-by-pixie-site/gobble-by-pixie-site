@@ -442,12 +442,12 @@ dies on that machine.
 **This site writes plain CSS**, so its `:hover` rules are unconditional and
 hover works here - which is exactly why it never showed the symptom. That
 was a property of the CSS this repo happens to have, not a guarantee, so
-this repo now carries the SAME build guard as the two Tailwind v4 sites:
+this repo now carries the SAME build guard as the Tailwind v4 sites:
 
-- `scripts/assert-hover-css.mjs` walks the built CSS and fails if any file
-  contains `@media (hover: hover)`; wired into `npm run build`
-  (`astro build && node scripts/assert-hover-css.mjs dist`), so a regression
-  **cannot ship**.
+- `scripts/assert-hover-css.mjs` walks the built CSS and fails if a
+  **Tailwind hover utility** is gated behind `@media (hover: hover)`; wired
+  into `npm run build` (`astro build && node scripts/assert-hover-css.mjs
+  dist`), so a regression **cannot ship**.
 - It refuses to pass vacuously: no CSS at all, or zero hover rules in the
   output, is a failure.
 - Verified by mutation: adding a media-guarded hover rule turns the build
