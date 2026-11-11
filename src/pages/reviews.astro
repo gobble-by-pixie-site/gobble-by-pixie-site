@@ -1,0 +1,177 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getSessionCustomer } from "../lib/auth-session";
+
+export const prerender = false;
+
+// Reviews bridge (2026-11-11) — ported from nanoliss.com, adapted for
+// gobble: there are no product pages here (the menu opens a quick-view
+// modal), so THIS page hosts the review forms themselves — one per ordered
+// item, inline. The review-request cron emails a CTA to
+// /reviews?order=<number>; this page is that landing target, which never
+// existed. Writing is session-gated (identity comes from the gbp_session
+// cookie via the /api/reviews proxy — Console resolves the verified
+// identity itself). Deliberately noindex: utility page, not content.
+
+const customer = await getSessionCustomer(Astro.cookies);
+const prefillOrder = Astro.url.searchParams.get("order") ?? "";
+---
+
+<BaseLayout title="Leave a review — Gobble by Pixie">
+  <slot name="head">
+    <meta name="robots" content="noindex" />
+  </slot>
+
+  <main style="max-width:640px;margin:0 auto;padding:3rem 1.25rem 5rem;min-height:70vh">
+    <div style="text-align:center;margin-bottom:2.5rem">
+      <p style="text-transform:uppercase;letter-spacing:0.14em;font-size:0.72rem;color:#8a7f6e;margin-bottom:0.75rem">Reviews</p>
+      <h1 style="font-size:clamp(1.8rem,5vw,2.6rem);margin:0 0 0.75rem">How was everything?</h1>
+      {
+        customer ? (
+          <p style="color:#6b6154;font-size:0.92rem;line-height:1.6">
+            Your recent orders are below — rate the platters you tried. Reviews appear after a quick moderation pass.
+          </p>
+        ) : (
+          <p style="color:#6b6154;font-size:0.92rem;line-height:1.6">
+            Log in with the account you ordered with — reviews are tied to real orders, so they stay honest.
+          </p>
+        )
+      }
+    </div>
+
+    {
+      !customer && (
+        <div style="border:1px solid #e2dacd;border-radius:12px;padding:2rem;text-align:center;max-width:480px;margin:0 auto;background:#fff">
+          <p style="font-size:1.15rem;margin:0 0 1rem;font-weight:600">Tried us? Tell us honestly.</p>
+          <a href="/login?next=/reviews" class="btn btn-primary" style="text-decoration:none">Log in to review</a>
+        </div>
+      )
+    }
+
+    {
+      customer && (
+        <div id="review-orders">
+          <p id="review-orders-loading" style="color:#a39a8a;font-size:0.9rem;text-align:center">Loading your orders…</p>
+        </div>
+      )
+    }
+  </main>
+</BaseLayout>
+
+{
+  customer && (
+    <script>
+      (async () => {
+      const wrap = document.getElementById("review-orders");
+      if (!wrap) return;
+      const highlight = new URLSearchParams(window.location.search).get("order") ?? "";
+
+      function escapeHTML(s) {
+        return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function escapeAttr(s) {
+        return escapeHTML(s).replace(/'/g, "&#39;");
+      }
+
+      try {
+        const res = await fetch("/api/account/orders");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not load orders.");
+        const orders = Array.isArray(data.orders) ? data.orders : [];
+        if (orders.length === 0) {
+          wrap.innerHTML =
+            '<p style="color:#6b6154;font-size:0.9rem;text-align:center;border:1px solid #e2dacd;border-radius:12px;padding:2rem;background:#fff">No orders yet — once your first order is delivered, its platters will show up here for review.</p>';
+          return;
+        }
+        wrap.innerHTML = orders
+          .map((o) => {
+            const items = (o.items ?? [])
+              .map((it, idx) => {
+                const formId = "rv-" + o.orderNumber.replace(/[^a-zA-Z0-9]/g, "") + "-" + idx;
+                return (
+                  '<div style="border-top:1px solid #eee7dc;padding:1rem 0">' +
+                  '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">' +
+                  (it.image ? '<img src="' + escapeAttr(it.image) + '" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:8px" loading="lazy" />' : "") +
+                  '<span style="flex:1;font-size:0.92rem">' + escapeHTML(it.productName) + (it.qty > 1 ? " × " + it.qty : "") + "</span>" +
+                  "</div>" +
+                  '<form id="' + formId + '" data-product="' + escapeAttr(it.productId ?? "") + '" style="display:flex;flex-direction:column;gap:0.6rem">' +
+                  '<div class="rating-stars" style="display:flex;gap:0.25rem;font-size:1.4rem;color:#d8d0c2;cursor:pointer">' +
+                  [1, 2, 3, 4, 5].map(function (n) {
+                    return '<span data-rating="' + n + '" role="button" aria-label="' + n + ' star' + (n > 1 ? "s" : "") + '">&#9733;</span>';
+                  }).join("") +
+                  "</div>" +
+                  '<textarea required minlength="20" rows="2" placeholder="At least 20 characters — how did it taste, texture, packaging?"' +
+                  ' style="border:1px solid #d8d0c2;border-radius:8px;padding:0.6rem 0.75rem;font-size:0.88rem;font-family:inherit;background:#fff"></textarea>' +
+                  '<div style="display:flex;align-items:center;gap:0.75rem">' +
+                  '<button type="submit" class="btn btn-primary" style="padding:0.5rem 1.1rem;font-size:0.8rem">Submit review</button>' +
+                  '<span class="rv-msg" style="font-size:0.8rem;color:#6b6154"></span>' +
+                  "</div>" +
+                  "</form>" +
+                  "</div>"
+                );
+              })
+              .join("");
+            const isHighlighted = highlight && o.orderNumber === highlight;
+            return '<section style="border:' + (isHighlighted ? "1.5px solid #7a9a5e" : "1px solid #e2dacd") + ';border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;background:#fff"' + (isHighlighted ? ' id="highlighted-order"' : "") + ">" +
+              '<div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0.5rem;margin-bottom:0.5rem">' +
+              '<p style="font-size:0.92rem;font-weight:600;margin:0">' + escapeHTML(o.orderNumber) + "</p>" +
+              '<span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:#a39a8a">' + escapeHTML(o.status) + (o.deliveredAt ? " · delivered" : "") + "</span>" +
+              "</div>" +
+              items +
+              "</section>";
+          })
+          .join("");
+
+        // Wire the inline forms: star select + submit per item.
+        wrap.querySelectorAll("form[data-product]").forEach(function (form) {
+          const starsBox = form.querySelector(".rating-stars");
+          let rating = 0;
+          starsBox.querySelectorAll("span[data-rating]").forEach(function (s) {
+            s.addEventListener("click", function () {
+              rating = Number(s.dataset.rating);
+              starsBox.querySelectorAll("span").forEach(function (x) {
+                x.style.color = Number(x.dataset.rating) <= rating ? "#c9a227" : "#d8d0c2";
+              });
+            });
+          });
+          form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const msg = form.querySelector(".rv-msg");
+            const ta = form.querySelector("textarea");
+            const btn = form.querySelector('button[type="submit"]');
+            function say(t) { if (msg) msg.textContent = t; }
+            if (rating < 1) { say("Pick a star rating first."); return; }
+            const body = (ta.value || "").trim();
+            if (body.length < 20) { say("At least 20 characters, please."); return; }
+            if (btn) { btn.disabled = true; btn.textContent = "Submitting…"; }
+            try {
+              const r = await fetch("/api/reviews", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ productId: form.dataset.product, rating: rating, body: body }),
+              });
+              const d = await r.json().catch(function () { return {}; });
+              if (!r.ok) { say(d.error || "Could not submit — try again."); return; }
+              say("Thank you — it will appear once approved.");
+              ta.value = "";
+              rating = 0;
+              starsBox.querySelectorAll("span").forEach(function (x) { x.style.color = "#d8d0c2"; });
+            } catch (err) {
+              say("Could not submit right now — try again in a moment.");
+            } finally {
+              if (btn) { btn.disabled = false; btn.textContent = "Submit review"; }
+            }
+          });
+        });
+
+        const el = document.getElementById("highlighted-order");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } catch (e) {
+        if (wrap)
+          wrap.innerHTML =
+            '<p style="color:#6b6154;font-size:0.9rem;text-align:center;border:1px solid #e2dacd;border-radius:12px;padding:2rem;background:#fff">Could not load your orders — refresh to try again.</p>';
+      }
+      })();
+    </script>
+  )
+}
