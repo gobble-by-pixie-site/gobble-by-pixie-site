@@ -77,7 +77,13 @@
   }
 </style>
 
-<script is:inline define:vars={{ WA }}>
+<script is:inline>
+  // `define:vars={{ WA }}` used to sit here while the component had NO WA
+  // in its frontmatter — evaluating it threw on EVERY render, which took
+  // down every page that renders this modal (all menu category pages →
+  // the site's own 404). The script reads window.GOBBLE_WHATSAPP_HREF
+  // (set by BaseLayout) directly; WhatsApp is Business-only, no fallback.
+  // (2026-11-12, found via the notify-me work.)
   (function () {
     const backdrop = document.getElementById('productModalBackdrop');
     const closeBtn = document.getElementById('modalCloseBtn');

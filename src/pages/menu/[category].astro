@@ -175,8 +175,15 @@ const products = allProducts.filter((p) => p.category === category);
     }
   </style>
 
-  <script is:inline define:vars={{ waBase: WA }}>
+  <script is:inline>
+    // WhatsApp is Business-only via window.GOBBLE_WHATSAPP_HREF (set by
+    // BaseLayout) — read at SEND time, never captured at parse time. This
+    // script previously referenced an undefined frontmatter `WA`, which
+    // threw on every render and turned the whole category route into a 404
+    // (found 2026-11-12 via the notify-me work; the error only surfaced as
+    // the site's own Page-Not-Found page, never as a build failure).
     function sendViaWhatsApp(text) {
+      var waBase = (typeof window !== "undefined" && window.GOBBLE_WHATSAPP_HREF) || null;
       if (!waBase) return;
       window.open(waBase + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
     }
