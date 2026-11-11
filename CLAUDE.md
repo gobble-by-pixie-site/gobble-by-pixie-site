@@ -157,14 +157,20 @@ announcements, same as Mane/Nanoliss):
   invoice in the body; `escHtml()` on every Console string. The
   `.order-card` chevron CSS lives in global.css (runtime innerHTML — §A12).
 - **Deps current**: RESOLVED 2026-11-06 (`8ab2e4c`, deployment `e201234d`
-  success). Gobble's Pages `NODE_VERSION` was already 22.23.4 (API-verified
-  2026-11-06, no-op) — the repo pin/lock were what lagged. astro 7.4.7 +
+  success), then bumped again 2026-11-11 (`cb9d609`): astro 7.4.10 +
+  @astrojs/cloudflare 14.4.7 + wrangler 4.160.0, deployment
+  `d62f32ce-281f-4e1f-bc38-a7bf67d543c0`, check-run `completed / success`.
+  Gobble's Pages `NODE_VERSION` was already 22.23.4 (API-verified
+  2026-11-06, no-op) - the repo pin/lock were what lagged. astro 7.4.7 +
   @astrojs/cloudflare 14.4.6 (patch line over the 7.4.6/14.4.5 security
   pass) re-landed; repo `.node-version`/`engines` bumped to 22.23.4; lock
   gate verified (npm ci --dry-run clean, 26/26 @esbuild variants, audit 0
   after fast-uri 3.1.6→3.1.9 in the dev-only ajv chain). 13/13 smoke green,
-  build Complete. wrangler here is TRANSITIVE (no manifest entry) - no bump
-  until the chain moves.
+  build Complete. **Correction to an earlier note in this file:** wrangler is
+  NOT transitive here — it IS a manifest entry (`"wrangler": "^4.116.0"` in
+  `devDependencies`, added 2026-07-30 in `01f5e68`), so it can be bumped
+  directly. The nested `4.156.1` copy under `@cloudflare/vite-plugin` is the
+  transitive one; the root `node_modules/wrangler` is 4.160.0.
 - **Announcement banner is live estate-default** (see 2026-11-05 section):
   bannerSpark seeded "on" (`patch-gobble-banner-spark.mjs`), glyphs gone,
   orders page verified.
@@ -491,3 +497,75 @@ nanoliss and TCS repos use.
   total. Unset threshold in Console = no nudge, never a guessed number.
 - Guard: `tests/smoke/cart-nudge.test.mjs` (registered in npm test,
   mutation-checked).
+
+## 2026-11-11 — dependency bump (astro 7.4.10 / @astrojs/cloudflare 14.4.7 / wrangler 4.160.0) and the npm lesson
+
+`cb9d609` — lockfile-only, no source change. astro 7.4.7 → **7.4.10**,
+`@astrojs/cloudflare` 14.4.6 → **14.4.7**, wrangler → **4.160.0**. The
+manifest ranges were NOT touched (`astro: "^7.4.6"`, `@astrojs/cloudflare:
+"^14.4.5"`, `wrangler: "^4.116.0"`) — every new version already sat inside
+the declared caret range, so this was an in-range bump.
+
+**Verified build:** the `Cloudflare Pages` check-run on `cb9d609` is
+`completed / success`, deployment `d62f32ce-281f-4e1f-bc38-a7bf67d543c0`.
+
+### `npm install --package-lock-only` is a NO-OP for an in-range bump
+
+It prints "up to date" and moves NOTHING: npm keeps the locked version
+whenever it already satisfies the caret range in `package.json`. The working
+verb is:
+
+```
+npx -y npm@10 update <pkg> --package-lock-only
+```
+
+For a **range change** the order is different — edit `package.json` FIRST,
+then regen with `install --package-lock-only`.
+
+### Verify the resolved version in the LOCKFILE, not with `npm ls`
+
+`npm ls` reads `node_modules`, which is stale until you actually install — it
+will happily report the OLD version after a successful lockfile regen. Read
+the resolved version out of `package-lock.json` instead.
+
+### npm@10 vs npm@11 — the `libc` divergence is real, and the strip is CORRECT
+
+npm 11 writes `"libc": ["glibc"]/["musl"]` onto optional platform packages;
+npm@10 strips that field. The npm@10 flavour is what the ARM box needs, so
+the strip is CORRECT — the lockfile diff looks alarming and is NOT a
+regression. Regenerate with npm@10 (`npx -y npm@10 …`).
+
+### `npm ls --all` "extraneous" wasm packages are pre-existing Windows noise
+
+`npm ls --all` reports "extraneous" wasm packages (`@emnapi/*`,
+`@img/sharp-wasm32`, `@napi-rs/wasm-runtime`, `@tybys/wasm-util`) on
+Windows. These are PRE-EXISTING npm-on-Windows noise, not a defect — prove
+it by comparing against HEAD's lockfile, then move on.
+
+### THIS repo's own 2026-10-29 incident — the check-run on the commit IS the verification
+
+**This is the lesson this bump re-learned, and gobble paid for it first.**
+On 2026-10-27 an astro bump (`3bb5fa5`, astro 7.4.2 + @astrojs/cloudflare
+14.4.2) **built clean locally and FAILED in Cloudflare's Linux builder** —
+the check-run on that commit is `completed / failure`, deployment
+`3c63f141-53d3-4b74-90b9-3a4e0cd55dc3`. The next push (`cfb9b46`, a
+menu/cart fix) inherited the same red lockfile and failed too
+(`47088500-43a9-46a0-afc7-8af6135c4682`), as did the empty retrigger
+(`6f9d83d`, `89185ffe-110a-4d46-9e64-db995468c465`).
+
+**Because the verification was "does the live page still contain a marker",
+the failure went UNNOTICED for a day** — the old site kept serving, and every
+marker was still present. It surfaced only when someone looked at the
+build: the lock was reverted (`f12c808`, green again — `c9dbf8fa-…`), the
+Node pin was blamed and moved to 22.22.0 (`381037c`, red again —
+`0d15e81a-…`), and the bump was abandoned (`e95a35d`, green —
+`e8844826-…`). Three reds across two Node pins, all read off the check-runs.
+
+**THE RULE, now estate policy: the check-run on the commit IS the
+verification** — and for gobble it IS readable via `gh`
+(`gh api repos/gobble-by-pixie-site/gobble-by-pixie-site/commits/<sha>/check-runs`).
+**A live-site marker is NOT build proof:** the edge can serve the previous
+build for minutes after a deploy (`cf-cache-status: HIT` plus an old
+`last-modified`), and when the build FAILS the previous build is what keeps
+serving — which is exactly why the marker check stayed green through a day
+of red builds.
