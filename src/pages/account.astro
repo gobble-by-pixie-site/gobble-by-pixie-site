@@ -49,7 +49,7 @@ const earnRules = [
 
     <div class="tabs-bar">
       <div class="container tabs-inner">
-        {['Profile', 'Orders', 'Rewards', 'Addresses'].map((tab) => (
+        {['Profile', 'Orders', 'Concierge', 'Rewards', 'Addresses'].map((tab) => (
           <button class="tab-btn" data-tab={tab.toLowerCase()}>{tab}</button>
         ))}
       </div>
@@ -87,6 +87,15 @@ const earnRules = [
       <!-- ORDERS TAB -->
       <div id="tab-orders" class="tab-pane" style="display:none;">
         <div id="orders-list"></div>
+      </div>
+
+      <!-- CONCIERGE TAB (2026-11-12, owner: "Gobble Concierge — let's do
+           it") — the shopper-side chat, same Console channel as nanoliss
+           and TCS: one open conversation, closed history stays readable,
+           the next message opens a new one. Text only; attachments are a
+           TCS-panel feature. -->
+      <div id="tab-concierge" class="tab-pane" style="display:none;">
+        <div id="concierge-root"></div>
       </div>
 
       <!-- ADDRESSES TAB — Console is the store; the wishlist/orders/rewards
@@ -825,3 +834,199 @@ const earnRules = [
   </script>
 </BaseLayout>
 
+
+<!-- ════════ CONCIERGE (2026-11-12) ════════ -->
+<script>
+  // The shopper-side concierge, gobble edition: one open conversation,
+  // closed history stays readable, the next message opens a new one.
+  // Same Console channel as nanoliss/TCS through the same-origin proxies
+  // under /api/account/concierge*. Text only. The rating card appears
+  // after the shopper ends a conversation — skippable, one per thread.
+  (function () {
+    var root = document.getElementById('concierge-root');
+    var loadedOnce = false;
+
+    function esc(s) {
+      var d = document.createElement('div');
+      d.textContent = String(s == null ? '' : s);
+      return d.innerHTML;
+    }
+    function rel(iso) {
+      if (!iso) return '';
+      var m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+      if (m < 1) return 'now';
+      if (m < 60) return m + 'm';
+      var h = Math.floor(m / 60);
+      if (h < 24) return h + 'h';
+      return Math.floor(h / 24) + 'd';
+    }
+
+    async function api(path, opts) {
+      var res = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts || {}));
+      var data = await res.json().catch(function () { return {}; });
+      return { ok: res.ok, status: res.status, data: data };
+    }
+
+    function messageRow(m) {
+      var mine = m.direction === 'customer';
+      return '<div style="display:flex;justify-content:' + (mine ? 'flex-end' : 'flex-start') + ';margin:0.4rem 0">'
+        + '<div style="max-width:82%;padding:0.55rem 0.8rem;border-radius:10px;font-size:0.9rem;line-height:1.45;'
+        + (mine ? 'background:var(--accent-berry,#b04a5a);color:#fff' : 'background:#f3efe8;color:#3d3831') + '">'
+        + esc(m.text) +
+        '<div style="font-size:0.64rem;opacity:0.65;margin-top:0.25rem;text-align:' + (mine ? 'right' : 'left') + '">'
+        + (m.authorName && !mine ? esc(m.authorName) + ' · ' : '') + rel(m.createdAt) + '</div>'
+        + '</div></div>';
+    }
+
+    function csatCard(threadId) {
+      var card = document.createElement('div');
+      card.id = 'gbp-csat';
+      card.style.cssText = 'border:1px solid #e2dacd;border-radius:12px;padding:1rem;margin-bottom:1rem;background:#fff';
+      card.innerHTML = '<p style="font-weight:600;font-size:0.9rem;margin:0 0 0.4rem">How was this conversation?</p>'
+        + '<div id="gbp-csat-stars" style="font-size:1.3rem;color:#d8d0c2;cursor:pointer;margin-bottom:0.5rem">'
+        + [1,2,3,4,5].map(function (n) { return '<span data-r="' + n + '" style="padding:0 0.1rem">&#9733;</span>'; }).join('')
+        + '</div>'
+        + '<textarea id="gbp-csat-comment" rows="2" placeholder="Anything to add? (optional)"'
+        + ' style="width:100%;border:1px solid #d8d0c2;border-radius:8px;padding:0.5rem 0.7rem;font-size:0.85rem;font-family:inherit"></textarea>'
+        + '<div style="display:flex;gap:0.75rem;align-items:center;margin-top:0.5rem">'
+        + '<button type="button" id="gbp-csat-send" class="btn btn-primary" style="padding:0.45rem 1rem;font-size:0.78rem">Send</button>'
+        + '<button type="button" id="gbp-csat-skip" style="background:none;border:none;color:#8a7f6e;text-decoration:underline;font-size:0.78rem;cursor:pointer">No thanks</button>'
+        + '<span id="gbp-csat-msg" style="font-size:0.78rem;color:#6b6154"></span></div>';
+      var rating = 0;
+      var stars = card.querySelectorAll('#gbp-csat-stars span');
+      stars.forEach(function (st) {
+        st.addEventListener('click', function () {
+          rating = Number(st.dataset.r);
+          stars.forEach(function (x) { x.style.color = Number(x.dataset.r) <= rating ? '#c9a227' : '#d8d0c2'; });
+        });
+      });
+      card.querySelector('#gbp-csat-skip').addEventListener('click', function () { card.remove(); });
+      card.querySelector('#gbp-csat-send').addEventListener('click', async function () {
+        var msg = card.querySelector('#gbp-csat-msg');
+        var btn = card.querySelector('#gbp-csat-send');
+        if (rating < 1) { msg.textContent = 'Pick a star rating first.'; return; }
+        btn.disabled = true; btn.textContent = 'Sending…';
+        var out = await api('/api/account/concierge/csat', { method: 'POST', body: JSON.stringify({ threadId: threadId, rating: rating, comment: card.querySelector('#gbp-csat-comment').value.trim() }) });
+        btn.disabled = false; btn.textContent = 'Send';
+        if (!out.ok) { msg.textContent = out.data.error || 'Could not send.'; return; }
+        msg.textContent = 'Thank you — noted.';
+        card.querySelector('#gbp-csat-stars').remove();
+        card.querySelector('#gbp-csat-comment').remove();
+        btn.remove();
+      });
+      return card;
+    }
+
+    function render(data) {
+      var open = data.thread;
+      var messages = data.messages || [];
+      var viewingClosed = data.viewing && (!open || data.viewing.id !== open.id);
+      var html = '';
+      html += '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:0.75rem">'
+        + '<h3 style="margin:0;font-size:1.05rem">Concierge</h3>'
+        + (open ? '<span style="font-size:0.72rem;color:#8a7f6e">Open · ' + esc(open.reference) + '</span>'
+                : '<span style="font-size:0.72rem;color:#8a7f6e">No open conversation</span>')
+        + '</div>';
+      html += '<div id="gbp-chat-box" style="border:1px solid #e2dacd;border-radius:12px;background:#fff;padding:1rem;min-height:180px;max-height:420px;overflow-y:auto">';
+      if (viewingClosed) {
+        html += '<p style="font-size:0.78rem;color:#8a7f6e;margin:0 0 0.5rem">Reading closed conversation ' + esc(data.viewing.reference) + ' — the composer belongs to a new one.</p>';
+      }
+      if (messages.length === 0) {
+        html += '<p style="color:#8a7f6e;font-size:0.88rem;margin:1rem 0;text-align:center">Ask about platters, delivery, custom builds — a real person answers here.</p>';
+      } else {
+        html += messages.map(messageRow).join('');
+      }
+      html += '</div>';
+
+      if (open) {
+        html += '<div style="display:flex;gap:0.6rem;margin-top:0.75rem;align-items:flex-start">'
+          + '<textarea id="gbp-msg" rows="2" maxlength="4000" placeholder="Write a message…"'
+          + ' style="flex:1;border:1px solid #d8d0c2;border-radius:10px;padding:0.6rem 0.8rem;font-size:0.9rem;font-family:inherit;background:#fff"></textarea>'
+          + '<button type="button" id="gbp-send" class="btn btn-primary" style="padding:0.6rem 1.1rem">Send</button>'
+          + '</div>'
+          + '<div style="margin-top:0.5rem"><button type="button" id="gbp-end" style="background:none;border:none;color:#8a7f6e;text-decoration:underline;font-size:0.75rem;cursor:pointer">End this conversation</button></div>';
+      } else {
+        html += '<div style="display:flex;gap:0.6rem;margin-top:0.75rem;align-items:flex-start">'
+          + '<textarea id="gbp-msg" rows="2" maxlength="4000" placeholder="Start a conversation — your first message opens it."'
+          + ' style="flex:1;border:1px solid #d8d0c2;border-radius:10px;padding:0.6rem 0.8rem;font-size:0.9rem;font-family:inherit;background:#fff"></textarea>'
+          + '<button type="button" id="gbp-send" class="btn btn-primary" style="padding:0.6rem 1.1rem">Send</button>'
+          + '</div>';
+      }
+
+      var closed = (data.threads || []).filter(function (t) { return !open || t.id !== open.id; });
+      if (closed.length) {
+        html += '<div style="margin-top:1.25rem"><p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:0.4rem">Past conversations</p>'
+          + closed.map(function (t) {
+              return '<button type="button" data-thread="' + esc(t.id) + '" style="display:flex;justify-content:space-between;width:100%;background:none;border:none;border-bottom:1px solid #f0ebe2;padding:0.5rem 0;cursor:pointer;font-size:0.85rem;text-align:left">'
+                + '<span style="color:#3d3831">' + esc(t.reference) + '</span>'
+                + '<span style="color:#8a7f6e;font-size:0.75rem">' + esc(t.status) + ' · ' + rel(t.lastMessageAt) + '</span></button>';
+            }).join('') + '</div>';
+      }
+
+      root.innerHTML = html;
+
+      var sendBtn = document.getElementById('gbp-send');
+      var msgEl = document.getElementById('gbp-msg');
+      async function send() {
+        var text = (msgEl.value || '').trim();
+        if (!text) return;
+        sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+        var out = await api('/api/account/concierge/send', { method: 'POST', body: JSON.stringify({ text: text }) });
+        sendBtn.disabled = false; sendBtn.textContent = 'Send';
+        if (!out.ok) {
+          msgEl.insertAdjacentHTML('beforebegin', '<p style="color:#8a3b2e;font-size:0.8rem;margin:0 0 0.4rem">' + esc(out.data.error || 'Could not send.') + '</p>');
+          return;
+        }
+        await load();
+      }
+      sendBtn.addEventListener('click', send);
+      msgEl.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+      var endBtn = document.getElementById('gbp-end');
+      if (endBtn) {
+        endBtn.addEventListener('click', async function () {
+          if (!confirm('End this conversation? Your next message will start a new one. Nothing is deleted.')) return;
+          var threadId = open ? open.id : null;
+          var out = await api('/api/account/concierge/close', { method: 'POST' });
+          if (!out.ok) return;
+          await load();
+          if (threadId) {
+            var box = document.getElementById('gbp-chat-box');
+            if (box) box.insertAdjacentElement('beforebegin', csatCard(threadId));
+          }
+        });
+      }
+
+      root.querySelectorAll('button[data-thread]').forEach(function (b) {
+        b.addEventListener('click', async function () {
+          var out = await api('/api/account/concierge?thread=' + encodeURIComponent(b.dataset.thread));
+          if (out.ok) render(out.data);
+        });
+      });
+    }
+
+    async function load() {
+      root.innerHTML = '<p style="color:#8a7f6e;font-size:0.88rem">Loading…</p>';
+      var out = await api('/api/account/concierge');
+      if (!out.ok) {
+        root.innerHTML = '<p style="color:#8a3b2e;font-size:0.88rem">' + esc(out.data.error || 'Could not load the conversation.') + '</p>';
+        return;
+      }
+      render(out.data);
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function (t) {
+      t.addEventListener('click', function () {
+        if (t.getAttribute('data-tab') === 'concierge' && !loadedOnce) {
+          loadedOnce = true;
+          load();
+        }
+      });
+    });
+    var activeTab = document.querySelector('.tab-btn.active');
+    if (activeTab && activeTab.getAttribute('data-tab') === 'concierge' && !loadedOnce) {
+      loadedOnce = true;
+      load();
+    }
+  })();
+</script>
