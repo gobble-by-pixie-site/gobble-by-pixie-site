@@ -1169,14 +1169,32 @@ const ogImage = SITE_URL + '/og-image.jpg';
 
     
       /* Cross-sells — from Console collection 'cross-sells' (per-tenant). */
-      function renderCrossSells(items) {
+      /* Cross-sells — LIVE first: Console's recommendations API
+         (co-occurrence → same category → newest, all live+in-stock) keyed
+         to the cart's first item; the embedded static 'cross-sells'
+         collection stays as the fallback for an empty API answer.
+         (2026-11-12, owner: "cart suggestions for the rest".) */
+      async function renderCrossSells(items) {
         const wrap = document.getElementById('cartCrossSells');
         const row = document.getElementById('cartCrossSellsRow');
         if (!wrap || !row) return;
         if (!items.length) { wrap.style.display = 'none'; row.innerHTML = ''; return; }
         let suggestions = [];
+        let live = [];
+        if (items[0].id) {
+          try {
+            const res = await fetch('/api/recommendations?slug=' + encodeURIComponent(items[0].id));
+            const data = await res.json();
+            if (Array.isArray(data && data.recommendations)) live = data.recommendations;
+          } catch (e) { /* static fallback below */ }
+        }
         try { suggestions = JSON.parse(document.getElementById('crossSellData').textContent) || []; } catch {}
         const inCart = new Set(items.map((i) => i.id));
+        if (live.length) {
+          // Live recommendations win — shaped into the static list's fields
+          // so the card markup and the add flow stay identical.
+          suggestions = live.map((r) => ({ id: r.slug, name: r.name, price: (r.discountPrice && r.discountPrice < r.price) ? r.discountPrice : r.price, image_url: r.image || '' }));
+        }
         const picks = suggestions.filter((s) => !inCart.has(s.id)).slice(0, 3);
         if (!picks.length) { wrap.style.display = 'none'; return; }
         wrap.style.display = '';
