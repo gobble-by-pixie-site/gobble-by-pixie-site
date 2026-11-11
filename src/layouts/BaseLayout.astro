@@ -1202,7 +1202,9 @@ const ogImage = SITE_URL + '/og-image.jpg';
           '<button class="cart-xs-card" data-xs-id="' + escapeHtml(p.id) + '" title="Add to order">'
           + '<img src="' + escapeHtml(p.image_url) + '" alt="" />'
           + '<span class="cart-xs-name">' + escapeHtml(p.name) + '</span>'
-          + '<span class="cart-xs-price">+' + formatPrice(p.price) + '</span>'
+          // ₹0 = price on request (unpriced items never enter the cart) —
+          // never print "+₹0".
+          + '<span class="cart-xs-price">' + (p.price > 0 ? '+' + formatPrice(p.price) : 'Price on request') + '</span>'
           + '</button>'
         ).join('');
         row.querySelectorAll('.cart-xs-card').forEach((card) => {

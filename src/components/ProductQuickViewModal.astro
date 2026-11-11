@@ -23,6 +23,24 @@
             Add to Cart
           </button>
         </div>
+        <!-- Notify-me (2026-11-12): the ask form for sold-out items. The
+             /api/stock-alert proxy shipped long ago but nothing ever
+             called it — this form is the missing half. Guest-allowed;
+             email OR an international phone; Console dedupes per contact
+             + product and the cron notifies on restock. -->
+        <div id="modalNotifyMe" style="display:none;margin-top:0.9rem;border-top:1px solid #eee7dc;padding-top:0.9rem">
+          <p style="margin:0 0 0.5rem;font-weight:600;font-size:0.9rem">Sold out — get notified when it's back</p>
+          <form id="notifyForm" style="display:flex;flex-direction:column;gap:0.5rem">
+            <input id="notifyEmail" type="email" placeholder="Email address"
+              style="border:1px solid #d8d0c2;border-radius:8px;padding:0.55rem 0.75rem;font-size:0.88rem;background:#fff" />
+            <input id="notifyPhone" type="tel" placeholder="Phone with country code, e.g. +9198…"
+              style="border:1px solid #d8d0c2;border-radius:8px;padding:0.55rem 0.75rem;font-size:0.88rem;background:#fff" />
+            <div style="display:flex;align-items:center;gap:0.75rem">
+              <button type="submit" class="btn btn-primary" style="padding:0.5rem 1.1rem;font-size:0.8rem">Notify me</button>
+              <span id="notifyMsg" style="font-size:0.8rem;color:#6b6154"></span>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -98,6 +116,51 @@
       const isOutOfStock = card.dataset.instock === 'false';
       addBtn.disabled = isOutOfStock;
       addBtn.textContent = isOutOfStock ? 'Sold Out' : (hasPrice ? 'Add to Cart' : 'Enquire on WhatsApp');
+
+      // Notify-me form: only for a sold-out item; resets per open.
+      const notifyWrap = document.getElementById('modalNotifyMe') as HTMLElement | null;
+      const notifyForm = document.getElementById('notifyForm') as HTMLFormElement | null;
+      const notifyMsg = document.getElementById('notifyMsg') as HTMLElement | null;
+      if (notifyWrap && notifyForm && notifyMsg) {
+        if (isOutOfStock) {
+          notifyWrap.style.display = 'block';
+          notifyMsg.textContent = '';
+          (document.getElementById('notifyEmail') as HTMLInputElement).value = '';
+          (document.getElementById('notifyPhone') as HTMLInputElement).value = '';
+          notifyForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const email = (document.getElementById('notifyEmail') as HTMLInputElement).value.trim();
+            const phone = (document.getElementById('notifyPhone') as HTMLInputElement).value.trim();
+            if (!email && !phone) {
+              notifyMsg.textContent = 'Add your email, or a phone with its country code.';
+              return;
+            }
+            const submitBtn = notifyForm.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving…'; }
+            try {
+              const res = await fetch('/api/stock-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, phone, productId: card.dataset.id }),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                notifyMsg.textContent = data.error || 'Could not save — try again.';
+                return;
+              }
+              notifyMsg.textContent = 'You are on the list — we will message you the day it is back.';
+              notifyForm.reset();
+            } catch (err) {
+              notifyMsg.textContent = 'Could not save right now — try again in a moment.';
+            } finally {
+              if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Notify me'; }
+            }
+          };
+        } else {
+          notifyWrap.style.display = 'none';
+        }
+      }
+
       addBtn.onclick = () => {
         if (!hasPrice) {
           // Price-on-request items never enter the cart — the cart's GST
