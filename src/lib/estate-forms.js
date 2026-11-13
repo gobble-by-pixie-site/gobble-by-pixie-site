@@ -35,9 +35,16 @@ function isDialSelect(sel) {
   const opts = Array.from(sel.options);
   if (opts.length < 30) return false;
   // Dial rows: numeric value + a flag-emoji-prefixed label ending in a dial.
+  // NOTE: flag emoji are Regional-Indicator pairs (U+1F1E6–FF), which are NOT
+  // \p{Extended_Pictographic} — the first shipped detector used that class
+  // and matched ZERO selects on the live sites (found in the live browser
+  // check, 2026-11-14). Storefront labels end with a bare dial ("… 93"),
+  // Console labels with "+93" — both end in digits, both start with a flag.
   const sample = opts.slice(0, 40);
   const numeric = sample.every((o) => /^\d+$/.test(o.value));
-  const flagged = sample.every((o) => /\+\d+\s*$/.test(o.text) && /^\p{Extended_Pictographic}/u.test(o.text));
+  const flagged = sample.every(
+    (o) => /^[\u{1F1E6}-\u{1F1FF}]/u.test(o.text) && /\d{1,4}\s*$/.test(o.text),
+  );
   return numeric && flagged;
 }
 
