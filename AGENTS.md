@@ -52,3 +52,10 @@ the changed bundle — the edge can serve the previous build for minutes.
 - The quiz/reviews/track/recommendations parity rules (Console AGENTS.md).
 - `.node-version` — bumping it without the Pages dashboard env matching will
   silently keep the old deployment live.
+
+## 2026-11-14 - the WhatsApp STOP is Console-side
+
+STOP / STOPALL / UNSUBSCRIBE / OPTOUT / OPT OUT replies to marketing
+templates are honoured by the Console Meta webhook (migration 0141,
+wa_optouts ledger) - no code path in this repo sends marketing, and
+nothing here changes. Service traffic (invoices, chat, OTP) is untouched.
