@@ -1829,6 +1829,10 @@ if (window.GobbleCart) {
   // picker + PIN autofill — see lib/estate-forms.js (progressive).
   import { initEstateForms } from "../lib/estate-forms.js";
   initEstateForms();
+  // Date fields: month/year dropdowns instead of the native swipe-only
+  // calendar. Progressive — see lib/date-field.js.
+  import { initDateFields } from "../lib/date-field.js";
+  initDateFields();
 </script>
 </body>
 </html>
