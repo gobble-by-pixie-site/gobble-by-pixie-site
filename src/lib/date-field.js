@@ -297,6 +297,11 @@ export function initDateFields() {
     injectStyle();
     document.querySelectorAll('input[type="date"]:not([data-lc-date])').forEach(enhanceOne);
   };
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
-  else run();
+  // WAIT FOR `load`, not DOMContentLoaded: on Gobble the deferred module ran
+  // before its stylesheet applied, so getComputedStyle returned the browser's
+  // default input look (monospace/white/inset) and we froze that onto the
+  // trigger. `load` means the CSS is resolved, so the copied styles match the
+  // site's real fields on every storefront.
+  if (document.readyState === "complete") run();
+  else window.addEventListener("load", run, { once: true });
 }
