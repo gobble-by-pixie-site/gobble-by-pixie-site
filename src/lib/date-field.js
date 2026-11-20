@@ -87,13 +87,38 @@ function enhanceOne(input) {
 
   const raw = () => native.get.call(input) || "";
 
+  // Sites do not all style fields by class: Gobble, for example, styles a bare
+  // `input` selector, so copying className to a <button> leaves a grey Arial
+  // browser default. Resolve the REAL field styles BEFORE hiding the input
+  // and apply them to the trigger, then layer our flex layout on top.
+  const cs = getComputedStyle(input);
+  const fieldStyles = {};
+  const styleProps = [
+    "font-family", "font-size", "font-weight", "font-style", "line-height",
+    "letter-spacing", "text-transform", "text-align", "text-indent",
+    "color", "background-color", "background-image", "background-size",
+    "background-position", "background-repeat",
+    "border-top-width", "border-right-width", "border-bottom-width", "border-left-width",
+    "border-top-style", "border-right-style", "border-bottom-style", "border-left-style",
+    "border-top-color", "border-right-color", "border-bottom-color", "border-left-color",
+    "border-radius", "padding-top", "padding-right", "padding-bottom", "padding-left",
+    "box-shadow", "box-sizing", "min-height",
+  ];
+  for (const prop of styleProps) {
+    const v = cs.getPropertyValue(prop);
+    if (v) fieldStyles[prop] = v;
+  }
+  // A hidden auth pane reports width:0 — fall back to full width there.
+  const resolvedWidth = parseFloat(cs.width) > 0 ? cs.width : "100%";
+  const resolvedHeight = parseFloat(cs.height) > 0 ? cs.height : "";
+
   // Keep the visible button in sync with ANY write to input.value — including
   // storefront code that fills the profile from an API response.
   function setRaw(v, notify) {
     native.set.call(input, v);
-    trigger.textContent = display(v);
-    const icon = trigger.querySelector(".lc-date-icon");
-    if (icon) trigger.appendChild(icon);
+    const label = trigger.querySelector('[data-role="label"]');
+    if (label) label.textContent = display(v);
+    else trigger.textContent = display(v);
     if (notify) {
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
@@ -122,15 +147,20 @@ function enhanceOne(input) {
 
   const trigger = document.createElement("button");
   trigger.type = "button";
-  trigger.className = input.className;
+  trigger.className = input.className + " lc-date-trigger";
   trigger.setAttribute("aria-label", input.getAttribute("aria-label") || "Pick a date");
   trigger.setAttribute("aria-haspopup", "dialog");
+  for (const [prop, v] of Object.entries(fieldStyles)) trigger.style.setProperty(prop, v);
+  if (resolvedHeight) trigger.style.height = resolvedHeight;
+  trigger.style.width = resolvedWidth;
+  // Our layout wins over the copied field styles.
   trigger.style.display = "flex";
   trigger.style.alignItems = "center";
   trigger.style.justifyContent = "space-between";
   trigger.style.gap = "0.5rem";
   trigger.style.textAlign = "left";
   trigger.style.cursor = "pointer";
+  trigger.style.appearance = "none";
   trigger.innerHTML =
     '<span data-role="label"></span>' +
     '<svg class="lc-date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
