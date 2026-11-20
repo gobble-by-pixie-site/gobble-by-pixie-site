@@ -32,7 +32,13 @@ STANDARDS" (2026-11-14). The short form:
    and keep them — the module only fills surfaces without one.
 3. **"Price on request"** is the estate's ₹0 display rule (per-line in
    Console's `priceOrder`; display-side in this repo's card/quick-view).
-4. Run `npm run build` (it includes the hover-CSS gate) before pushing.
+4. **Date fields** use `src/lib/date-field.js` (`initDateFields()` from the
+   base layout) — a month + year calendar instead of the native picker's
+   swipe-only month wheel (A24, 2026-11-20). Gobble styles a bare `input`,
+   so the module copies the resolved field styles onto the trigger on
+   `window.load`; do not swap that for a hand-picked colour. The file is
+   byte-identical in all six storefront repos — fix it everywhere or nowhere.
+5. Run `npm run build` (it includes the hover-CSS gate) before pushing.
 
 `estate-forms.js` is IDENTICAL in all four commerce storefronts (nanoliss,
 TCS, gobble, mane). If you fix a bug in it here, fix it in all four — it is a

@@ -562,10 +562,23 @@ Node pin was blamed and moved to 22.22.0 (`381037c`, red again —
 `e8844826-…`). Three reds across two Node pins, all read off the check-runs.
 
 **THE RULE, now estate policy: the check-run on the commit IS the
-verification** — and for gobble it IS readable via `gh`
+verification** - and for gobble it IS readable via `gh`
 (`gh api repos/gobble-by-pixie-site/gobble-by-pixie-site/commits/<sha>/check-runs`).
 **A live-site marker is NOT build proof:** the edge can serve the previous
 build for minutes after a deploy (`cf-cache-status: HIT` plus an old
 `last-modified`), and when the build FAILS the previous build is what keeps
-serving — which is exactly why the marker check stayed green through a day
+serving - which is exactly why the marker check stayed green through a day
 of red builds.
+
+## 2026-11-20 - month selector on the account birthday field (estate A24)
+
+`src/lib/date-field.js` is imported from `BaseLayout.astro`; it upgrades the
+account page's `#p-birthday` into a month + year calendar. This repo exposed
+the estate-wide styling trap: Gobble styles a bare `input` selector, not
+`.text-field`, so a `<button>` trigger with the same class rendered as a grey
+Arial browser default. The module now copies the RESOLVED field styles onto
+the trigger on `window.load` (DOMContentLoaded was too early — CSS had not
+applied). Byte-identical in all six storefront repos; contract:
+`linear-console/docs/STOREFRONT-STANDARDS.md` §A24. The account page is
+auth-gated and has no signed-in user yet, so final visual confirmation is
+the owner's once a customer account exists.
