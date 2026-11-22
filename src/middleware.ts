@@ -29,6 +29,20 @@ const SECURITY_HEADERS: Record<string, string> = {
   // editor iframe hits admin.gobblebypixie.com — which must be in this list.
   "Content-Security-Policy":
     "frame-ancestors 'self' https://admin.gobblebypixie.com https://console.linearventures.in",
+  // Estate hardening H (2026-11-22): REPORT-ONLY CSP — blocks nothing,
+  // reports violations to the Console collector so the eventual enforcing
+  // policy is derived from measured behaviour. Inventory from the served
+  // HTML: R2 media, Google Fonts, GTM, Instagram CDN (feed), Console API.
+  // No Razorpay/ipapi/unsplash found in Gobble's src — reports will say so
+  // if checkout ever loads one. Enforcement is a LATER, evidence-gated change.
+  "Content-Security-Policy-Report-Only":
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' data: https://fonts.gstatic.com; " +
+    "img-src 'self' data: blob: https://pub-9d1c969550a94b9a927967002928dbaf.r2.dev https://*.cdninstagram.com https://www.googletagmanager.com https://www.google-analytics.com; " +
+    "connect-src 'self' https://console.linearventures.in https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com; " +
+    "media-src 'self' blob: https://pub-9d1c969550a94b9a927967002928dbaf.r2.dev; " +
+    "object-src 'none'; base-uri 'self'; report-uri https://console.linearventures.in/api/csp-report",
 };
 
 const isCacheablePath = (pathname: string): boolean => {
