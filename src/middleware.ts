@@ -43,8 +43,24 @@ const isCacheablePath = (pathname: string): boolean => {
   return true;
 };
 
+// RFC 9116 security.txt (estate hardening F, 2026-11-22). The Pages asset
+// layer does not serve dot-directories under the advanced-mode worker
+// (regular public files fall back fine; /.well-known/* 404s), so the exact
+// path is answered here directly.
+const SECURITY_TXT =
+  "Contact: mailto:support@linearventures.in\nExpires: 2027-11-22T00:00:00Z\nPreferred-Languages: en\n";
+
 export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
   await captureRuntimeEnv();
+
+  if (context.url.pathname === "/.well-known/security.txt") {
+    return new Response(SECURITY_TXT, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "public, max-age=86400, s-maxage=86400",
+      },
+    });
+  }
 
   const upstream = await next();
   const headers = new Headers(upstream.headers);
